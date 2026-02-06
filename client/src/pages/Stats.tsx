@@ -1,7 +1,7 @@
 import { useUserState } from '@/hooks/use-user-state';
 import { Navigation } from '@/components/Navigation';
 import { motion } from 'framer-motion';
-import { Flame, Calendar, TrendingUp } from 'lucide-react';
+import { Flame, Calendar, TrendingUp, Heart } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from 'recharts';

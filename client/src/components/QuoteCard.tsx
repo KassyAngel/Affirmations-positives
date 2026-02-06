@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Heart, Share2, Quote as QuoteIcon } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 import type { Quote } from '@shared/schema';
 
 interface QuoteCardProps {
@@ -10,12 +11,18 @@ interface QuoteCardProps {
 }
 
 export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors }: QuoteCardProps) {
+  const { t, language } = useLanguage();
+
+  // Choisir le contenu selon la langue
+  const displayContent = language === 'en' && quote.contentEn ? quote.contentEn : quote.content;
+
   const handleShare = async () => {
+    const shareText = `"${displayContent}" - ${quote.author}`;
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Citation du jour',
-          text: `"${quote.content}" - ${quote.author}`,
+          title: t.home.shareTitle,
+          text: shareText,
           url: window.location.href,
         });
       } catch (err) {
@@ -23,8 +30,12 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
       }
     } else {
       // Fallback: copy to clipboard
-      navigator.clipboard.writeText(`"${quote.content}" - ${quote.author}`);
-      alert('Citation copiée !');
+      try {
+        await navigator.clipboard.writeText(shareText);
+        alert(t.home.quoteCopied);
+      } catch (err) {
+        console.error('Error copying to clipboard', err);
+      }
     }
   };
 
@@ -43,22 +54,22 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
           style={{ backgroundImage: `url(${quote.backgroundImage})` }}
         />
       )}
-      
+
       {/* Decorative Texture */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-      
+
       {/* Content Container */}
       <div className="relative h-full flex flex-col justify-between p-8 sm:p-12 z-10">
         <div className="flex justify-between items-start">
           <QuoteIcon className="w-10 h-10 text-white/40" />
           <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-bold uppercase tracking-widest text-white/80 border border-white/20">
-            {quote.category}
+            {t.categories[quote.category as keyof typeof t.categories] || quote.category}
           </span>
         </div>
 
         <div className="space-y-6 text-center my-auto">
           <h2 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl text-white leading-tight drop-shadow-md">
-            "{quote.content}"
+            "{displayContent}"
           </h2>
           <div className="w-12 h-1 bg-white/30 mx-auto rounded-full" />
           <p className="font-sans font-medium text-white/80 text-lg uppercase tracking-wide">
@@ -70,6 +81,7 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
           <button
             onClick={onToggleFavorite}
             className="p-3 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all active:scale-95 group"
+            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
           >
             <Heart 
               className={`w-6 h-6 transition-colors ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-white'}`} 
@@ -78,6 +90,7 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
           <button
             onClick={handleShare}
             className="p-3 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 transition-all active:scale-95"
+            aria-label="Share quote"
           >
             <Share2 className="w-6 h-6 text-white" />
           </button>

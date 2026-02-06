@@ -1,0 +1,33 @@
+-- D'abord ajouter la colonne
+ALTER TABLE quotes ADD COLUMN content_en TEXT;
+
+-- Puis mettre à jour toutes les citations
+UPDATE quotes SET content_en = 'The only place where success comes before work is in the dictionary.' WHERE id = 1;
+UPDATE quotes SET content_en = 'Your time is limited, don''t waste it living someone else''s life.' WHERE id = 2;
+UPDATE quotes SET content_en = 'Success is going from failure to failure without losing your enthusiasm.' WHERE id = 3;
+UPDATE quotes SET content_en = 'Choose a job you love and you will never have to work a day in your life.' WHERE id = 4;
+UPDATE quotes SET content_en = 'Action is the foundational key to all success.' WHERE id = 5;
+UPDATE quotes SET content_en = 'Pain is temporary. Quitting lasts forever.' WHERE id = 6;
+UPDATE quotes SET content_en = 'Don''t limit your challenges, challenge your limits.' WHERE id = 7;
+UPDATE quotes SET content_en = 'The body achieves what the mind believes.' WHERE id = 8;
+UPDATE quotes SET content_en = 'There are no shortcuts to any place worth going.' WHERE id = 9;
+UPDATE quotes SET content_en = 'Take care of your body. It''s the only place you have to live.' WHERE id = 10;
+UPDATE quotes SET content_en = 'To love is not to look at one another, but to look together in the same direction.' WHERE id = 11;
+UPDATE quotes SET content_en = 'Life is a sleep, love is its dream.' WHERE id = 12;
+UPDATE quotes SET content_en = 'The greatest happiness after loving is to confess one''s love.' WHERE id = 13;
+UPDATE quotes SET content_en = 'There is only one happiness in life: to love and be loved.' WHERE id = 14;
+UPDATE quotes SET content_en = 'Believe in yourself and all that you are. Know that there is something inside you that is greater than any obstacle.' WHERE id = 15;
+UPDATE quotes SET content_en = 'No one can make you feel inferior without your consent.' WHERE id = 16;
+UPDATE quotes SET content_en = 'Self-confidence is the first secret of success.' WHERE id = 17;
+UPDATE quotes SET content_en = 'Life isn''t about waiting for the storm to pass, it''s about learning to dance in the rain.' WHERE id = 18;
+UPDATE quotes SET content_en = 'Know thyself.' WHERE id = 19;
+UPDATE quotes SET content_en = 'Happiness is not easy. It is very difficult to find within ourselves, impossible to find elsewhere.' WHERE id = 20;
+UPDATE quotes SET content_en = 'Even the darkest night will end and the sun will rise.' WHERE id = 21;
+UPDATE quotes SET content_en = 'What doesn''t kill me makes me stronger.' WHERE id = 22;
+UPDATE quotes SET content_en = 'There are flowers everywhere for those who want to see them.' WHERE id = 23;
+UPDATE quotes SET content_en = 'Never forget that you are braver than you believe, stronger than you seem, and smarter than you think.' WHERE id = 24;
+UPDATE quotes SET content_en = 'Sometimes you have to accept that some people can only be in your heart, not in your life.' WHERE id = 25;
+UPDATE quotes SET content_en = 'Letting go is saying ''I love you'' to yourself.' WHERE id = 26;
+UPDATE quotes SET content_en = 'Every ending is the beginning of a new start.' WHERE id = 27;
+UPDATE quotes SET content_en = 'Success is not the key to happiness. Happiness is the key to success. If you love what you are doing, you will be successful.' WHERE id = 28;
+UPDATE quotes SET content_en = 'Winners find ways, losers find excuses.' WHERE id = 29;

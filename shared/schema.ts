@@ -6,6 +6,7 @@ import { z } from "zod";
 export const quotes = pgTable("quotes", {
   id: serial("id").primaryKey(),
   content: text("content").notNull(),
+  contentEn: text("content_en"), // Traduction anglaise
   author: text("author").notNull(),
   category: varchar("category", { length: 50 }).notNull(), // 'work', 'love', 'sport', 'confidence', 'support', 'breakup', 'philosophy', 'success'
   backgroundImage: text("background_image"), // Optional URL or CSS gradient string

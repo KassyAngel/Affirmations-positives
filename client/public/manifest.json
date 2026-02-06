@@ -1,21 +1,60 @@
 {
-  "name": "Daily Motivation",
-  "short_name": "Motivation",
-  "description": "Citations motivantes quotidiennes",
+  "name": "Citations Motivantes Quotidiennes",
+  "short_name": "CitationsDuJour",
+  "description": "Recevez chaque jour une citation inspirante adaptée à votre humeur",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1a1a1a",
-  "theme_color": "#1a1a1a",
+  "background_color": "#0a0a0a",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "fr",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/favicon.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/favicon.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "categories": [
+    "lifestyle",
+    "productivity",
+    "health"
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Citation du jour",
+      "short_name": "Aujourd'hui",
+      "description": "Voir la citation du jour",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/favicon.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Favoris",
+      "short_name": "Favoris",
+      "description": "Voir mes citations favorites",
+      "url": "/favorites",
+      "icons": [
+        {
+          "src": "/favicon.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
 }

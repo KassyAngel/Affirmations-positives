@@ -1,0 +1,135 @@
+/* ==========================================
+   DÉGRADÉS ZEN ET REPOSANTS
+   Couleurs douces et apaisantes pour chaque catégorie
+   ========================================== */
+
+/* Travail / Work - Bleu profond apaisant */
+.gradient-work {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* Amour / Love - Rose tendre et chaleureux */
+.gradient-love {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* Sport / Exercice - Orange énergique mais doux */
+.gradient-sport {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* Confiance / Confidence - Vert émeraude confiant */
+.gradient-confidence {
+  background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* Soutien / Support - Violet doux et réconfortant */
+.gradient-support {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* Rupture / Breakup - Bleu nuit apaisant */
+.gradient-breakup {
+  background: linear-gradient(135deg, #6a85b6 0%, #bac8e0 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* Philosophie / Philosophy - Indigo profond et méditatif */
+.gradient-philosophy {
+  background: linear-gradient(135deg, #5f72bd 0%, #9b23ea 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* Succès / Success - Or et ambre lumineux */
+.gradient-success {
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* Dégradé par défaut - Neutre et élégant */
+.gradient-default {
+  background: linear-gradient(135deg, #434343 0%, #000000 100%);
+  background-size: 200% 200%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* Animation douce de dégradé */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Variantes pour les cartes de catégories */
+.category-card-work {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+.category-card-love {
+  background: linear-gradient(135deg, rgba(240, 147, 251, 0.15) 0%, rgba(245, 87, 108, 0.15) 100%);
+  border: 1px solid rgba(240, 147, 251, 0.3);
+}
+
+.category-card-sport {
+  background: linear-gradient(135deg, rgba(250, 112, 154, 0.15) 0%, rgba(254, 225, 64, 0.15) 100%);
+  border: 1px solid rgba(250, 112, 154, 0.3);
+}
+
+.category-card-confidence {
+  background: linear-gradient(135deg, rgba(48, 207, 208, 0.15) 0%, rgba(51, 8, 103, 0.15) 100%);
+  border: 1px solid rgba(48, 207, 208, 0.3);
+}
+
+.category-card-support {
+  background: linear-gradient(135deg, rgba(168, 237, 234, 0.15) 0%, rgba(254, 214, 227, 0.15) 100%);
+  border: 1px solid rgba(168, 237, 234, 0.3);
+}
+
+.category-card-breakup {
+  background: linear-gradient(135deg, rgba(106, 133, 182, 0.15) 0%, rgba(186, 200, 224, 0.15) 100%);
+  border: 1px solid rgba(106, 133, 182, 0.3);
+}
+
+.category-card-philosophy {
+  background: linear-gradient(135deg, rgba(95, 114, 189, 0.15) 0%, rgba(155, 35, 234, 0.15) 100%);
+  border: 1px solid rgba(95, 114, 189, 0.3);
+}
+
+.category-card-success {
+  background: linear-gradient(135deg, rgba(255, 236, 210, 0.15) 0%, rgba(252, 182, 159, 0.15) 100%);
+  border: 1px solid rgba(255, 236, 210, 0.3);
+}
+
+/* Effet de survol pour les cartes */
+.category-card-work:hover,
+.category-card-love:hover,
+.category-card-sport:hover,
+.category-card-confidence:hover,
+.category-card-support:hover,
+.category-card-breakup:hover,
+.category-card-philosophy:hover,
+.category-card-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
