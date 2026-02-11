@@ -120,6 +120,17 @@ export const en: TranslationKeys = {
         preferNot: 'I prefer not to say'
       }
     },
+    notifications: {
+      title: 'Receive quotes throughout the day',
+      subtitle: 'Small doses of motivation can make a big difference',
+    },
+    theme: {
+      title: 'Which theme would you like to start with?',
+    },
+    widget: {
+      title: 'Add a widget to your home screen',
+      subtitle: 'On your phone\'s home screen, press and hold an empty area, then select the Motivation widget from the list',
+    },
     complete: {
       title: 'All set!',
       subtitle: 'Your journey begins now',

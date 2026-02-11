@@ -52,6 +52,19 @@ export class DatabaseStorage implements IStorage {
     return quote;
   }
 
+  async getQuoteCountsByCategory(): Promise<Record<string, number>> {
+    const results = await db.select({
+      category: quotes.category,
+      count: sql<number>`count(*)`
+    }).from(quotes).groupBy(quotes.category);
+    
+    const counts: Record<string, number> = {};
+    results.forEach(row => {
+      counts[row.category] = Number(row.count);
+    });
+    return counts;
+  }
+
   async createQuote(insertQuote: InsertQuote): Promise<Quote> {
     const [quote] = await db.insert(quotes).values(insertQuote).returning();
     return quote;

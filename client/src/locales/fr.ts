@@ -118,6 +118,17 @@ export const fr = {
         preferNot: 'Je préfère ne pas le dire'
       }
     },
+    notifications: {
+      title: 'Recevez des citations tout au long de la journée',
+      subtitle: 'De petites doses de motivation peuvent faire une grande différence',
+    },
+    theme: {
+      title: 'Avec quel thème souhaitez-vous commencer ?',
+    },
+    widget: {
+      title: 'Ajouter un widget à votre écran d\'accueil',
+      subtitle: 'Sur l\'écran d\'accueil de votre téléphone, maintenez le doigt appuyé sur une zone vide, puis sélectionnez le widget Motivation dans la liste',
+    },
     complete: {
       title: 'Tout est prêt !',
       subtitle: 'Votre voyage commence maintenant',
