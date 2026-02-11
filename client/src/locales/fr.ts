@@ -6,7 +6,6 @@ export const fr = {
     favorites: 'Favoris',
     stats: 'Stats'
   },
-
   // Page d'accueil
   home: {
     greeting: 'Bonjour',
@@ -22,7 +21,6 @@ export const fr = {
     quoteCopied: 'Citation copiée !',
     shareTitle: 'Citation du jour'
   },
-
   // Mood Overlay
   mood: {
     title: 'Bonjour',
@@ -33,7 +31,6 @@ export const fr = {
     tired: 'Fatigué',
     frustrated: 'Frustré'
   },
-
   // Catégories
   categories: {
     title: 'Thèmes',
@@ -49,7 +46,6 @@ export const fr = {
     quotes: 'citations',
     quote: 'citation'
   },
-
   // Favoris
   favorites: {
     title: 'Favoris',
@@ -58,7 +54,6 @@ export const fr = {
     emptySubtitle: 'Touchez le cœur sur une citation pour la retrouver ici.',
     savedCount: '{{count}} citations gardées précieusement'
   },
-
   // Statistiques
   stats: {
     title: 'Statistiques',
@@ -71,7 +66,6 @@ export const fr = {
     days: 'Jours',
     day: 'Jour'
   },
-
   // Notifications
   notifications: {
     title: '🌟 Ta citation du jour',
@@ -85,7 +79,53 @@ export const fr = {
     viewNow: 'Voir maintenant',
     later: 'Plus tard'
   },
-
+  // Onboarding
+  onboarding: {
+    welcome: {
+      title: 'Bienvenue',
+      subtitle: 'Découvrez votre dose quotidienne d\'inspiration',
+      description: 'Chaque jour, une citation pour vous accompagner, vous motiver et vous inspirer.',
+      continue: 'Commencer'
+    },
+    personalize: {
+      title: 'Personnalisez',
+      subtitle: 'votre expérience',
+      description: 'Quelques informations pour mieux vous accompagner',
+      continue: 'Continuer'
+    },
+    age: {
+      title: 'Quel âge avez-vous ?',
+      ranges: {
+        young: '13 à 17 ans',
+        youngAdult: '18 à 24 ans',
+        adult: '25 à 34 ans',
+        mature: '35 à 44 ans',
+        experienced: '45 à 54 ans',
+        senior: 'Plus de 55 ans'
+      }
+    },
+    name: {
+      title: 'Comment vous appelez-vous ?',
+      placeholder: 'Votre prénom',
+      continue: 'Continuer'
+    },
+    gender: {
+      title: 'Quelle option vous représente le mieux ?',
+      options: {
+        female: 'Femme',
+        male: 'Homme',
+        other: 'Autre',
+        preferNot: 'Je préfère ne pas le dire'
+      }
+    },
+    complete: {
+      title: 'Tout est prêt !',
+      subtitle: 'Votre voyage commence maintenant',
+      description: 'Chaque jour est une nouvelle opportunité de grandir et de s\'inspirer.',
+      start: 'Découvrir'
+    },
+    skip: 'Ignorer'
+  },
   // Settings
   settings: {
     title: 'Paramètres',
@@ -95,7 +135,6 @@ export const fr = {
     about: 'À propos',
     version: 'Version'
   },
-
   // Général
   common: {
     loading: 'Chargement...',

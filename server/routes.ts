@@ -8,16 +8,17 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  
+
   // Initialize seed data
   await storage.seedQuotes();
 
+  // GET /api/quotes - List quotes with optional filters
   app.get(api.quotes.list.path, async (req, res) => {
     try {
       const category = req.query.category as string | undefined;
       const search = req.query.search as string | undefined;
       const limit = req.query.limit ? Number(req.query.limit) : undefined;
-      
+
       const quotes = await storage.getQuotes(category, search, limit);
       res.json(quotes);
     } catch (err) {
@@ -25,6 +26,7 @@ export async function registerRoutes(
     }
   });
 
+  // GET /api/quotes/random - Get random quote
   app.get(api.quotes.random.path, async (req, res) => {
     try {
       const category = req.query.category as string | undefined;
@@ -41,6 +43,17 @@ export async function registerRoutes(
     }
   });
 
+  // GET /api/quotes/count-by-category - Get quote counts by category
+  app.get("/api/quotes/count-by-category", async (req, res) => {
+    try {
+      const counts = await storage.getQuoteCountsByCategory();
+      res.json(counts);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // GET /api/quotes/:id - Get specific quote
   app.get(api.quotes.get.path, async (req, res) => {
     try {
       const quote = await storage.getQuote(Number(req.params.id));
@@ -53,6 +66,7 @@ export async function registerRoutes(
     }
   });
 
+  // POST /api/quotes - Create quote (Admin/Seeding)
   app.post(api.quotes.create.path, async (req, res) => {
     try {
       const input = api.quotes.create.input.parse(req.body);

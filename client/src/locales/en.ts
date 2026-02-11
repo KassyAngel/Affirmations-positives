@@ -8,7 +8,6 @@ export const en: TranslationKeys = {
     favorites: 'Favorites',
     stats: 'Stats'
   },
-
   // Home page
   home: {
     greeting: 'Hello',
@@ -24,7 +23,6 @@ export const en: TranslationKeys = {
     quoteCopied: 'Quote copied!',
     shareTitle: 'Quote of the day'
   },
-
   // Mood Overlay
   mood: {
     title: 'Hello',
@@ -35,7 +33,6 @@ export const en: TranslationKeys = {
     tired: 'Tired',
     frustrated: 'Frustrated'
   },
-
   // Categories
   categories: {
     title: 'Themes',
@@ -51,7 +48,6 @@ export const en: TranslationKeys = {
     quotes: 'quotes',
     quote: 'quote'
   },
-
   // Favorites
   favorites: {
     title: 'Favorites',
@@ -60,7 +56,6 @@ export const en: TranslationKeys = {
     emptySubtitle: 'Tap the heart on a quote to find it here.',
     savedCount: '{{count}} carefully saved quotes'
   },
-
   // Statistics
   stats: {
     title: 'Statistics',
@@ -73,7 +68,6 @@ export const en: TranslationKeys = {
     days: 'Days',
     day: 'Day'
   },
-
   // Notifications
   notifications: {
     title: '🌟 Your daily quote',
@@ -87,7 +81,53 @@ export const en: TranslationKeys = {
     viewNow: 'View now',
     later: 'Later'
   },
-
+  // Onboarding
+  onboarding: {
+    welcome: {
+      title: 'Welcome',
+      subtitle: 'Discover your daily dose of inspiration',
+      description: 'Every day, a quote to guide you, motivate you and inspire you.',
+      continue: 'Get Started'
+    },
+    personalize: {
+      title: 'Personalize',
+      subtitle: 'your experience',
+      description: 'A few details to better accompany you',
+      continue: 'Continue'
+    },
+    age: {
+      title: 'How old are you?',
+      ranges: {
+        young: '13 to 17 years',
+        youngAdult: '18 to 24 years',
+        adult: '25 to 34 years',
+        mature: '35 to 44 years',
+        experienced: '45 to 54 years',
+        senior: 'Over 55 years'
+      }
+    },
+    name: {
+      title: 'What\'s your name?',
+      placeholder: 'Your first name',
+      continue: 'Continue'
+    },
+    gender: {
+      title: 'Which option best represents you?',
+      options: {
+        female: 'Female',
+        male: 'Male',
+        other: 'Other',
+        preferNot: 'I prefer not to say'
+      }
+    },
+    complete: {
+      title: 'All set!',
+      subtitle: 'Your journey begins now',
+      description: 'Every day is a new opportunity to grow and be inspired.',
+      start: 'Discover'
+    },
+    skip: 'Skip'
+  },
   // Settings
   settings: {
     title: 'Settings',
@@ -97,7 +137,6 @@ export const en: TranslationKeys = {
     about: 'About',
     version: 'Version'
   },
-
   // Common
   common: {
     loading: 'Loading...',

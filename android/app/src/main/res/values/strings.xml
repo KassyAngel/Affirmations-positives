@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Affirmations Positives</string>
+    <string name="title_activity_main">Affirmations Positives</string>
+    <string name="package_name">com.kcdev.affirmationspositives</string>
+    <string name="custom_url_scheme">com.kcdev.affirmationspositives</string>
+</resources>
