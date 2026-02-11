@@ -68,7 +68,7 @@ export function ThemeStep({ onSelect, onBack }: ThemeStepProps) {
           onClick={() => onSelect(selected)}
           className="w-full h-14 rounded-full bg-white text-slate-900 hover:bg-white/90 text-lg font-bold"
         >
-          {t.onboarding.continue}
+          {t.onboarding.complete.start}
         </Button>
         <button onClick={onBack} className="text-white/40 hover:text-white text-sm">
           Retour

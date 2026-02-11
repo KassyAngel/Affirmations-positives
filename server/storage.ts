@@ -70,21 +70,6 @@ export class DatabaseStorage implements IStorage {
     return quote;
   }
 
-  async getQuoteCountsByCategory(): Promise<Record<string, number>> {
-    const counts = await db
-      .select({
-        category: quotes.category,
-        count: sql<number>`count(*)::int`,
-      })
-      .from(quotes)
-      .groupBy(quotes.category);
-
-    return counts.reduce((acc, { category, count }) => {
-      acc[category] = count;
-      return acc;
-    }, {} as Record<string, number>);
-  }
-
   async seedQuotes(): Promise<void> {
     const count = await db.select({ count: sql<number>`count(*)` }).from(quotes);
     if (Number(count[0].count) > 0) return;

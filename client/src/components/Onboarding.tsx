@@ -180,7 +180,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
           {currentStep === 'theme' && (
             <motion.div key="theme" custom={1} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.5 }}>
               <ThemeStep 
-                onSelect={(theme) => { updateData('theme', theme); handleNext(); }} 
+                onSelect={(theme: string) => { updateData('theme', theme); handleNext(); }} 
                 onBack={handleBack} 
               />
             </motion.div>
