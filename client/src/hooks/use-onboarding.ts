@@ -1,9 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export interface UserData {
   age?: string;
   name?: string;
   gender?: string;
+  theme?: string;
+  notifications?: {
+    enabled: boolean;
+    frequency: number;
+    startTime: string;
+    endTime: string;
+  };
 }
 
 const ONBOARDING_STORAGE_KEY = 'onboarding_completed';
@@ -18,21 +25,14 @@ export function useOnboarding() {
   const [userData, setUserData] = useState<UserData>(() => {
     const stored = localStorage.getItem(USER_DATA_STORAGE_KEY);
     if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return {};
-      }
+      try { return JSON.parse(stored); } catch { return {}; }
     }
     return {};
   });
 
   const completeOnboarding = (data: UserData) => {
-    // Sauvegarder les données utilisateur
     localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify(data));
     setUserData(data);
-
-    // Marquer l'onboarding comme complété
     localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
     setHasCompletedOnboarding(true);
   };

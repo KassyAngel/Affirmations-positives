@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { useQuotes } from '@/hooks/use-quotes';
 import { useUserState } from '@/hooks/use-user-state';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { QuoteCard } from '@/components/QuoteCard';
 import { MoodOverlay } from '@/components/MoodOverlay';
 import { Navigation } from '@/components/Navigation';
@@ -33,48 +34,43 @@ const CATEGORY_STYLES: Record<string, string> = {
 
 export default function Home() {
   const { t, language } = useLanguage();
+  const { theme } = useTheme();
   const [location] = useLocation();
-  const { 
-    state, 
-    logMood, 
-    updateStreak, 
+  const {
+    state,
+    logMood,
+    updateStreak,
     hasLoggedMoodToday,
     toggleFavorite,
-    getTodaysMood 
+    getTodaysMood
   } = useUserState();
 
   const [showMoodOverlay, setShowMoodOverlay] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | undefined>();
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Lire le paramètre category de l'URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const categoryParam = params.get('category');
-
     if (categoryParam) {
       setActiveCategory(categoryParam);
-      setCurrentIndex(0); // Reset index when changing category
+      setCurrentIndex(0);
     }
   }, [location]);
 
-  // Check mood on mount
   useEffect(() => {
     updateStreak();
     if (!hasLoggedMoodToday()) {
       setShowMoodOverlay(true);
     } else {
       const mood = getTodaysMood();
-      // Only set category from mood if no URL param
       if (mood && !new URLSearchParams(window.location.search).get('category')) {
         setActiveCategory(MOOD_CATEGORY_MAP[mood]);
       }
     }
   }, []);
 
-  const { data: quotes, isLoading, isError, refetch } = useQuotes({ 
-    category: activeCategory 
-  });
+  const { data: quotes, isLoading, isError, refetch } = useQuotes({ category: activeCategory });
 
   const handleMoodSelect = (mood: Mood) => {
     logMood(mood);
@@ -89,19 +85,19 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className={`min-h-screen flex items-center justify-center ${theme.bgClass}`}>
+        <Loader2 className={`w-8 h-8 animate-spin ${theme.accentClass}`} />
       </div>
     );
   }
 
   if (isError || !quotes || quotes.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center">
-        <p className="text-muted-foreground mb-4">{t.home.error}</p>
-        <button 
+      <div className={`min-h-screen flex flex-col items-center justify-center p-6 text-center ${theme.bgClass}`}>
+        <p className={`mb-4 ${theme.textMutedClass}`}>{t.home.error}</p>
+        <button
           onClick={() => refetch()}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          className={`px-4 py-2 rounded-lg transition-colors ${theme.buttonClass}`}
         >
           {t.home.retry}
         </button>
@@ -113,15 +109,14 @@ export default function Home() {
   const isFavorite = state.favorites.includes(currentQuote.id);
   const bgStyle = CATEGORY_STYLES[currentQuote.category] || CATEGORY_STYLES.default;
 
-  // Format date selon la langue
-  const formattedDate = new Date().toLocaleDateString(t.home.dateFormat, { 
-    weekday: 'long', 
-    day: 'numeric', 
-    month: 'long' 
+  const formattedDate = new Date().toLocaleDateString(t.home.dateFormat, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
   });
 
   return (
-    <div className="min-h-screen bg-background pb-24 overflow-hidden relative">
+    <div className={`min-h-screen pb-24 overflow-hidden relative transition-all duration-700 ${theme.bgClass}`}>
       <MoodOverlay isOpen={showMoodOverlay} onSelectMood={handleMoodSelect} />
       <LanguageSwitcher variant="floating" />
       <NotificationBanner />
@@ -129,22 +124,24 @@ export default function Home() {
       {/* Header */}
       <header className="px-6 py-6 flex justify-between items-center">
         <div>
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
+          <p className={`text-sm font-medium uppercase tracking-widest ${theme.textMutedClass}`}>
             {formattedDate}
           </p>
-          <h1 className="text-2xl font-display font-bold">{t.home.quoteOfTheDay}</h1>
+          <h1 className={`text-2xl font-display font-bold ${theme.textClass}`}>
+            {t.home.quoteOfTheDay}
+          </h1>
         </div>
         <div className="flex items-center gap-2">
-          <div className="bg-card border border-white/5 rounded-full px-3 py-1 flex items-center gap-2">
+          <div className={`border rounded-full px-3 py-1 flex items-center gap-2 ${theme.cardClass}`}>
             <span className="text-amber-500">🔥</span>
-            <span className="font-bold text-foreground">{state.streak}</span>
+            <span className={`font-bold ${theme.textClass}`}>{state.streak}</span>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="px-4 mt-4 flex flex-col items-center gap-8">
-        <QuoteCard 
+        <QuoteCard
           key={currentQuote.id}
           quote={currentQuote}
           isFavorite={isFavorite}
@@ -153,9 +150,9 @@ export default function Home() {
         />
 
         <div className="flex gap-4">
-          <button 
+          <button
             onClick={handleNext}
-            className="flex items-center gap-2 px-6 py-3 rounded-full bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-all active:scale-95 shadow-lg"
+            className={`flex items-center gap-2 px-6 py-3 rounded-full border transition-all active:scale-95 shadow-lg ${theme.cardClass} ${theme.textClass}`}
           >
             <RefreshCcw className="w-4 h-4" />
             <span>{t.home.newQuote}</span>
