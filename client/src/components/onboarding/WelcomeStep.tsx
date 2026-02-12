@@ -9,69 +9,53 @@ interface WelcomeStepProps {
 export function WelcomeStep({ onContinue }: WelcomeStepProps) {
   const { t, language, setLanguage } = useLanguage();
 
-  const toggleLanguage = () => {
-    setLanguage(language === 'fr' ? 'en' : 'fr');
-  };
-
   return (
     <div className="max-w-md w-full text-center">
-      {/* Sélecteur de langue */}
+      {/* Sélecteur de langue adapté au fond clair */}
       <motion.button
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        onClick={toggleLanguage}
-        className="absolute top-6 right-6 flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white/90 hover:bg-white/20 transition-all"
+        onClick={() => setLanguage(language === 'fr' ? 'en' : 'fr')}
+        className="absolute top-6 right-6 flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-sm border border-rose-200 rounded-full text-rose-700 hover:bg-white transition-all shadow-sm"
       >
         <Globe className="w-4 h-4" />
-        <span className="text-sm font-medium">{language === 'fr' ? '🇫🇷' : '🇬🇧'}</span>
+        <span className="text-sm font-medium">{language === 'fr' ? '🇫🇷 FR' : '🇬🇧 EN'}</span>
       </motion.button>
 
+      {/* Icône centrale */}
       <motion.div
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
         className="mb-8 flex justify-center"
       >
         <div className="relative">
           <motion.div
-            className="w-24 h-24 rounded-full bg-gradient-to-br from-rose-300 to-pink-400 flex items-center justify-center"
+            className="w-24 h-24 rounded-full bg-gradient-to-br from-rose-300 to-pink-400 flex items-center justify-center shadow-xl shadow-rose-200/60"
             animate={{
               boxShadow: [
-                "0 0 20px rgba(251, 207, 232, 0.4)",
-                "0 0 40px rgba(251, 207, 232, 0.7)",
-                "0 0 20px rgba(251, 207, 232, 0.4)",
+                '0 0 20px rgba(253, 164, 175, 0.4)',
+                '0 0 40px rgba(253, 164, 175, 0.7)',
+                '0 0 20px rgba(253, 164, 175, 0.4)',
               ]
             }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           >
             <Sparkles className="w-12 h-12 text-white" />
           </motion.div>
 
-          {/* Particules flottantes */}
           {[...Array(6)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-2 h-2 bg-rose-200 rounded-full"
-              style={{
-                top: '50%',
-                left: '50%',
-              }}
+              className="absolute w-2 h-2 bg-rose-300 rounded-full"
+              style={{ top: '50%', left: '50%' }}
               animate={{
                 x: [0, Math.cos(i * 60 * Math.PI / 180) * 60],
                 y: [0, Math.sin(i * 60 * Math.PI / 180) * 60],
-                opacity: [1, 0],
+                opacity: [0.8, 0],
                 scale: [1, 0],
               }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                delay: i * 0.2,
-                ease: "easeOut"
-              }}
+              transition={{ duration: 2, repeat: Infinity, delay: i * 0.2, ease: 'easeOut' }}
             />
           ))}
         </div>
@@ -81,7 +65,7 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="text-5xl font-display font-bold text-white mb-4"
+        className="text-5xl font-display font-bold text-rose-900 mb-4"
       >
         {t.onboarding.welcome.title}
       </motion.h1>
@@ -90,7 +74,7 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="text-xl text-rose-100 mb-2 font-light"
+        className="text-xl text-rose-600 mb-3 font-light"
       >
         {t.onboarding.welcome.subtitle}
       </motion.p>
@@ -99,7 +83,7 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
-        className="text-white/80 mb-12 max-w-sm mx-auto leading-relaxed"
+        className="text-rose-800/70 mb-12 max-w-sm mx-auto leading-relaxed"
       >
         {t.onboarding.welcome.description}
       </motion.p>
@@ -109,7 +93,7 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9 }}
         onClick={onContinue}
-        className="w-full px-8 py-4 bg-white text-rose-600 rounded-full font-semibold text-lg shadow-2xl hover:shadow-rose-300/50 transition-all duration-300 hover:scale-105"
+        className="w-full px-8 py-4 bg-gradient-to-r from-rose-400 to-pink-400 text-white rounded-full font-semibold text-lg shadow-lg shadow-rose-200/60 hover:shadow-xl hover:shadow-rose-300/60 transition-all duration-300 hover:scale-105"
       >
         {t.onboarding.welcome.continue}
       </motion.button>

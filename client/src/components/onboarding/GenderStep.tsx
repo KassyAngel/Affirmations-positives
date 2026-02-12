@@ -22,7 +22,7 @@ export function GenderStep({ value, onSelect, onBack }: GenderStepProps) {
     <div className="max-w-md w-full">
       <button
         onClick={onBack}
-        className="absolute top-6 left-6 text-rose-600/70 hover:text-rose-600 transition-colors"
+        className="absolute top-6 left-6 text-rose-400 hover:text-rose-600 transition-colors"
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
@@ -30,7 +30,7 @@ export function GenderStep({ value, onSelect, onBack }: GenderStepProps) {
       <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-4xl font-display font-bold text-rose-900 mb-12 text-center"
+        className="text-4xl font-display font-bold text-rose-900 mb-10 text-center"
       >
         {t.onboarding.gender.title}
       </motion.h1>
@@ -39,11 +39,15 @@ export function GenderStep({ value, onSelect, onBack }: GenderStepProps) {
         {genderOptions.map((option, index) => (
           <motion.button
             key={option.key}
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ delay: index * 0.08 }}
             onClick={() => onSelect(option.key)}
-            className="w-full px-6 py-4 bg-white/80 backdrop-blur-sm border border-rose-200 rounded-2xl text-rose-900 hover:bg-white hover:border-rose-300 transition-all duration-300 text-left font-medium hover:scale-105 shadow-sm hover:shadow-md"
+            className={`w-full px-6 py-4 bg-white/80 backdrop-blur-sm border rounded-2xl text-left font-medium transition-all duration-200 hover:scale-[1.02] shadow-sm hover:shadow-md ${
+              value === option.key
+                ? 'border-rose-400 bg-rose-50 text-rose-700 shadow-rose-100'
+                : 'border-rose-100 text-rose-900 hover:border-rose-300 hover:bg-white'
+            }`}
           >
             {option.label}
           </motion.button>

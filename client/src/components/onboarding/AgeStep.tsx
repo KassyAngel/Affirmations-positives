@@ -24,7 +24,7 @@ export function AgeStep({ value, onSelect, onBack }: AgeStepProps) {
     <div className="max-w-md w-full">
       <button
         onClick={onBack}
-        className="absolute top-6 left-6 text-white/60 hover:text-white/90 transition-colors"
+        className="absolute top-6 left-6 text-rose-400 hover:text-rose-600 transition-colors"
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
@@ -32,7 +32,7 @@ export function AgeStep({ value, onSelect, onBack }: AgeStepProps) {
       <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-4xl font-display font-bold text-white mb-12 text-center"
+        className="text-4xl font-display font-bold text-rose-900 mb-10 text-center"
       >
         {t.onboarding.age.title}
       </motion.h1>
@@ -41,11 +41,15 @@ export function AgeStep({ value, onSelect, onBack }: AgeStepProps) {
         {ageRanges.map((range, index) => (
           <motion.button
             key={range.key}
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ delay: index * 0.08 }}
             onClick={() => onSelect(range.key)}
-            className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-white hover:bg-white/20 transition-all duration-300 text-left font-medium hover:scale-105 hover:border-purple-400/50"
+            className={`w-full px-6 py-4 bg-white/80 backdrop-blur-sm border rounded-2xl text-left font-medium transition-all duration-200 hover:scale-[1.02] shadow-sm hover:shadow-md ${
+              value === range.key
+                ? 'border-rose-400 bg-rose-50 text-rose-700 shadow-rose-100'
+                : 'border-rose-100 text-rose-900 hover:border-rose-300 hover:bg-white'
+            }`}
           >
             {range.label}
           </motion.button>
