@@ -43,7 +43,6 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
           >
             <Sparkles className="w-12 h-12 text-white" />
           </motion.div>
-
           {[...Array(6)].map((_, i) => (
             <motion.div
               key={i}

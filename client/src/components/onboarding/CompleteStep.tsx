@@ -31,7 +31,6 @@ export function CompleteStep({ onComplete }: CompleteStepProps) {
               transition={{ duration: 2, repeat: Infinity, delay: i * 0.4 }}
             />
           ))}
-
           <motion.div
             className="relative w-28 h-28 rounded-full bg-gradient-to-br from-emerald-300 to-teal-400 flex items-center justify-center shadow-xl shadow-emerald-200/60"
             animate={{

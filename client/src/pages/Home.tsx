@@ -9,6 +9,7 @@ import { MoodOverlay } from '@/components/MoodOverlay';
 import { Navigation } from '@/components/Navigation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { NotificationBanner } from '@/components/NotificationBanner';
+import { ThemeSelector } from '@/components/ThemeSelector';
 import { Loader2, RefreshCcw } from 'lucide-react';
 import type { Mood } from '@shared/schema';
 
@@ -131,7 +132,11 @@ export default function Home() {
             {t.home.quoteOfTheDay}
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {/* Sélecteur de thème */}
+          <ThemeSelector />
+
+          {/* Compteur de streak */}
           <div className={`border rounded-full px-3 py-1 flex items-center gap-2 ${theme.cardClass}`}>
             <span className="text-amber-500">🔥</span>
             <span className={`font-bold ${theme.textClass}`}>{state.streak}</span>
