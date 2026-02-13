@@ -44,7 +44,7 @@ export function ThemeSelector() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-6 pb-8 max-h-[80vh] overflow-y-auto ${theme.bgClass}`}
+              className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-6 pb-8 max-h-[80vh] overflow-y-auto bg-[#fff5f5]`}
             >
               {/* Header */}
               <div className="flex items-center justify-between mb-6">

@@ -76,7 +76,7 @@ export function ThemeStep({ selectedTheme, onThemeSelect, onBack }: ThemeStepPro
       </div>
 
       {/* Grille scrollable avec TOUS les thèmes */}
-      <div className="grid grid-cols-2 gap-4 mt-8 max-h-[60vh] overflow-y-auto pr-2">
+      <div className="grid grid-cols-2 gap-4 mt-8 max-h-[60vh] overflow-y-auto pr-2 bg-[#fff5f5] p-4 rounded-3xl">
         {(Object.keys(THEMES) as ThemeId[]).map((themeId) => 
           themePreview(themeId)
         )}
