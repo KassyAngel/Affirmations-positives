@@ -26,6 +26,7 @@ export type ThemeId =
   | 'sunset'
   | 'zen'
   | 'zen-cascade'
+  | 'zen-jardin-japonais'
   | 'zen-montagnes';
 
 export interface ThemeConfig {
@@ -48,7 +49,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   afrique: {
     id: 'afrique',
     label: { fr: 'Afrique', en: 'Africa' },
-    imagePath: getImagePath('afrique.webp'),
+    imagePath: getImagePath('afrique.jpg'),
     bgClass: 'bg-gradient-to-br from-amber-900 via-orange-800 to-red-900',
     textClass: 'text-white',
     textMutedClass: 'text-amber-100/80',
@@ -63,7 +64,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   ethereal: {
     id: 'ethereal',
     label: { fr: 'Éthéré', en: 'Ethereal' },
-    imagePath: getImagePath('ethereal.webp'),
+    imagePath: getImagePath('ethereal.png'),
     bgClass: 'bg-gradient-to-br from-indigo-950 via-purple-900 to-violet-900',
     textClass: 'text-white',
     textMutedClass: 'text-purple-200/80',
@@ -78,7 +79,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'gratitude-champ': {
     id: 'gratitude-champ',
     label: { fr: 'Champ doré', en: 'Golden field' },
-    imagePath: getImagePath('gratitude-champ.webp'),
+    imagePath: getImagePath('gratitude-champ.jpg'),
     bgClass: 'bg-gradient-to-br from-yellow-700 via-amber-600 to-orange-700',
     textClass: 'text-white',
     textMutedClass: 'text-yellow-100/80',
@@ -93,7 +94,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'gratitude-fleurs': {
     id: 'gratitude-fleurs',
     label: { fr: 'Jardin fleuri', en: 'Flower garden' },
-    imagePath: getImagePath('gratitude-fleurs.webp'),
+    imagePath: getImagePath('gratitude-fleurs.jpg'),
     bgClass: 'bg-gradient-to-br from-pink-700 via-rose-600 to-purple-700',
     textClass: 'text-white',
     textMutedClass: 'text-pink-100/80',
@@ -108,7 +109,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'jardin-japonais': {
     id: 'jardin-japonais',
     label: { fr: 'Jardin japonais', en: 'Japanese garden' },
-    imagePath: getImagePath('jardin-japonais.webp'),
+    imagePath: getImagePath('jardin-japonais.jpg'),
     bgClass: 'bg-gradient-to-br from-green-800 via-teal-700 to-emerald-900',
     textClass: 'text-white',
     textMutedClass: 'text-teal-100/80',
@@ -123,7 +124,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'lacherprise-ciel': {
     id: 'lacherprise-ciel',
     label: { fr: 'Lâcher prise - Ciel', en: 'Let go - Sky' },
-    imagePath: getImagePath('lacherprise-ciel.webp'),
+    imagePath: getImagePath('lacherprise-ciel.jpg'),
     bgClass: 'bg-gradient-to-br from-sky-600 via-blue-500 to-indigo-600',
     textClass: 'text-white',
     textMutedClass: 'text-sky-100/80',
@@ -138,7 +139,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'lacherprise-ocean': {
     id: 'lacherprise-ocean',
     label: { fr: 'Lâcher prise - Océan', en: 'Let go - Ocean' },
-    imagePath: getImagePath('lacherprise-ocean.webp'),
+    imagePath: getImagePath('lacherprise-ocean.jpg'),
     bgClass: 'bg-gradient-to-br from-blue-800 via-cyan-700 to-teal-800',
     textClass: 'text-white',
     textMutedClass: 'text-cyan-100/80',
@@ -153,7 +154,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'minimaliste-1': {
     id: 'minimaliste-1',
     label: { fr: 'Minimaliste 1', en: 'Minimal 1' },
-    imagePath: getImagePath('minimaliste-1.webp'),
+    imagePath: getImagePath('minimaliste-1.jpg'),
     bgClass: 'bg-gradient-to-br from-stone-50 via-amber-50 to-stone-100',
     textClass: 'text-stone-900',
     textMutedClass: 'text-stone-600',
@@ -168,7 +169,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'minimaliste-2': {
     id: 'minimaliste-2',
     label: { fr: 'Minimaliste 2', en: 'Minimal 2' },
-    imagePath: getImagePath('minimaliste-2.webp'),
+    imagePath: getImagePath('minimaliste-2.jpg'),
     bgClass: 'bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100',
     textClass: 'text-slate-900',
     textMutedClass: 'text-slate-600',
@@ -183,7 +184,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'minimaliste-3': {
     id: 'minimaliste-3',
     label: { fr: 'Minimaliste 3', en: 'Minimal 3' },
-    imagePath: getImagePath('minimaliste-3.webp'),
+    imagePath: getImagePath('minimaliste-3.jpg'),
     bgClass: 'bg-gradient-to-br from-neutral-50 via-stone-50 to-neutral-100',
     textClass: 'text-neutral-900',
     textMutedClass: 'text-neutral-600',
@@ -198,7 +199,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'minimaliste-6': {
     id: 'minimaliste-6',
     label: { fr: 'Minimaliste 6', en: 'Minimal 6' },
-    imagePath: getImagePath('minimaliste-6.webp'),
+    imagePath: getImagePath('minimaliste-6.jpg'),
     bgClass: 'bg-gradient-to-br from-gray-50 via-slate-50 to-zinc-50',
     textClass: 'text-gray-900',
     textMutedClass: 'text-gray-600',
@@ -213,7 +214,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'minimaliste-7': {
     id: 'minimaliste-7',
     label: { fr: 'Minimaliste 7', en: 'Minimal 7' },
-    imagePath: getImagePath('minimaliste-7.webp'),
+    imagePath: getImagePath('minimaliste-7.jpg'),
     bgClass: 'bg-gradient-to-br from-zinc-50 via-neutral-50 to-stone-50',
     textClass: 'text-zinc-900',
     textMutedClass: 'text-zinc-600',
@@ -228,7 +229,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'minimaliste-8': {
     id: 'minimaliste-8',
     label: { fr: 'Minimaliste 8', en: 'Minimal 8' },
-    imagePath: getImagePath('minimaliste-8.webp'),
+    imagePath: getImagePath('minimaliste-8.jpg'),
     bgClass: 'bg-gradient-to-br from-stone-50 via-neutral-50 to-slate-50',
     textClass: 'text-stone-900',
     textMutedClass: 'text-stone-600',
@@ -243,7 +244,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'minimalite-5': {
     id: 'minimalite-5',
     label: { fr: 'Minimaliste 5', en: 'Minimal 5' },
-    imagePath: getImagePath('minimalite-5.webp'),
+    imagePath: getImagePath('minimalite-5.jpg'),
     bgClass: 'bg-gradient-to-br from-gray-100 via-slate-100 to-zinc-100',
     textClass: 'text-gray-900',
     textMutedClass: 'text-gray-700',
@@ -258,7 +259,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'motivation-levedusoleil': {
     id: 'motivation-levedusoleil',
     label: { fr: 'Lever du soleil', en: 'Sunrise' },
-    imagePath: getImagePath('motivation-levedusoleil.webp'),
+    imagePath: getImagePath('motivation-levedusoleil.jpg'),
     bgClass: 'bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500',
     textClass: 'text-white',
     textMutedClass: 'text-orange-100/90',
@@ -273,7 +274,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   nature: {
     id: 'nature',
     label: { fr: 'Nature', en: 'Nature' },
-    imagePath: getImagePath('nature.webp'),
+    imagePath: getImagePath('nature.png'),
     bgClass: 'bg-gradient-to-br from-green-900 via-emerald-800 to-teal-900',
     textClass: 'text-white',
     textMutedClass: 'text-emerald-100/80',
@@ -288,7 +289,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   plage: {
     id: 'plage',
     label: { fr: 'Plage', en: 'Beach' },
-    imagePath: getImagePath('plage.webp'),
+    imagePath: getImagePath('plage.jpg'),
     bgClass: 'bg-gradient-to-br from-cyan-600 via-blue-500 to-indigo-600',
     textClass: 'text-white',
     textMutedClass: 'text-cyan-100/80',
@@ -303,7 +304,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   sombre: {
     id: 'sombre',
     label: { fr: 'Sombre', en: 'Dark' },
-    imagePath: getImagePath('sombre.webp'),
+    imagePath: getImagePath('sombre.jpg'),
     bgClass: 'bg-gradient-to-br from-gray-900 via-slate-900 to-black',
     textClass: 'text-white',
     textMutedClass: 'text-gray-400',
@@ -318,7 +319,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   sunset: {
     id: 'sunset',
     label: { fr: 'Coucher de soleil', en: 'Sunset' },
-    imagePath: getImagePath('sunset.webp'),
+    imagePath: getImagePath('sunset.png'),
     bgClass: 'bg-gradient-to-br from-orange-900 via-rose-900 to-pink-950',
     textClass: 'text-white',
     textMutedClass: 'text-orange-200/80',
@@ -333,7 +334,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   zen: {
     id: 'zen',
     label: { fr: 'Zen', en: 'Zen' },
-    imagePath: getImagePath('zen.webp'),
+    imagePath: getImagePath('zen.png'),
     bgClass: 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900',
     textClass: 'text-white',
     textMutedClass: 'text-white/70',
@@ -348,7 +349,7 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
   'zen-cascade': {
     id: 'zen-cascade',
     label: { fr: 'Cascade zen', en: 'Zen waterfall' },
-    imagePath: getImagePath('zen-cascade.webp'),
+    imagePath: getImagePath('zen-cascade.jpg'),
     bgClass: 'bg-gradient-to-br from-slate-700 via-teal-800 to-cyan-900',
     textClass: 'text-white',
     textMutedClass: 'text-slate-200/80',
@@ -360,10 +361,25 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     accentClass: 'text-cyan-400',
     progressClass: 'from-cyan-400 to-teal-400',
   },
+  'zen-jardin-japonais': {
+    id: 'zen-jardin-japonais',
+    label: { fr: 'Jardin Japonais', en: 'Japanese Garden' },
+    imagePath: getImagePath('zen-jardin-japonais.jpg'),
+    bgClass: 'bg-gradient-to-br from-emerald-900 via-teal-800 to-slate-900',
+    textClass: 'text-white',
+    textMutedClass: 'text-emerald-100/80',
+    cardClass: 'bg-white/10 border-emerald-400/20',
+    borderClass: 'border-emerald-400/30',
+    buttonClass: 'bg-emerald-400 text-emerald-950 hover:bg-emerald-300',
+    subtleTextClass: 'text-emerald-200/60 hover:text-emerald-100',
+    inputClass: 'bg-white/10 border-emerald-400/30 text-white placeholder:text-emerald-200/40',
+    accentClass: 'text-emerald-400',
+    progressClass: 'from-emerald-400 to-teal-400',
+  },
   'zen-montagnes': {
     id: 'zen-montagnes',
     label: { fr: 'Montagnes zen', en: 'Zen mountains' },
-    imagePath: getImagePath('zen-montagnes.webp'),
+    imagePath: getImagePath('zen-montagnes.jpg'),
     bgClass: 'bg-gradient-to-br from-indigo-900 via-blue-800 to-slate-900',
     textClass: 'text-white',
     textMutedClass: 'text-indigo-200/80',
