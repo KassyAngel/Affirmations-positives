@@ -30,6 +30,7 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    assetsInlineLimit: 0, // ✨ AJOUTÉ - Ne pas inline les images
   },
   server: {
     fs: {
@@ -37,4 +38,6 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
+  // ✨ AJOUTÉ - Configuration pour les fichiers .webp
+  assetsInclude: ['**/*.webp', '**/*.png', '**/*.jpg', '**/*.jpeg'],
 });

@@ -137,6 +137,34 @@ export const fr = {
     },
     skip: 'Ignorer'
   },
+  // Carnet de libération
+  releaseJournal: {
+    title: 'Carnet de Libération',
+    subtitle: 'Libérez vos pensées négatives',
+    placeholder: 'Écrivez vos pensées négatives ici...\n\nLaissez sortir ce qui vous pèse, puis libérez-le.',
+    saveButton: 'Garder cette pensée',
+    burnButton: 'Libérer',
+    savedThoughts: 'Pensées sauvegardées',
+    burnedCount: 'pensées libérées',
+    emptyState: 'Aucune pensée sauvegardée',
+    emptyStateSubtitle: 'Écrivez vos pensées et choisissez de les sauvegarder ou de les libérer immédiatement',
+    confirmBurn: 'Libérer cette pensée ?',
+    confirmBurnMessage: 'Une fois libérée, cette pensée disparaîtra définitivement.',
+    cancel: 'Annuler',
+    confirm: 'Libérer',
+    positiveMessages: [
+      '✨ Vous venez de libérer un poids. Respirez profondément.',
+      '🌟 Cette pensée ne vous définit pas. Vous êtes plus fort(e) que cela.',
+      '💫 Chaque libération est un pas vers la légèreté.',
+      '🌸 Vous méritez la paix intérieure. Continuez d\'avancer.',
+      '🦋 Comme un papillon, vous vous libérez pour mieux vous envoler.',
+      '🌊 Laissez cette vague négative s\'éloigner. Le calme revient.',
+      '🌈 Après la pluie vient toujours le beau temps.',
+      '💝 Vous faites preuve de courage en libérant vos pensées.',
+      '🕊️ La légèreté vous attend. Vous l\'avez mérité.',
+      '⭐ Chaque pensée libérée est une victoire sur vous-même.'
+    ]
+  },
   // Settings
   settings: {
     title: 'Paramètres',

@@ -139,6 +139,34 @@ export const en: TranslationKeys = {
     },
     skip: 'Skip'
   },
+  // Release Journal
+  releaseJournal: {
+    title: 'Release Journal',
+    subtitle: 'Release your negative thoughts',
+    placeholder: 'Write your negative thoughts here...\n\nLet out what weighs on you, then release it.',
+    saveButton: 'Keep this thought',
+    burnButton: 'Release',
+    savedThoughts: 'Saved thoughts',
+    burnedCount: 'thoughts released',
+    emptyState: 'No saved thoughts',
+    emptyStateSubtitle: 'Write your thoughts and choose to save them or release them immediately',
+    confirmBurn: 'Release this thought?',
+    confirmBurnMessage: 'Once released, this thought will disappear permanently.',
+    cancel: 'Cancel',
+    confirm: 'Release',
+    positiveMessages: [
+      '✨ You just released a burden. Take a deep breath.',
+      '🌟 This thought doesn\'t define you. You are stronger than that.',
+      '💫 Every release is a step towards lightness.',
+      '🌸 You deserve inner peace. Keep moving forward.',
+      '🦋 Like a butterfly, you release yourself to soar higher.',
+      '🌊 Let this negative wave drift away. Calm is returning.',
+      '🌈 After the rain always comes sunshine.',
+      '💝 You show courage by releasing your thoughts.',
+      '🕊️ Lightness awaits you. You\'ve earned it.',
+      '⭐ Every thought released is a victory over yourself.'
+    ]
+  },
   // Settings
   settings: {
     title: 'Settings',

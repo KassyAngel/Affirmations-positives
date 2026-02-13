@@ -1,14 +1,15 @@
 import { motion } from 'framer-motion';
-import { Globe } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { languages, type Language } from '@/locales';
+import { useTheme } from '@/contexts/ThemeContext';
+import { languages } from '@/locales';
 
 interface LanguageSwitcherProps {
-  variant?: 'floating' | 'inline';
+  variant?: 'header' | 'inline';
 }
 
-export function LanguageSwitcher({ variant = 'floating' }: LanguageSwitcherProps) {
+export function LanguageSwitcher({ variant = 'header' }: LanguageSwitcherProps) {
   const { language, setLanguage } = useLanguage();
+  const { theme } = useTheme();
 
   const handleToggle = () => {
     const currentIndex = languages.findIndex(lang => lang.code === language);
@@ -17,6 +18,7 @@ export function LanguageSwitcher({ variant = 'floating' }: LanguageSwitcherProps
   };
 
   const currentLanguage = languages.find(lang => lang.code === language);
+  const nextLanguage = languages[(languages.findIndex(l => l.code === language) + 1) % languages.length];
 
   if (variant === 'inline') {
     return (
@@ -24,23 +26,29 @@ export function LanguageSwitcher({ variant = 'floating' }: LanguageSwitcherProps
         onClick={handleToggle}
         className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-white/5 hover:border-primary/30 transition-all"
       >
-        <Globe className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm font-medium">{currentLanguage?.flag} {currentLanguage?.name}</span>
+        <span className="text-sm">{currentLanguage?.flag}</span>
+        <span className="text-sm font-medium">{currentLanguage?.name}</span>
       </button>
     );
   }
 
+  // variant === 'header' : petit bouton compact pour le header
   return (
     <motion.button
       onClick={handleToggle}
-      initial={{ scale: 0 }}
-      animate={{ scale: 1 }}
-      whileHover={{ scale: 1.1 }}
+      whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      className="fixed top-6 right-6 z-50 w-12 h-12 rounded-full bg-card border border-white/10 backdrop-blur-md shadow-lg flex items-center justify-center hover:border-primary/30 transition-all"
-      title={currentLanguage?.name}
+      className={`
+        flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all
+        ${theme.cardClass}
+      `}
+      title={`Passer en ${nextLanguage?.name}`}
+      aria-label={`Langue actuelle : ${currentLanguage?.name}. Cliquer pour passer en ${nextLanguage?.name}`}
     >
-      <span className="text-2xl">{currentLanguage?.flag}</span>
+      <span className="text-base leading-none">{currentLanguage?.flag}</span>
+      <span className={`text-xs font-bold uppercase tracking-wider ${theme.textClass}`}>
+        {currentLanguage?.code.toUpperCase()}
+      </span>
     </motion.button>
   );
 }

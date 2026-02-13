@@ -4,16 +4,6 @@ import { Palette, X, Check } from 'lucide-react';
 import { useTheme, THEMES, type ThemeId } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-// Mapping des thèmes vers leurs images
-const THEME_IMAGES: Record<ThemeId, string> = {
-  classic: '/themes/zen.png',
-  nature: '/themes/nature.png',
-  ethereal: '/themes/ethereal.png',
-  mountain: '/themes/zen.png',
-  minimal: '/themes/zen.png',
-  sunset: '/themes/sunset.png',
-};
-
 export function ThemeSelector() {
   const { t } = useLanguage();
   const { theme, themeId, setTheme } = useTheme();
@@ -69,20 +59,19 @@ export function ThemeSelector() {
                 </button>
               </div>
 
-              {/* Grille de thèmes */}
+              {/* Grille de thèmes - JUSTE LES IMAGES */}
               <div className="grid grid-cols-2 gap-4">
                 {(Object.keys(THEMES) as ThemeId[]).map((id) => {
                   const themeConfig = THEMES[id];
                   const isSelected = id === themeId;
-                  const imagePath = THEME_IMAGES[id];
 
                   return (
                     <button
                       key={id}
                       onClick={() => handleThemeSelect(id)}
-                      className="relative group text-left"
+                      className="relative"
                     >
-                      {/* Aperçu du thème */}
+                      {/* Miniature - JUSTE L'IMAGE */}
                       <div
                         className={`
                           h-32 rounded-2xl border-2 transition-all duration-300 overflow-hidden
@@ -93,33 +82,24 @@ export function ThemeSelector() {
                         `}
                       >
                         <div className="relative h-full w-full">
-                          {/* Image de fond */}
                           <img 
-                            src={imagePath} 
-                            alt={themeConfig.label}
+                            src={themeConfig.imagePath} 
+                            alt=""
                             className="absolute inset-0 w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error(`❌ Image non chargée pour ${id}:`, themeConfig.imagePath);
+                              e.currentTarget.style.display = 'none';
+                            }}
+                            onLoad={() => {
+                              console.log(`✅ Image chargée pour ${id}:`, themeConfig.imagePath);
+                            }}
                           />
-                          {/* Overlay avec gradient */}
-                          <div className={`absolute inset-0 ${themeConfig.bgClass} opacity-60`} />
-
-                          {/* Contenu */}
-                          <div className="relative h-full w-full p-4 flex flex-col justify-between">
-                            {/* Titre du thème */}
-                            <div className={`text-sm font-medium ${themeConfig.textClass} drop-shadow-lg`}>
-                              {themeConfig.label}
-                            </div>
-
-                            {/* Indicateurs visuels */}
-                            <div className="flex gap-2">
-                              <div className={`h-2 w-8 rounded-full ${themeConfig.cardClass} backdrop-blur-sm`} />
-                              <div className={`h-2 w-12 rounded-full ${themeConfig.cardClass} backdrop-blur-sm`} />
-                              <div className={`h-2 w-6 rounded-full ${themeConfig.cardClass} backdrop-blur-sm`} />
-                            </div>
-                          </div>
+                          {/* Overlay très léger */}
+                          <div className={`absolute inset-0 ${themeConfig.bgClass} opacity-30`} />
                         </div>
                       </div>
 
-                      {/* Icône de sélection */}
+                      {/* Icône de sélection uniquement */}
                       {isSelected && (
                         <motion.div
                           initial={{ scale: 0 }}

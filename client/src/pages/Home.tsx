@@ -10,7 +10,11 @@ import { Navigation } from '@/components/Navigation';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { NotificationBanner } from '@/components/NotificationBanner';
 import { ThemeSelector } from '@/components/ThemeSelector';
+import { ReleaseJournal } from '@/components/ReleaseJournal';
+import { FloatingJournalButton } from '@/components/FloatingJournalButton';
+import { EmergencyMode } from '@/components/EmergencyMode';
 import { Loader2, RefreshCcw } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { Mood } from '@shared/schema';
 
 const MOOD_CATEGORY_MAP: Record<Mood, string> = {
@@ -47,6 +51,8 @@ export default function Home() {
   } = useUserState();
 
   const [showMoodOverlay, setShowMoodOverlay] = useState(false);
+  const [showReleaseJournal, setShowReleaseJournal] = useState(false);
+  const [showEmergency, setShowEmergency] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | undefined>();
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -118,8 +124,11 @@ export default function Home() {
 
   return (
     <div className={`min-h-screen pb-24 overflow-hidden relative transition-all duration-700 ${theme.bgClass}`}>
+      {/* Overlays */}
       <MoodOverlay isOpen={showMoodOverlay} onSelectMood={handleMoodSelect} />
-      <LanguageSwitcher variant="floating" />
+      <ReleaseJournal isOpen={showReleaseJournal} onClose={() => setShowReleaseJournal(false)} />
+      <EmergencyMode isOpen={showEmergency} onClose={() => setShowEmergency(false)} />
+      <FloatingJournalButton onClick={() => setShowReleaseJournal(true)} />
       <NotificationBanner />
 
       {/* Header */}
@@ -132,11 +141,9 @@ export default function Home() {
             {t.home.quoteOfTheDay}
           </h1>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Sélecteur de thème */}
+        <div className="flex items-center gap-2">
+          <LanguageSwitcher variant="header" />
           <ThemeSelector />
-
-          {/* Compteur de streak */}
           <div className={`border rounded-full px-3 py-1 flex items-center gap-2 ${theme.cardClass}`}>
             <span className="text-amber-500">🔥</span>
             <span className={`font-bold ${theme.textClass}`}>{state.streak}</span>
@@ -163,6 +170,58 @@ export default function Home() {
             <span>{t.home.newQuote}</span>
           </button>
         </div>
+
+        {/* ── Bouton Urgence Émotionnelle ── */}
+        <motion.button
+          onClick={() => setShowEmergency(true)}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+          className="relative flex items-center gap-3 px-6 py-4 rounded-2xl w-full max-w-md overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.1) 100%)',
+            border: '1px solid rgba(99,102,241,0.25)',
+            boxShadow: '0 4px 24px rgba(99,102,241,0.1)',
+          }}
+        >
+          {/* Subtle animated glow */}
+          <motion.div
+            className="absolute inset-0 rounded-2xl pointer-events-none"
+            style={{ background: 'radial-gradient(circle at 50% 50%, rgba(99,102,241,0.08), transparent 70%)' }}
+            animate={{ opacity: [0.5, 0.8, 0.5] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          />
+
+          <div
+            className="relative z-10 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.3)' }}
+          >
+            <span className="text-xl">🆘</span>
+          </div>
+
+          <div className="relative z-10 text-left">
+            <p className={`font-semibold text-sm ${theme.textClass}`}>
+              {language === 'fr' ? 'Je me sens mal maintenant' : 'I am not feeling well'}
+            </p>
+            <p className={`text-xs mt-0.5 ${theme.textMutedClass}`}>
+              {language === 'fr'
+                ? 'Citation · Respiration · Ancrage'
+                : 'Quote · Breathing · Grounding'}
+            </p>
+          </div>
+
+          <div className="relative z-10 ml-auto">
+            <motion.div
+              animate={{ x: [0, 3, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="text-indigo-400 opacity-60"
+            >
+              →
+            </motion.div>
+          </div>
+        </motion.button>
       </main>
 
       <Navigation />
