@@ -1,7 +1,8 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useTheme, THEMES, type ThemeId } from '@/contexts/ThemeContext';
-import { Check } from 'lucide-react';
+import { THEMES, type ThemeId } from '@/contexts/ThemeContext';
+import { Check, ChevronLeft } from 'lucide-react';
 
 interface ThemeStepProps {
   selectedTheme: ThemeId;
@@ -10,76 +11,86 @@ interface ThemeStepProps {
 }
 
 export function ThemeStep({ selectedTheme, onThemeSelect, onBack }: ThemeStepProps) {
-  const { t } = useLanguage();
-  const { theme: currentTheme } = useTheme();
+  const { t, language } = useLanguage();
+  const [selected, setSelected] = useState<ThemeId>(selectedTheme);
 
-  const themePreview = (themeId: ThemeId) => {
-    const theme = THEMES[themeId];
-    const isSelected = selectedTheme === themeId;
+  const themeIds = Object.keys(THEMES) as ThemeId[];
 
-    return (
-      <div
-        key={themeId}
-        onClick={() => onThemeSelect(themeId)}
-        className="relative cursor-pointer"
-      >
-        {/* Miniature du thème - JUSTE L'IMAGE, PAS DE TEXTE */}
-        <div
-          className={`
-            h-32 rounded-2xl border-2 transition-all duration-300 overflow-hidden
-            ${isSelected 
-              ? 'border-white/80 scale-105 shadow-2xl' 
-              : 'border-white/20 hover:border-white/40 hover:scale-102'
-            }
-          `}
-        >
-          <div className="relative h-full w-full">
-            <img 
-              src={theme.imagePath} 
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover"
-              onError={(e) => {
-                // Afficher l'erreur dans la console
-                console.error(`❌ Image non chargée pour ${themeId}:`, theme.imagePath);
-                // Afficher le gradient de secours
-                e.currentTarget.style.display = 'none';
-              }}
-              onLoad={() => {
-                console.log(`✅ Image chargée pour ${themeId}:`, theme.imagePath);
-              }}
-            />
-            {/* Overlay très léger pour voir l'image */}
-            <div className={`absolute inset-0 ${theme.bgClass} opacity-30`} />
-          </div>
-        </div>
-
-        {/* Icône de sélection uniquement */}
-        {isSelected && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg"
-          >
-            <Check className="w-5 h-5 text-slate-900" />
-          </motion.div>
-        )}
-      </div>
-    );
+  const handlePreview = (id: ThemeId) => {
+    setSelected(id);
+    onThemeSelect(id);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center space-y-2">
-        <h2 className={`text-3xl font-display font-bold ${currentTheme.textClass}`}>
+    <div className="max-w-md w-full space-y-4 px-1">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-6 left-6 text-rose-400 hover:text-rose-600 transition-colors"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+      )}
+
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="text-center pt-4"
+      >
+        <h2 className="text-3xl font-display font-bold text-rose-900 leading-tight">
           {t.onboarding.theme.title}
         </h2>
-      </div>
+        <p className="text-sm mt-1 text-rose-500">
+          {language === 'fr' ? 'Touchez un thème pour le sélectionner' : 'Tap a theme to select it'}
+        </p>
+      </motion.div>
 
-      {/* Grille scrollable avec TOUS les thèmes */}
-      <div className="grid grid-cols-2 gap-4 mt-8 max-h-[60vh] overflow-y-auto pr-2 bg-[#fff5f5] p-4 rounded-3xl">
-        {(Object.keys(THEMES) as ThemeId[]).map((themeId) => 
-          themePreview(themeId)
-        )}
+      {/* Grille scrollable — pas de noms */}
+      <div
+        className="grid grid-cols-2 gap-3 max-h-[52vh] overflow-y-auto pr-1 pb-1"
+        style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(251,113,133,0.3) transparent' }}
+      >
+        {themeIds.map((id, index) => {
+          const cfg = THEMES[id];
+          const isSelected = selected === id;
+
+          return (
+            <motion.button
+              key={id}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: Math.min(index * 0.04, 0.6) }}
+              onClick={() => handlePreview(id)}
+              className={`relative aspect-[3/4] rounded-2xl overflow-hidden border-2 transition-all duration-300 ${
+                isSelected
+                  ? 'border-rose-400 ring-4 ring-rose-300/50 scale-[1.04]'
+                  : 'border-rose-100 hover:border-rose-300 hover:scale-[1.02]'
+              }`}
+            >
+              {/* Image uniquement — pas de nom */}
+              <img
+                src={cfg.imagePath}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+              />
+
+              {/* Coche verte si sélectionné */}
+              <AnimatePresence>
+                {isSelected && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    className="absolute top-2 right-2 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <Check className="w-4 h-4 text-emerald-600" strokeWidth={3} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
+          );
+        })}
       </div>
     </div>
   );

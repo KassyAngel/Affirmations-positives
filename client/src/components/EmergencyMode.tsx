@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Heart, Wind } from 'lucide-react';
+import { X, Heart, Wind, Eye, PenLine } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import emergencyQuotes from '@/data/emergency-quotes.json';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-type Phase = 'quote' | 'breathing' | 'anchor' | 'done';
+type Phase = 'quote' | 'exercise' | 'anchor';
+type ExerciseTab = 'breathing' | 'grounding' | 'writing';
 type BreathPhase = 'inhale' | 'hold-in' | 'exhale' | 'hold-out';
 
 interface EmergencyModeProps {
@@ -13,157 +13,324 @@ interface EmergencyModeProps {
   onClose: () => void;
 }
 
-// ─── Breathing config (cohérence cardiaque 4-4-4-4) ──────────────────────────
+const BG = 'linear-gradient(160deg, #0a0e1a 0%, #0d1526 50%, #09101d 100%)';
+
+const R = {
+  accent:       '#60a5fa',  // bleu clair
+  text:         '#bfdbfe',  // bleu très clair
+  soft:         'rgba(96,165,250,0.18)',
+  border:       'rgba(96,165,250,0.35)',
+  glow:         'rgba(96,165,250,0.25)',
+  circleBg:     'radial-gradient(circle, rgba(96,165,250,0.32) 0%, rgba(59,130,246,0.16) 55%, transparent 100%)',
+  circleBorder: 'rgba(96,165,250,0.42)',
+  dimText:      'rgba(191,219,254,0.65)',
+  veryDim:      'rgba(191,219,254,0.35)',
+  bodyText:     'rgba(230,240,255,0.92)',
+  blueGlow:     'rgba(59,130,246,0.08)',
+  cardBg:       'rgba(96,165,250,0.08)',
+  cardBorder:   'rgba(96,165,250,0.22)',
+  cardHover:    'rgba(96,165,250,0.14)',
+};
+
+// ── Breathing ─────────────────────────────────────────────────────────────────
 const BREATH_CYCLE: { phase: BreathPhase; duration: number; labelFr: string; labelEn: string }[] = [
-  { phase: 'inhale',   duration: 4000, labelFr: 'Inspire...',      labelEn: 'Inhale...' },
-  { phase: 'hold-in',  duration: 4000, labelFr: 'Retiens...',      labelEn: 'Hold...' },
-  { phase: 'exhale',   duration: 4000, labelFr: 'Expire...',       labelEn: 'Exhale...' },
-  { phase: 'hold-out', duration: 4000, labelFr: 'Pause...',        labelEn: 'Pause...' },
+  { phase: 'inhale',   duration: 4000, labelFr: 'Inspire',   labelEn: 'Inhale'   },
+  { phase: 'hold-in',  duration: 4000, labelFr: 'Retiens',   labelEn: 'Hold'     },
+  { phase: 'exhale',   duration: 4000, labelFr: 'Expire',    labelEn: 'Exhale'   },
+  { phase: 'hold-out', duration: 4000, labelFr: 'Pause',     labelEn: 'Pause'    },
 ];
-const TOTAL_CYCLES = 3; // 3 cycles complets (~48 secondes)
+const TOTAL_CYCLES = 3;
 
-// ─── Anchor messages ──────────────────────────────────────────────────────────
-const ANCHOR_MESSAGES_FR = [
-  "Tu es encore là.",
-  "Tu as bien respiré.",
-  "La tempête se calme.",
-  "Tu es en sécurité maintenant.",
-  "Tu mérites de prendre soin de toi.",
+// ── Grounding ─────────────────────────────────────────────────────────────────
+const GROUNDING_FR = [
+  { count: 5, labelFr: 'Tu vois',    labelEn: 'You see',   instruction: '5 choses que tu vois autour de toi' },
+  { count: 4, labelFr: 'Tu touches', labelEn: 'You touch', instruction: '4 choses que tu peux toucher' },
+  { count: 3, labelFr: 'Tu entends', labelEn: 'You hear',  instruction: '3 choses que tu entends' },
+  { count: 2, labelFr: 'Tu sens',    labelEn: 'You smell', instruction: '2 choses que tu peux sentir' },
+  { count: 1, labelFr: 'Tu goûtes',  labelEn: 'You taste', instruction: '1 chose que tu peux goûter' },
 ];
-const ANCHOR_MESSAGES_EN = [
-  "You are still here.",
-  "You breathed well.",
-  "The storm is calming.",
-  "You are safe now.",
-  "You deserve to take care of yourself.",
+const GROUNDING_EN = [
+  { count: 5, labelFr: 'Tu vois',    labelEn: 'You see',   instruction: '5 things you can see around you' },
+  { count: 4, labelFr: 'Tu touches', labelEn: 'You touch', instruction: '4 things you can touch' },
+  { count: 3, labelFr: 'Tu entends', labelEn: 'You hear',  instruction: '3 things you can hear' },
+  { count: 2, labelFr: 'Tu sens',    labelEn: 'You smell', instruction: '2 things you can smell' },
+  { count: 1, labelFr: 'Tu goûtes',  labelEn: 'You taste', instruction: '1 thing you can taste' },
 ];
 
-// ─── Typewriter Hook ──────────────────────────────────────────────────────────
-function useTypewriter(text: string, speed = 35, enabled = false) {
-  const [displayed, setDisplayed] = useState('');
-  const [done, setDone] = useState(false);
+// ── Writing ───────────────────────────────────────────────────────────────────
+const WRITING_FR = [
+  'En ce moment, je ressens...',
+  "Ce qui me pèse le plus c'est...",
+  "Ce dont j'ai besoin maintenant c'est...",
+  "Une chose que je peux faire pour moi là, c'est...",
+];
+const WRITING_EN = [
+  'Right now, I feel...',
+  'What weighs on me most is...',
+  'What I need right now is...',
+  'One thing I can do for myself is...',
+];
 
-  useEffect(() => {
-    if (!enabled) return;
-    setDisplayed('');
-    setDone(false);
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i < text.length) {
-        setDisplayed(text.slice(0, i + 1));
-        i++;
-      } else {
-        setDone(true);
-        clearInterval(interval);
-      }
-    }, speed);
-    return () => clearInterval(interval);
-  }, [text, speed, enabled]);
+// ── Anchor ────────────────────────────────────────────────────────────────────
+const ANCHOR_FR = [
+  'Tu es encore là.',
+  'Tu as bien fait.',
+  'La tempête se calme.',
+  'Tu es en sécurité.',
+  'Tu mérites de prendre soin de toi.',
+];
+const ANCHOR_EN = [
+  'You are still here.',
+  'You did well.',
+  'The storm is calming.',
+  'You are safe.',
+  'You deserve to take care of yourself.',
+];
 
-  return { displayed, done };
+// ── Dots ──────────────────────────────────────────────────────────────────────
+function StepDots({ total, current }: { total: number; current: number }) {
+  return (
+    <div className="flex gap-2 items-center justify-center">
+      {Array.from({ length: total }).map((_, i) => (
+        <motion.div key={i} className="rounded-full"
+          animate={{
+            width: i === current ? 24 : 8, height: 8,
+            backgroundColor: i < current ? 'rgba(251,113,133,0.55)' : i === current ? R.accent : 'rgba(255,255,255,0.12)',
+          }}
+          transition={{ duration: 0.35 }}
+        />
+      ))}
+    </div>
+  );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ── AnchorSequence ────────────────────────────────────────────────────────────
+function AnchorSequence({
+  messages,
+  onAllDone,
+}: {
+  messages: string[];
+  onAllDone: () => void;
+}) {
+  const [revealed, setRevealed] = useState<number[]>(messages.map(() => 0));
+  const [currentMsg, setCurrentMsg] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onAllDoneRef = useRef(onAllDone);
+  onAllDoneRef.current = onAllDone;
+
+  useEffect(() => {
+    const msg = messages[currentMsg];
+    if (!msg) return;
+
+    let charIdx = 0;
+    timerRef.current = setInterval(() => {
+      charIdx++;
+      setRevealed(prev => {
+        const next = [...prev];
+        next[currentMsg] = charIdx;
+        return next;
+      });
+
+      if (charIdx >= msg.length) {
+        if (timerRef.current) clearInterval(timerRef.current);
+
+        if (currentMsg < messages.length - 1) {
+          setTimeout(() => setCurrentMsg(c => c + 1), 850);
+        } else {
+          setTimeout(() => onAllDoneRef.current(), 600);
+        }
+      }
+    }, 38);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [currentMsg, messages]);
+
+  return (
+    <div className="flex flex-col items-center gap-3 justify-center" style={{ minHeight: 200 }}>
+      {messages.map((msg, i) => {
+        const chars = revealed[i] ?? 0;
+        const isActive = i === currentMsg;
+        const isPast = i < currentMsg;
+        const displayText = msg.slice(0, chars);
+
+        return (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: isPast ? 0.25 : isActive || chars > 0 ? 1 : 0, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="text-lg font-light leading-relaxed text-center px-4"
+            style={{ fontFamily: "'Georgia', serif", color: isPast ? 'rgba(230,240,255,0.25)' : R.bodyText }}
+          >
+            {displayText}
+            {isActive && chars < msg.length && (
+              <motion.span
+                animate={{ opacity: [1, 0] }}
+                transition={{ duration: 0.5, repeat: Infinity }}
+                className="inline-block w-0.5 ml-0.5 align-middle"
+                style={{ height: '1em', backgroundColor: R.accent }}
+              />
+            )}
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
 export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
   const { language } = useLanguage();
   const isFr = language === 'fr';
 
   const [phase, setPhase] = useState<Phase>('quote');
   const [quote, setQuote] = useState(emergencyQuotes[0]);
-  const [breathPhaseIndex, setBreathPhaseIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState<ExerciseTab>('breathing');
+
+  // Quote typewriter
+  const [quoteDisplayed, setQuoteDisplayed] = useState('');
+  const [quoteDone, setQuoteDone] = useState(false);
+  const [authorDisplayed, setAuthorDisplayed] = useState('');
+
+  // Breathing
+  const [breathPhaseIdx, setBreathPhaseIdx] = useState(0);
   const [cycleCount, setCycleCount] = useState(0);
   const [breathProgress, setBreathProgress] = useState(0);
-  const [anchorIndex, setAnchorIndex] = useState(0);
+  const [breathDone, setBreathDone] = useState(false);
   const breathTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Pick a random quote on open
+  // Grounding
+  const [groundingStep, setGroundingStep] = useState(0);
+  const [groundingDone, setGroundingDone] = useState(false);
+
+  // Writing
+  const [writingStep, setWritingStep] = useState(0);
+  const [writingAnswers, setWritingAnswers] = useState(['', '', '', '']);
+  const [writingDone, setWritingDone] = useState(false);
+
+  // Anchor
+  const [anchorDone, setAnchorDone] = useState(false);
+  const [anchorKey, setAnchorKey] = useState(0);
+
+  // ── Reset ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (isOpen) {
-      const random = emergencyQuotes[Math.floor(Math.random() * emergencyQuotes.length)];
-      setQuote(random);
-      setPhase('quote');
-      setBreathPhaseIndex(0);
-      setCycleCount(0);
-      setBreathProgress(0);
-      setAnchorIndex(0);
-    }
+    if (!isOpen) return;
+    const random = emergencyQuotes[Math.floor(Math.random() * emergencyQuotes.length)];
+    setQuote(random);
+    setPhase('quote');
+    setActiveTab('breathing');
+    setQuoteDisplayed(''); setQuoteDone(false); setAuthorDisplayed('');
+    resetBreath(); resetGrounding(); resetWriting();
+    setAnchorDone(false); setAnchorKey(k => k + 1);
   }, [isOpen]);
 
-  // Typewriter for quote
-  const quoteText = isFr ? quote.content : quote.contentEn;
-  const { displayed: displayedQuote, done: quoteDone } = useTypewriter(quoteText, 30, phase === 'quote' && isOpen);
+  const resetBreath = () => {
+    if (breathTimerRef.current) clearTimeout(breathTimerRef.current);
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    setBreathPhaseIdx(0); setCycleCount(0); setBreathProgress(0); setBreathDone(false);
+  };
+  const resetGrounding = () => { setGroundingStep(0); setGroundingDone(false); };
+  const resetWriting = () => { setWritingStep(0); setWritingAnswers(['', '', '', '']); setWritingDone(false); };
 
-  // Author typewriter (starts after quote)
-  const { displayed: displayedAuthor } = useTypewriter(
-    `— ${quote.author}`,
-    50,
-    quoteDone && phase === 'quote'
-  );
-
-  // ─── Anchor typewriter ───────────────────────────────────────────────────
-  const anchorMessages = isFr ? ANCHOR_MESSAGES_FR : ANCHOR_MESSAGES_EN;
-  const { displayed: displayedAnchor, done: anchorDone } = useTypewriter(
-    anchorMessages[anchorIndex] ?? '',
-    40,
-    phase === 'anchor' && isOpen
-  );
-
-  // Avance les messages d'ancrage les uns après les autres
   useEffect(() => {
-    if (phase !== 'anchor' || !anchorDone) return;
-    if (anchorIndex < anchorMessages.length - 1) {
-      const t = setTimeout(() => setAnchorIndex(i => i + 1), 900);
-      return () => clearTimeout(t);
-    }
-  }, [anchorDone, anchorIndex, anchorMessages.length, phase]);
+    if (phase !== 'exercise') return;
+    resetBreath(); resetGrounding(); resetWriting();
+  }, [activeTab]);
 
-  // ─── Breathing logic ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (phase === 'anchor') {
+      setAnchorDone(false);
+      setAnchorKey(k => k + 1);
+    }
+  }, [phase]);
+
+  // ── Quote typewriter ───────────────────────────────────────────────────────
+  useEffect(() => {
+    if (phase !== 'quote' || !isOpen) return;
+    const text = isFr ? quote.content : quote.contentEn;
+    setQuoteDisplayed(''); setQuoteDone(false);
+    let i = 0;
+    const iv = setInterval(() => {
+      if (i < text.length) { setQuoteDisplayed(text.slice(0, i + 1)); i++; }
+      else { setQuoteDone(true); clearInterval(iv); }
+    }, 26);
+    return () => clearInterval(iv);
+  }, [phase, isOpen, isFr, quote]);
+
+  useEffect(() => {
+    if (!quoteDone) return;
+    const text = `— ${quote.author}`;
+    setAuthorDisplayed('');
+    let i = 0;
+    const iv = setInterval(() => {
+      if (i < text.length) { setAuthorDisplayed(text.slice(0, i + 1)); i++; }
+      else clearInterval(iv);
+    }, 42);
+    return () => clearInterval(iv);
+  }, [quoteDone]);
+
+  // ── Breathing ─────────────────────────────────────────────────────────────
   const startBreathTimer = useCallback((phaseIdx: number, cycle: number) => {
     if (breathTimerRef.current) clearTimeout(breathTimerRef.current);
     if (progressTimerRef.current) clearInterval(progressTimerRef.current);
-
-    const currentBreath = BREATH_CYCLE[phaseIdx];
-    const { duration } = currentBreath;
-
-    // Progress bar
+    const { duration } = BREATH_CYCLE[phaseIdx];
     let elapsed = 0;
-    const tick = 50;
     progressTimerRef.current = setInterval(() => {
-      elapsed += tick;
+      elapsed += 50;
       setBreathProgress(Math.min(elapsed / duration, 1));
-    }, tick);
-
+    }, 50);
     breathTimerRef.current = setTimeout(() => {
-      const nextPhaseIdx = (phaseIdx + 1) % BREATH_CYCLE.length;
-      const nextCycle = nextPhaseIdx === 0 ? cycle + 1 : cycle;
-
-      if (nextCycle >= TOTAL_CYCLES && nextPhaseIdx === 0) {
-        // Breathing done → anchor phase
-        setPhase('anchor');
+      const nextIdx = (phaseIdx + 1) % BREATH_CYCLE.length;
+      const nextCycle = nextIdx === 0 ? cycle + 1 : cycle;
+      if (nextCycle >= TOTAL_CYCLES && nextIdx === 0) {
+        if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+        setBreathDone(true);
       } else {
-        setBreathPhaseIndex(nextPhaseIdx);
-        setCycleCount(nextCycle);
-        setBreathProgress(0);
-        startBreathTimer(nextPhaseIdx, nextCycle);
+        setBreathPhaseIdx(nextIdx); setCycleCount(nextCycle); setBreathProgress(0);
+        startBreathTimer(nextIdx, nextCycle);
       }
     }, duration);
   }, []);
 
   useEffect(() => {
-    if (phase === 'breathing') {
+    if (phase === 'exercise' && activeTab === 'breathing' && !breathDone) {
       startBreathTimer(0, 0);
     }
     return () => {
       if (breathTimerRef.current) clearTimeout(breathTimerRef.current);
       if (progressTimerRef.current) clearInterval(progressTimerRef.current);
     };
-  }, [phase, startBreathTimer]);
+  }, [phase, activeTab]);
 
-  // ─── Breath circle scale ─────────────────────────────────────────────────
-  const currentBreath = BREATH_CYCLE[breathPhaseIndex];
-  const circleScale = currentBreath.phase === 'inhale' || currentBreath.phase === 'hold-in' ? 1 : 0.55;
-  const circleLabel = isFr ? currentBreath.labelFr : currentBreath.labelEn;
+  const currentBreath = BREATH_CYCLE[breathPhaseIdx];
+  const isExpanding = currentBreath.phase === 'inhale' || currentBreath.phase === 'hold-in';
+  const groundingSteps = isFr ? GROUNDING_FR : GROUNDING_EN;
+  const writingPrompts = isFr ? WRITING_FR : WRITING_EN;
+  const anchorMessages = isFr ? ANCHOR_FR : ANCHOR_EN;
+
+  const TABS = [
+    {
+      id: 'breathing' as ExerciseTab,
+      Icon: Wind,
+      fr: 'Respiration', en: 'Breathing',
+      desc_fr: 'Cohérence cardiaque', desc_en: 'Cardiac coherence',
+    },
+    {
+      id: 'grounding' as ExerciseTab,
+      Icon: Eye,
+      fr: '5-4-3-2-1', en: '5-4-3-2-1',
+      desc_fr: 'Ancrage sensoriel', desc_en: 'Sensory grounding',
+    },
+    {
+      id: 'writing' as ExerciseTab,
+      Icon: PenLine,
+      fr: 'Écriture', en: 'Writing',
+      desc_fr: 'Exprime tes émotions', desc_en: 'Express your feelings',
+    },
+  ];
 
   if (!isOpen) return null;
 
@@ -171,250 +338,414 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
     <AnimatePresence>
       <motion.div
         key="emergency-overlay"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #0f0c29 0%, #1a1a2e 40%, #16213e 100%)' }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] flex items-center justify-center"
+        style={{ background: BG }}
       >
-        {/* Grain texture overlay */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }}
+        {/* Glow bleu ambiant */}
+        <motion.div className="absolute pointer-events-none"
+          style={{ width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${R.blueGlow} 0%, transparent 70%)` }}
+          animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         />
 
-        {/* Pulsing ambient glow */}
-        <motion.div
-          className="absolute rounded-full pointer-events-none"
-          style={{ width: 600, height: 600, background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)' }}
-          animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/10 transition-all"
+        {/* Close */}
+        <button onClick={onClose}
+          className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all z-10"
+          style={{ color: R.veryDim, background: 'rgba(255,255,255,0.06)', border: `1px solid rgba(255,255,255,0.12)` }}
+          onMouseEnter={e => { e.currentTarget.style.color = R.text; e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = R.veryDim; e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Phase indicator dots */}
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 flex gap-2">
-          {(['quote', 'breathing', 'anchor'] as Phase[]).map((p, i) => (
-            <motion.div
-              key={p}
-              className="rounded-full"
-              style={{ width: 6, height: 6 }}
-              animate={{
-                backgroundColor: phase === p ? '#818cf8' : (
-                  ['quote', 'breathing', 'anchor'].indexOf(phase) > i ? '#4ade80' : 'rgba(255,255,255,0.2)'
-                ),
-                scale: phase === p ? 1.4 : 1,
-              }}
-              transition={{ duration: 0.3 }}
-            />
-          ))}
+        {/* Phase dots */}
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 flex gap-2 items-center z-10">
+          {(['quote', 'exercise', 'anchor'] as Phase[]).map((p, i) => {
+            const order = ['quote', 'exercise', 'anchor'];
+            const isActive = phase === p;
+            const isPast = order.indexOf(phase) > i;
+            return (
+              <motion.div key={p} className="rounded-full" style={{ height: 5 }}
+                animate={{ 
+                  width: isActive ? 20 : 5, 
+                  backgroundColor: isActive ? R.accent : isPast ? 'rgba(251,113,133,0.40)' : 'rgba(255,255,255,0.15)' 
+                }}
+                transition={{ duration: 0.4 }}
+              />
+            );
+          })}
         </div>
 
-        {/* ══════════════════════ PHASE 1 — CITATION ══════════════════════ */}
-        <AnimatePresence mode="wait">
-          {phase === 'quote' && (
-            <motion.div
-              key="phase-quote"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -30 }}
-              transition={{ duration: 0.6 }}
-              className="flex flex-col items-center justify-center px-8 max-w-sm w-full text-center gap-8"
-            >
-              {/* Icône */}
-              <motion.div
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 3, repeat: Infinity }}
-                className="w-14 h-14 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.4)' }}
+        {/* Container avec hauteur fixe pour éviter les sauts */}
+        <div className="w-full max-w-sm px-6 flex items-center justify-center" style={{ minHeight: '80vh' }}>
+          <AnimatePresence mode="wait">
+
+            {/* ═══════════════ PHASE 1 — CITATION ═══════════════ */}
+            {phase === 'quote' && (
+              <motion.div key="quote"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col items-center w-full text-center gap-6"
               >
-                <span className="text-2xl">💙</span>
-              </motion.div>
-
-              {/* Citation machine à écrire */}
-              <div className="space-y-4">
-                <p className="text-white/90 text-xl font-light leading-relaxed tracking-wide min-h-[120px]"
-                  style={{ fontFamily: "'Georgia', serif" }}>
-                  "{displayedQuote}
-                  {!quoteDone && (
-                    <motion.span
-                      animate={{ opacity: [1, 0] }}
-                      transition={{ duration: 0.5, repeat: Infinity }}
-                      className="inline-block w-0.5 h-5 bg-indigo-400 ml-0.5 align-middle"
-                    />
-                  )}"
-                </p>
-                {quoteDone && (
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-white/40 text-sm uppercase tracking-widest"
-                  >
-                    {displayedAuthor}
-                  </motion.p>
-                )}
-              </div>
-
-              {/* Bouton suivant */}
-              {quoteDone && (
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.2 }}
-                  onClick={() => setPhase('breathing')}
-                  className="px-8 py-3 rounded-full text-white font-medium text-sm tracking-wide transition-all active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', boxShadow: '0 0 30px rgba(99,102,241,0.4)' }}
-                >
-                  {isFr ? 'Exercice de respiration →' : 'Breathing exercise →'}
-                </motion.button>
-              )}
-            </motion.div>
-          )}
-
-          {/* ══════════════════════ PHASE 2 — RESPIRATION ══════════════════════ */}
-          {phase === 'breathing' && (
-            <motion.div
-              key="phase-breathing"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.6 }}
-              className="flex flex-col items-center justify-center px-8 max-w-sm w-full text-center gap-10"
-            >
-              <div className="space-y-1">
-                <p className="text-white/40 text-xs uppercase tracking-widest">
-                  {isFr ? 'Cohérence cardiaque' : 'Cardiac coherence'}
-                </p>
-                <p className="text-white/60 text-sm">
-                  {isFr ? `Cycle ${Math.min(cycleCount + 1, TOTAL_CYCLES)} / ${TOTAL_CYCLES}` : `Cycle ${Math.min(cycleCount + 1, TOTAL_CYCLES)} / ${TOTAL_CYCLES}`}
-                </p>
-              </div>
-
-              {/* Cercle de respiration */}
-              <div className="relative flex items-center justify-center" style={{ width: 200, height: 200 }}>
-                {/* Outer ring */}
-                <div className="absolute inset-0 rounded-full" style={{ border: '1px solid rgba(99,102,241,0.2)' }} />
-
-                {/* Animated circle */}
+                {/* Icône */}
                 <motion.div
-                  animate={{ scale: circleScale }}
-                  transition={{ duration: currentBreath.duration / 1000, ease: currentBreath.phase === 'inhale' ? 'easeIn' : currentBreath.phase === 'exhale' ? 'easeOut' : 'linear' }}
-                  className="absolute rounded-full"
-                  style={{
-                    width: 180, height: 180,
-                    background: 'radial-gradient(circle, rgba(99,102,241,0.5) 0%, rgba(139,92,246,0.3) 50%, rgba(99,102,241,0.1) 100%)',
-                    border: '1px solid rgba(99,102,241,0.5)',
-                    boxShadow: '0 0 40px rgba(99,102,241,0.3), inset 0 0 40px rgba(139,92,246,0.2)',
+                  animate={{ 
+                    scale: [1, 1.05, 1], 
+                    boxShadow: [`0 0 0px ${R.glow}`, `0 0 24px ${R.glow}`, `0 0 0px ${R.glow}`] 
                   }}
-                />
+                  transition={{ duration: 4, repeat: Infinity }}
+                  className="w-14 h-14 rounded-full flex items-center justify-center"
+                  style={{ background: 'rgba(96,165,250,0.14)', border: `1.5px solid rgba(96,165,250,0.30)` }}>
+                  <Heart className="w-6 h-6" style={{ color: '#60a5fa' }} />
+                </motion.div>
 
-                {/* Label */}
-                <div className="relative z-10 text-center">
-                  <motion.p
-                    key={circleLabel}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-white text-lg font-light tracking-wider"
-                  >
-                    {circleLabel}
-                  </motion.p>
-                  <p className="text-white/40 text-xs mt-1">
-                    {currentBreath.duration / 1000}s
+                {/* Citation avec auteur intégré - hauteur fixe */}
+                <div style={{ minHeight: 160 }} className="flex flex-col items-center gap-3">
+                  <p className="text-lg font-light leading-relaxed"
+                    style={{ color: R.bodyText, fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                    "{quoteDisplayed}
+                    {!quoteDone && (
+                      <motion.span animate={{ opacity: [1, 0] }} transition={{ duration: 0.5, repeat: Infinity }}
+                        className="inline-block w-0.5 ml-0.5 align-middle" style={{ height: '1em', backgroundColor: R.accent }} />
+                    )}"
                   </p>
+
+                  {/* Auteur sous la citation */}
+                  {quoteDone && authorDisplayed && (
+                    <motion.p 
+                      initial={{ opacity: 0, y: -5 }} 
+                      animate={{ opacity: 1, y: 0 }} 
+                      transition={{ delay: 0.2 }}
+                      className="text-xs italic font-light" 
+                      style={{ color: R.veryDim }}
+                    >
+                      {authorDisplayed}
+                    </motion.p>
+                  )}
                 </div>
-              </div>
 
-              {/* Progress bar */}
-              <div className="w-full max-w-[200px] h-1 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${breathProgress * 100}%`,
-                    background: 'linear-gradient(90deg, #6366f1, #8b5cf6)'
-                  }}
-                />
-              </div>
+                {/* Exercices */}
+                <div style={{ minHeight: quoteDone ? 'auto' : 0, opacity: quoteDone ? 1 : 0 }} className="w-full transition-opacity duration-500">
+                  {quoteDone && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
+                      className="flex flex-col gap-3 w-full"
+                    >
+                      <p className="text-xs uppercase tracking-wider font-semibold mb-1" style={{ color: R.text }}>
+                        {isFr ? 'Choisis un exercice' : 'Choose an exercise'}
+                      </p>
 
-              <p className="text-white/30 text-xs max-w-[220px] leading-relaxed">
-                {isFr
-                  ? 'Laisse ton souffle guider ton corps vers le calme.'
-                  : 'Let your breath guide your body toward calm.'}
-              </p>
-            </motion.div>
-          )}
-
-          {/* ══════════════════════ PHASE 3 — ANCRAGE ══════════════════════ */}
-          {phase === 'anchor' && (
-            <motion.div
-              key="phase-anchor"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.7 }}
-              className="flex flex-col items-center justify-center px-8 max-w-sm w-full text-center gap-10"
-            >
-              <motion.div
-                animate={{ scale: [1, 1.08, 1] }}
-                transition={{ duration: 2.5, repeat: Infinity }}
-                className="w-16 h-16 rounded-full flex items-center justify-center"
-                style={{ background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.3)' }}
-              >
-                <Heart className="w-7 h-7 text-green-400" />
+                      {TABS.map(({ id, Icon, fr, en, desc_fr, desc_en }) => (
+                        <motion.button key={id}
+                          onClick={() => { setActiveTab(id); setPhase('exercise'); }}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-left"
+                          style={{ 
+                            background: R.cardBg, 
+                            border: `1.5px solid ${R.cardBorder}`,
+                            boxShadow: `0 2px 8px rgba(96,165,250,0.06)`
+                          }}
+                        >
+                          <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                            style={{ background: R.soft, border: `1px solid ${R.border}` }}>
+                            <Icon className="w-4 h-4" style={{ color: R.accent }} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold" style={{ color: R.text }}>{isFr ? fr : en}</p>
+                            <p className="text-xs truncate" style={{ color: R.dimText }}>{isFr ? desc_fr : desc_en}</p>
+                          </div>
+                          <span className="text-base flex-shrink-0 font-semibold" style={{ color: R.text }}>›</span>
+                        </motion.button>
+                      ))}
+                    </motion.div>
+                  )}
+                </div>
               </motion.div>
+            )}
 
-              {/* Messages d'ancrage */}
-              <div className="min-h-[140px] flex flex-col items-center justify-center gap-2">
-                {anchorMessages.slice(0, anchorIndex + 1).map((msg, i) => (
-                  <motion.p
-                    key={i}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: i === anchorIndex ? 1 : 0.3, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-white text-lg font-light leading-relaxed"
-                    style={{ fontFamily: "'Georgia', serif" }}
-                  >
-                    {i === anchorIndex ? displayedAnchor : msg}
-                  </motion.p>
-                ))}
-              </div>
+            {/* ═══════════════ PHASE 2 — EXERCICE ═══════════════ */}
+            {phase === 'exercise' && (
+              <motion.div key={`exercise-${activeTab}`}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col items-center w-full gap-5"
+              >
+                {/* Label module */}
+                {(() => {
+                  const tab = TABS.find(t => t.id === activeTab)!;
+                  return (
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" 
+                      style={{ background: R.soft, border: `1px solid ${R.border}` }}>
+                      <tab.Icon className="w-3.5 h-3.5" style={{ color: R.accent }} />
+                      <p className="text-xs uppercase tracking-wider font-semibold" style={{ color: R.text }}>
+                        {isFr ? tab.fr : tab.en}
+                      </p>
+                    </div>
+                  );
+                })()}
 
-              {/* Bouton "Je me sens mieux" */}
-              {anchorIndex >= anchorMessages.length - 1 && anchorDone && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                  onClick={onClose}
-                  className="px-8 py-4 rounded-full text-white font-semibold text-base tracking-wide transition-all active:scale-95 flex items-center gap-3"
-                  style={{
-                    background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-                    boxShadow: '0 0 40px rgba(34,197,94,0.4)',
-                  }}
-                >
-                  <span>💚</span>
-                  <span>{isFr ? 'Je me sens mieux' : 'I feel better'}</span>
-                </motion.button>
-              )}
+                <AnimatePresence mode="wait">
+                  {/* ── Respiration ── */}
+                  {activeTab === 'breathing' && (
+                    <motion.div key="b" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      className="flex flex-col items-center gap-5 w-full text-center"
+                    >
+                      {!breathDone ? (
+                        <>
+                          <p className="text-xs tracking-wider font-medium" style={{ color: R.dimText }}>
+                            {isFr ? `Cycle ${Math.min(cycleCount + 1, TOTAL_CYCLES)} / ${TOTAL_CYCLES}` : `Cycle ${Math.min(cycleCount + 1, TOTAL_CYCLES)} / ${TOTAL_CYCLES}`}
+                          </p>
+                          {/* Cercle - taille fixe */}
+                          <div className="relative flex items-center justify-center" style={{ width: 200, height: 200 }}>
+                            <div className="absolute inset-0 rounded-full" style={{ border: '1px solid rgba(96,165,250,0.12)' }} />
+                            <motion.div
+                              animate={{ scale: isExpanding ? 1 : 0.52 }}
+                              transition={{ 
+                                duration: currentBreath.duration / 1000, 
+                                ease: currentBreath.phase === 'inhale' ? [0.4, 0, 0.6, 1] : currentBreath.phase === 'exhale' ? [0.4, 0, 0.6, 1] : 'linear' 
+                              }}
+                              className="absolute rounded-full"
+                              style={{ 
+                                width: 180, 
+                                height: 180, 
+                                background: R.circleBg, 
+                                border: `1.5px solid ${R.circleBorder}`, 
+                                boxShadow: `0 0 48px ${R.glow}` 
+                              }}
+                            />
+                            <div className="relative z-10 flex flex-col items-center gap-1">
+                              <AnimatePresence mode="wait">
+                                <motion.p key={currentBreath.phase}
+                                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                                  className="text-xl font-light tracking-wide" style={{ color: R.bodyText }}>
+                                  {isFr ? currentBreath.labelFr : currentBreath.labelEn}
+                                </motion.p>
+                              </AnimatePresence>
+                              <p className="text-xs font-medium" style={{ color: R.dimText }}>{currentBreath.duration / 1000}s</p>
+                            </div>
+                          </div>
+                          {/* Barre */}
+                          <div className="w-48 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(96,165,250,0.12)' }}>
+                            <motion.div className="h-full rounded-full"
+                              style={{ 
+                                width: `${breathProgress * 100}%`, 
+                                background: `linear-gradient(90deg, #60a5fa, #3b82f6)`,
+                                boxShadow: `0 0 8px ${R.glow}`
+                              }} 
+                            />
+                          </div>
+                          <p className="text-xs max-w-[200px] leading-relaxed" style={{ color: R.dimText }}>
+                            {isFr ? 'Laisse ton souffle te guider' : 'Let your breath guide you'}
+                          </p>
+                        </>
+                      ) : (
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-5">
+                          <div className="w-16 h-16 rounded-full flex items-center justify-center" 
+                            style={{ background: 'rgba(134,239,172,0.14)', border: '1.5px solid rgba(134,239,172,0.30)' }}>
+                            <span className="text-2xl">🌿</span>
+                          </div>
+                          <p className="text-base" style={{ color: R.bodyText, fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                            {isFr ? 'Bien respiré. Tu vas mieux.' : 'Well breathed. You feel better.'}
+                          </p>
+                          <ContinueButton isFr={isFr} onClick={() => setPhase('anchor')} glow={R.glow} />
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  )}
 
-              {/* Skip anchor */}
-              {anchorIndex < anchorMessages.length - 1 && (
-                <button
-                  onClick={onClose}
-                  className="text-white/20 text-xs hover:text-white/40 transition-colors"
-                >
-                  {isFr ? 'Fermer' : 'Close'}
+                  {/* ── Grounding ── */}
+                  {activeTab === 'grounding' && (
+                    <motion.div key="g" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      className="flex flex-col items-center gap-5 w-full text-center"
+                    >
+                      {!groundingDone ? (
+                        <>
+                          <StepDots total={groundingSteps.length} current={groundingStep} />
+                          <div style={{ minHeight: 280 }}>
+                            <AnimatePresence mode="wait">
+                              <motion.div key={groundingStep}
+                                initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
+                                transition={{ duration: 0.25 }}
+                                className="flex flex-col items-center gap-4"
+                              >
+                                {/* Nombre */}
+                                <div className="w-20 h-20 rounded-xl flex items-center justify-center"
+                                  style={{ background: R.soft, border: `1.5px solid ${R.border}`, boxShadow: `0 4px 16px ${R.glow}` }}>
+                                  <span className="text-5xl font-bold" style={{ color: R.accent }}>
+                                    {groundingSteps[groundingStep].count}
+                                  </span>
+                                </div>
+                                <p className="text-xs uppercase tracking-wider font-semibold" style={{ color: R.text }}>
+                                  {isFr ? groundingSteps[groundingStep].labelFr : groundingSteps[groundingStep].labelEn}
+                                </p>
+                                <p className="text-base leading-relaxed" style={{ color: R.bodyText }}>
+                                  {groundingSteps[groundingStep].instruction}
+                                </p>
+                                <p className="text-xs" style={{ color: R.dimText }}>
+                                  {isFr ? 'Prends ton temps' : 'Take your time'}
+                                </p>
+                              </motion.div>
+                            </AnimatePresence>
+                          </div>
+                          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                            onClick={() => { if (groundingStep < groundingSteps.length - 1) setGroundingStep(s => s + 1); else setGroundingDone(true); }}
+                            className="px-7 py-3 rounded-full text-white text-sm font-semibold"
+                            style={{ 
+                              background: `linear-gradient(135deg, #60a5fa, #3b82f6)`, 
+                              boxShadow: `0 0 24px ${R.glow}` 
+                            }}>
+                            {groundingStep < groundingSteps.length - 1 ? (isFr ? 'Suivant →' : 'Next →') : (isFr ? 'Terminé ✓' : 'Done ✓')}
+                          </motion.button>
+                        </>
+                      ) : (
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-5">
+                          <div className="w-16 h-16 rounded-full flex items-center justify-center" 
+                            style={{ background: 'rgba(134,239,172,0.14)', border: '1.5px solid rgba(134,239,172,0.30)' }}>
+                            <span className="text-2xl">✨</span>
+                          </div>
+                          <p className="text-base" style={{ color: R.bodyText, fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                            {isFr ? 'Tu es ancré dans le présent' : 'You are grounded in the present'}
+                          </p>
+                          <ContinueButton isFr={isFr} onClick={() => setPhase('anchor')} glow={R.glow} />
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* ── Writing ── */}
+                  {activeTab === 'writing' && (
+                    <motion.div key="w" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                      className="flex flex-col items-center gap-4 w-full"
+                    >
+                      {!writingDone ? (
+                        <>
+                          <StepDots total={writingPrompts.length} current={writingStep} />
+                          <div className="w-full" style={{ minHeight: 240 }}>
+                            <AnimatePresence mode="wait">
+                              <motion.div key={writingStep}
+                                initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -16 }}
+                                transition={{ duration: 0.25 }}
+                                className="w-full flex flex-col gap-3"
+                              >
+                                <p className="text-sm font-semibold text-center" style={{ color: R.text }}>
+                                  {writingPrompts[writingStep]}
+                                </p>
+                                <textarea
+                                  value={writingAnswers[writingStep]}
+                                  onChange={e => { const u = [...writingAnswers]; u[writingStep] = e.target.value; setWritingAnswers(u); }}
+                                  placeholder={isFr ? 'Écris ici...' : 'Write here...'}
+                                  rows={4}
+                                  className="w-full rounded-xl px-4 py-3 text-sm resize-none outline-none"
+                                  style={{ 
+                                    background: 'rgba(96,165,250,0.06)', 
+                                    border: `1px solid rgba(96,165,250,0.14)`, 
+                                    color: R.bodyText, 
+                                    caretColor: R.accent 
+                                  }}
+                                />
+                              </motion.div>
+                            </AnimatePresence>
+                          </div>
+                          <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                            onClick={() => { if (writingStep < writingPrompts.length - 1) setWritingStep(s => s + 1); else setWritingDone(true); }}
+                            className="px-7 py-3 rounded-full text-white text-sm font-semibold"
+                            style={{ 
+                              background: `linear-gradient(135deg, #60a5fa, #3b82f6)`, 
+                              boxShadow: `0 0 24px ${R.glow}` 
+                            }}>
+                            {writingStep < writingPrompts.length - 1 ? (isFr ? 'Suivant →' : 'Next →') : (isFr ? 'Terminer ✓' : 'Finish ✓')}
+                          </motion.button>
+                        </>
+                      ) : (
+                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center gap-5">
+                          <div className="w-16 h-16 rounded-full flex items-center justify-center" 
+                            style={{ background: 'rgba(134,239,172,0.14)', border: '1.5px solid rgba(134,239,172,0.30)' }}>
+                            <Heart className="w-6 h-6" style={{ color: '#86efac' }} />
+                          </div>
+                          <p className="text-center text-base" style={{ color: R.bodyText, fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
+                            {isFr ? "Merci de t'être confié" : 'Thank you for opening up'}
+                          </p>
+                          <ContinueButton isFr={isFr} onClick={() => setPhase('anchor')} glow={R.glow} />
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <button onClick={() => setPhase('anchor')} 
+                  className="text-xs mt-1 transition-colors" 
+                  style={{ color: R.veryDim }}
+                  onMouseEnter={e => (e.currentTarget.style.color = R.dimText)}
+                  onMouseLeave={e => (e.currentTarget.style.color = R.veryDim)}>
+                  {isFr ? "Passer à l'étape finale" : 'Skip to final step'}
                 </button>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </motion.div>
+            )}
+
+            {/* ═══════════════ PHASE 3 — ANCRAGE ═══════════════ */}
+            {phase === 'anchor' && (
+              <motion.div key="anchor"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex flex-col items-center justify-center w-full text-center gap-6"
+              >
+                <motion.div 
+                  animate={{ 
+                    scale: [1, 1.06, 1], 
+                    boxShadow: ['0 0 0px rgba(74,222,128,0.2)', '0 0 24px rgba(74,222,128,0.3)', '0 0 0px rgba(74,222,128,0.2)'] 
+                  }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                  className="w-16 h-16 rounded-full flex items-center justify-center"
+                  style={{ background: 'rgba(74,222,128,0.14)', border: '1.5px solid rgba(74,222,128,0.30)' }}>
+                  <Heart className="w-7 h-7" style={{ color: '#4ade80' }} />
+                </motion.div>
+
+                <AnchorSequence
+                  key={anchorKey}
+                  messages={anchorMessages}
+                  onAllDone={() => setAnchorDone(true)}
+                />
+
+                {anchorDone && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                    onClick={onClose} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}
+                    className="flex items-center gap-2.5 px-8 py-3.5 rounded-full text-white font-semibold"
+                    style={{ 
+                      background: 'linear-gradient(135deg, #22c55e, #16a34a)', 
+                      boxShadow: '0 0 32px rgba(34,197,94,0.35)' 
+                    }}>
+                    <Heart className="w-5 h-5" />
+                    <span>{isFr ? 'Je me sens mieux' : 'I feel better'}</span>
+                  </motion.button>
+                )}
+
+                {!anchorDone && (
+                  <button onClick={onClose} className="text-xs transition-colors" style={{ color: R.veryDim }}
+                    onMouseEnter={e => (e.currentTarget.style.color = R.dimText)}
+                    onMouseLeave={e => (e.currentTarget.style.color = R.veryDim)}>
+                    {isFr ? 'Fermer' : 'Close'}
+                  </button>
+                )}
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </div>
       </motion.div>
     </AnimatePresence>
+  );
+}
+
+// ── Bouton Continuer ──────────────────────────────────────────────────────────
+function ContinueButton({ isFr, onClick, glow }: { isFr: boolean; onClick: () => void; glow: string }) {
+  return (
+    <motion.button onClick={onClick} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+      className="px-7 py-3 rounded-full text-white text-sm font-semibold"
+      style={{ background: 'linear-gradient(135deg, #60a5fa, #3b82f6)', boxShadow: `0 0 24px ${glow}` }}>
+      {isFr ? 'Continuer →' : 'Continue →'}
+    </motion.button>
   );
 }

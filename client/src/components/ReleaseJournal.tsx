@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { X, Flame, Save, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { X, Heart, Save, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SavedThought {
@@ -10,16 +10,17 @@ interface SavedThought {
   createdAt: string;
 }
 
-interface Particle {
+interface FallingLetter {
   id: number;
+  char: string;
   x: number;
   y: number;
+  rotation: number;
+  opacity: number;
   vx: number;
   vy: number;
-  opacity: number;
-  size: number;
-  color: string;
-  type: 'flame' | 'spark' | 'smoke' | 'ash';
+  rotationSpeed: number;
+  delay: number;
 }
 
 interface ReleaseJournalProps {
@@ -36,13 +37,14 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
   const [savedThoughts, setSavedThoughts] = useState<SavedThought[]>([]);
   const [burnedCount, setBurnedCount] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [particles, setParticles] = useState<Particle[]>([]);
+  const [fallingLetters, setFallingLetters] = useState<FallingLetter[]>([]);
   const [showSaved, setShowSaved] = useState(false);
   const [confirmingBurn, setConfirmingBurn] = useState<string | null>(null);
   const [showPositiveMessage, setShowPositiveMessage] = useState(false);
   const [currentPositiveMessage, setCurrentPositiveMessage] = useState('');
+  const [displayedText, setDisplayedText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
 
-  // Charger les données depuis localStorage
   useEffect(() => {
     const saved = localStorage.getItem('savedThoughts');
     const count = localStorage.getItem('burnedCount');
@@ -50,7 +52,6 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
     if (count) setBurnedCount(parseInt(count));
   }, []);
 
-  // Sauvegarder dans localStorage
   useEffect(() => {
     localStorage.setItem('savedThoughts', JSON.stringify(savedThoughts));
   }, [savedThoughts]);
@@ -59,149 +60,132 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
     localStorage.setItem('burnedCount', burnedCount.toString());
   }, [burnedCount]);
 
-  const createIntenseBurningParticles = () => {
-    const newParticles: Particle[] = [];
-
-    // ÉNORMES FLAMMES CENTRALES (40 au lieu de 20)
-    for (let i = 0; i < 40; i++) {
-      const baseX = 35 + Math.random() * 30;
-      newParticles.push({
-        id: Date.now() + i,
-        x: baseX,
-        y: 55 + Math.random() * 15,
-        vx: (Math.random() - 0.5) * 2,
-        vy: -Math.random() * 6 - 3, // Monte TRÈS rapidement
-        opacity: 1,
-        size: Math.random() * 25 + 15, // BEAUCOUP plus grosses
-        color: ['#ff0000', '#ff4500', '#ff6347', '#ffa500', '#ffff00'][Math.floor(Math.random() * 5)],
-        type: 'flame'
-      });
+  useEffect(() => {
+    if (!isOpen) {
+      setShowPositiveMessage(false);
+      setIsAnimating(false);
+      setFallingLetters([]);
+      setDisplayedText('');
+      setIsTyping(false);
     }
+  }, [isOpen]);
 
-    // ÉTINCELLES EXPLOSIVES (30 au lieu de 15)
-    for (let i = 0; i < 30; i++) {
-      newParticles.push({
-        id: Date.now() + 100 + i,
-        x: 50 + (Math.random() - 0.5) * 40,
-        y: 50 + Math.random() * 20,
-        vx: (Math.random() - 0.5) * 6, // Plus rapide
-        vy: -Math.random() * 7 - 3,
-        opacity: 1,
-        size: Math.random() * 6 + 3, // Plus grosses
-        color: '#ffeb3b',
-        type: 'spark'
-      });
-    }
+  // Effet machine à écrire
+  useEffect(() => {
+    if (!showPositiveMessage || !currentPositiveMessage || !isTyping) return;
 
-    // FUMÉE ÉPAISSE ET DENSE (25 au lieu de 10)
-    for (let i = 0; i < 25; i++) {
-      newParticles.push({
-        id: Date.now() + 200 + i,
-        x: 35 + Math.random() * 30,
-        y: 35 + Math.random() * 25,
-        vx: (Math.random() - 0.5) * 1,
-        vy: -Math.random() * 3 - 1,
-        opacity: 0.8, // Plus opaque
-        size: Math.random() * 35 + 25, // ÉNORME fumée
-        color: ['#808080', '#696969', '#a9a9a9'][Math.floor(Math.random() * 3)],
-        type: 'smoke'
-      });
-    }
+    let index = 0;
+    setDisplayedText('');
 
-    // CENDRES VOLANTES (15 nouvelles)
-    for (let i = 0; i < 15; i++) {
-      newParticles.push({
-        id: Date.now() + 300 + i,
-        x: 40 + Math.random() * 20,
-        y: 50 + Math.random() * 15,
-        vx: (Math.random() - 0.5) * 0.8,
-        vy: -Math.random() * 2 - 0.5,
-        opacity: 0.6,
-        size: Math.random() * 4 + 2,
-        color: '#4a4a4a',
-        type: 'ash'
-      });
-    }
+    const typingInterval = setInterval(() => {
+      if (index < currentPositiveMessage.length) {
+        setDisplayedText(currentPositiveMessage.substring(0, index + 1));
+        index++;
+      } else {
+        setIsTyping(false);
+        clearInterval(typingInterval);
+      }
+    }, 50);
 
-    setParticles(newParticles);
+    return () => clearInterval(typingInterval);
+  }, [showPositiveMessage, currentPositiveMessage, isTyping]);
+
+  const createFallingLetters = (text: string) => {
+    const letters: FallingLetter[] = [];
+    const chars = text.split('');
+
+    chars.forEach((char, index) => {
+      if (char.trim()) {
+        const lineApprox = Math.floor(index / 40);
+        const charInLine = index % 40;
+
+        const x = 10 + (charInLine * 2);
+        const y = 20 + (lineApprox * 6);
+
+        letters.push({
+          id: index,
+          char: char,
+          x: x,
+          y: y,
+          rotation: 0,
+          opacity: 1,
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: 0,
+          rotationSpeed: (Math.random() - 0.5) * 4,
+          delay: index * 50
+        });
+      }
+    });
+
+    return letters;
   };
 
-  const animateParticles = () => {
-    const animationInterval = setInterval(() => {
-      setParticles(prev => {
-        const updated = prev.map(p => {
-          if (p.type === 'flame') {
-            return {
-              ...p,
-              x: p.x + p.vx + (Math.random() - 0.5) * 1.5, // Vacillement intense
-              y: p.y + p.vy,
-              vy: p.vy - 0.15, // Accélère vers le haut
-              opacity: p.opacity - 0.02,
-              size: p.size * 0.97
-            };
-          } else if (p.type === 'spark') {
-            return {
-              ...p,
-              x: p.x + p.vx,
-              y: p.y + p.vy,
-              vy: p.vy + 0.25, // Gravité
-              opacity: p.opacity - 0.03,
-              size: p.size * 0.99
-            };
-          } else if (p.type === 'smoke') {
-            return {
-              ...p,
-              x: p.x + p.vx + (Math.random() - 0.5) * 0.3,
-              y: p.y + p.vy,
-              opacity: p.opacity - 0.012,
-              size: p.size * 1.03 // Grandit beaucoup
-            };
-          } else { // ash
-            return {
-              ...p,
-              x: p.x + p.vx + (Math.random() - 0.5) * 0.2,
-              y: p.y + p.vy,
-              vy: p.vy + 0.05,
-              opacity: p.opacity - 0.018
-            };
-          }
-        }).filter(p => p.opacity > 0 && p.y > -30);
+  const animateFallingLetters = (letters: FallingLetter[], messageToShow: string) => {
+    setFallingLetters(letters);
+    const startTime = Date.now();
+    let messageShown = false;
 
-        if (updated.length === 0) {
-          clearInterval(animationInterval);
+    const animationInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+
+      if (!messageShown && elapsed > 4000) {
+        messageShown = true;
+        setBurnedCount(prev => prev + 1);
+        setCurrentPositiveMessage(messageToShow);
+        setShowPositiveMessage(true);
+        setIsTyping(true);
+        setIsAnimating(false);
+        setFallingLetters([]);
+        clearInterval(animationInterval);
+        return;
+      }
+
+      setFallingLetters(prev => {
+        const updated = prev.map(letter => {
+          if (elapsed < letter.delay) {
+            return letter;
+          }
+
+          const timeSinceStart = elapsed - letter.delay;
+
+          return {
+            ...letter,
+            y: letter.y + letter.vy,
+            x: letter.x + letter.vx,
+            vy: letter.vy + 0.08,
+            rotation: letter.rotation + letter.rotationSpeed,
+            opacity: timeSinceStart > 2500 ? Math.max(0, letter.opacity - 0.02) : letter.opacity
+          };
+        }).filter(letter => letter.opacity > 0 && letter.y < 100);
+
+        if (updated.length === 0 && !messageShown) {
+          messageShown = true;
+          setBurnedCount(prev => prev + 1);
+          setCurrentPositiveMessage(messageToShow);
+          setShowPositiveMessage(true);
+          setIsTyping(true);
           setIsAnimating(false);
+          clearInterval(animationInterval);
         }
 
         return updated;
       });
-    }, 25); // Plus rapide pour plus de fluidité
-  };
-
-  const showPositiveMessageCard = (message: string) => {
-    setCurrentPositiveMessage(message);
-    setShowPositiveMessage(true);
-
-    setTimeout(() => {
-      setShowPositiveMessage(false);
-    }, 6000);
+    }, 16);
   };
 
   const handleBurn = () => {
     if (!thought.trim()) return;
 
+    const messageToShow = t.releaseJournal.positiveMessages[
+      Math.floor(Math.random() * t.releaseJournal.positiveMessages.length)
+    ];
+
+    const textToAnimate = thought;
+    setThought('');
+
     setIsAnimating(true);
-    createIntenseBurningParticles();
-    animateParticles();
-
-    setTimeout(() => {
-      setThought('');
-      setBurnedCount(prev => prev + 1);
-
-      const messages = t.releaseJournal.positiveMessages;
-      const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-
-      showPositiveMessageCard(randomMessage);
-    }, 2000); // Plus long pour voir l'animation complète
+    const letters = createFallingLetters(textToAnimate);
+    animateFallingLetters(letters, messageToShow);
   };
 
   const handleSave = () => {
@@ -230,14 +214,27 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
   const confirmBurnSaved = () => {
     if (!confirmingBurn) return;
 
+    const thoughtToBurn = savedThoughts.find(t => t.id === confirmingBurn);
+    if (!thoughtToBurn) return;
+
     setSavedThoughts(prev => prev.filter(t => t.id !== confirmingBurn));
     setBurnedCount(prev => prev + 1);
     setConfirmingBurn(null);
 
-    const messages = t.releaseJournal.positiveMessages;
-    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    const messageToShow = t.releaseJournal.positiveMessages[
+      Math.floor(Math.random() * t.releaseJournal.positiveMessages.length)
+    ];
 
-    showPositiveMessageCard(randomMessage);
+    setIsAnimating(true);
+    const letters = createFallingLetters(thoughtToBurn.text);
+    animateFallingLetters(letters, messageToShow);
+  };
+
+  const handleClose = () => {
+    setShowPositiveMessage(false);
+    setIsAnimating(false);
+    setFallingLetters([]);
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -250,7 +247,6 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
           background: 'linear-gradient(135deg, #faf4ed 0%, #f9e8e0 25%, #f5ddd5 50%, #f1d2ca 75%, #ecc7bf 100%)'
         }}
       >
-        {/* Header */}
         <div 
           className="sticky top-0 z-10 px-6 py-6 border-b backdrop-blur-sm"
           style={{
@@ -268,14 +264,13 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
               </p>
             </div>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-2 rounded-full transition-all hover:bg-white/50 text-gray-700"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Compteur */}
           <div 
             className="mt-4 flex items-center gap-2 px-4 py-2 rounded-full inline-flex"
             style={{
@@ -283,141 +278,148 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
               border: '1px solid rgba(236, 199, 191, 0.3)'
             }}
           >
-            <Flame className="w-4 h-4 text-orange-500" />
+            <Heart className="w-4 h-4 text-pink-400" />
             <span className="text-sm font-medium text-gray-700">
               {burnedCount} {t.releaseJournal.burnedCount}
             </span>
           </div>
         </div>
 
-        {/* Content */}
         <div className="overflow-y-auto max-h-[calc(90vh-200px)] px-6 py-6">
-          {/* Zone d'écriture */}
-          <div className="relative mb-6">
-            <textarea
-              value={thought}
-              onChange={(e) => setThought(e.target.value)}
-              placeholder={t.releaseJournal.placeholder}
-              className="w-full h-48 p-4 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-rose-300/50 transition-all text-gray-800 placeholder-gray-400"
-              style={{
-                background: 'rgba(255, 255, 255, 0.6)',
-                border: '1px solid rgba(236, 199, 191, 0.3)',
-                opacity: isAnimating ? 0.2 : 1,
-                transform: isAnimating ? 'scale(0.92)' : 'scale(1)',
-                transition: 'all 0.8s ease'
-              }}
-            />
-
-            {/* PARTICULES DE FEU INTENSES */}
-            {isAnimating && (
-              <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
-                {particles.map(particle => (
-                  <div
-                    key={particle.id}
-                    className="absolute"
-                    style={{
-                      left: `${particle.x}%`,
-                      top: `${particle.y}%`,
-                      width: `${particle.size}px`,
-                      height: `${particle.size}px`,
-                      backgroundColor: particle.color,
-                      opacity: particle.opacity,
-                      borderRadius: particle.type === 'smoke' ? '50%' : particle.type === 'spark' ? '50%' : particle.type === 'ash' ? '50%' : '45%',
-                      boxShadow: particle.type === 'flame' 
-                        ? `0 0 ${particle.size * 3}px ${particle.color}, 0 0 ${particle.size * 1.5}px ${particle.color}` 
-                        : particle.type === 'spark'
-                        ? `0 0 ${particle.size * 2}px #ffeb3b, 0 0 ${particle.size}px #ffffff`
-                        : 'none',
-                      filter: particle.type === 'smoke' ? 'blur(12px)' : particle.type === 'flame' ? 'blur(3px)' : particle.type === 'ash' ? 'blur(1px)' : 'none',
-                      mixBlendMode: particle.type === 'flame' || particle.type === 'spark' ? 'screen' : 'normal',
-                      transition: 'all 0.025s linear'
-                    }}
-                  />
-                ))}
-
-                {/* LUEUR DE BASE DU FEU */}
-                <div 
-                  className="absolute inset-0"
+          {/* Formulaire */}
+          {!showPositiveMessage && !isAnimating && (
+            <>
+              <div className="relative mb-6">
+                <textarea
+                  value={thought}
+                  onChange={(e) => setThought(e.target.value)}
+                  placeholder={t.releaseJournal.placeholder}
+                  className="w-full h-48 p-4 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-rose-300/50 transition-all text-gray-800 placeholder-gray-400"
                   style={{
-                    background: 'radial-gradient(circle at 50% 60%, rgba(255, 69, 0, 0.4) 0%, rgba(255, 140, 0, 0.2) 30%, transparent 60%)',
-                    animation: 'fireGlow 0.5s ease-in-out infinite alternate'
+                    background: 'rgba(255, 255, 255, 0.6)',
+                    border: '1px solid rgba(236, 199, 191, 0.3)',
                   }}
                 />
               </div>
-            )}
-          </div>
 
-          {/* MESSAGE POSITIF - INTÉGRÉ AU DESIGN */}
-          {showPositiveMessage && (
-            <div 
-              className="mb-6 p-6 rounded-3xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 248, 240, 0.9) 100%)',
-                border: '2px solid rgba(255, 215, 0, 0.3)',
-                boxShadow: '0 8px 32px rgba(255, 193, 7, 0.2)',
-                animation: 'slideInScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
-              }}
-            >
-              <div className="flex items-start gap-4">
-                <div 
-                  className="p-3 rounded-2xl flex-shrink-0"
+              <div className="flex gap-3 mb-8">
+                <button
+                  onClick={handleSave}
+                  disabled={!thought.trim()}
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full border transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
                   style={{
-                    background: 'linear-gradient(135deg, #ffd93d 0%, #ff8e53 50%, #ff6b9d 100%)',
-                    boxShadow: '0 4px 12px rgba(255, 217, 61, 0.4)'
+                    background: 'rgba(255, 255, 255, 0.7)',
+                    borderColor: 'rgba(236, 199, 191, 0.5)'
                   }}
                 >
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-base font-medium text-gray-800 leading-relaxed">
-                    {currentPositiveMessage}
+                  <Save className="w-4 h-4" />
+                  <span>{t.releaseJournal.saveButton}</span>
+                </button>
+
+                <button
+                  onClick={handleBurn}
+                  disabled={!thought.trim()}
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-white"
+                  style={{
+                    background: 'linear-gradient(135deg, #FF69B4 0%, #DA70D6 50%, #FFD700 100%)',
+                    boxShadow: '0 4px 15px rgba(255, 105, 180, 0.5)'
+                  }}
+                >
+                  <Heart className="w-4 h-4" />
+                  <span className="font-medium">{t.releaseJournal.burnButton}</span>
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* ANIMATION */}
+          {isAnimating && (
+            <div className="relative w-full mb-6">
+              <div 
+                className="relative rounded-2xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 248, 240, 0.6) 100%)',
+                  border: '2px solid rgba(255, 182, 193, 0.3)',
+                  boxShadow: '0 8px 32px rgba(255, 182, 193, 0.2)',
+                  height: '180px',
+                  padding: '16px'
+                }}
+              >
+                <div className="text-center mb-3">
+                  <p className="text-xs font-medium text-gray-400 italic">
+                    Laissez partir...
                   </p>
-                  <button
-                    onClick={() => setShowPositiveMessage(false)}
-                    className="mt-3 px-4 py-1.5 rounded-full text-sm font-medium transition-all hover:bg-white/80 text-gray-600"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.6)',
-                      border: '1px solid rgba(236, 199, 191, 0.3)'
-                    }}
-                  >
-                    {t.common.close}
-                  </button>
+                </div>
+
+                <div className="relative h-32">
+                  {fallingLetters.map(letter => (
+                    <div
+                      key={letter.id}
+                      className="absolute font-semibold select-none"
+                      style={{
+                        left: `${letter.x}%`,
+                        top: `${letter.y}%`,
+                        transform: `rotate(${letter.rotation}deg)`,
+                        opacity: letter.opacity,
+                        fontSize: '22px',
+                        color: '#a67c7c',
+                        textShadow: '0 2px 6px rgba(166, 124, 124, 0.4), 1px 1px 2px rgba(0, 0, 0, 0.2)',
+                        fontFamily: 'system-ui, -apple-system, sans-serif',
+                        fontWeight: '600',
+                        willChange: 'transform, opacity'
+                      }}
+                    >
+                      {letter.char}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Boutons d'action */}
-          <div className="flex gap-3 mb-8">
-            <button
-              onClick={handleSave}
-              disabled={!thought.trim() || isAnimating}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full border transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
+          {/* MESSAGE POSITIF avec effet machine à écrire */}
+          {showPositiveMessage && (
+            <div 
+              className="mb-6 p-8 rounded-3xl"
               style={{
-                background: 'rgba(255, 255, 255, 0.7)',
-                borderColor: 'rgba(236, 199, 191, 0.5)'
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 248, 240, 0.95) 100%)',
+                border: '2px solid rgba(255, 182, 193, 0.4)',
+                boxShadow: '0 12px 40px rgba(255, 182, 193, 0.3)',
+                animation: 'slideInScale 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                minHeight: '200px'
               }}
             >
-              <Save className="w-4 h-4" />
-              <span>{t.releaseJournal.saveButton}</span>
-            </button>
-
-            <button
-              onClick={handleBurn}
-              disabled={!thought.trim() || isAnimating}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-white"
-              style={{
-                background: 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 50%, #ffd93d 100%)',
-                boxShadow: '0 4px 15px rgba(255, 107, 107, 0.4)'
-              }}
-            >
-              <Flame className="w-4 h-4" />
-              <span className="font-medium">{t.releaseJournal.burnButton}</span>
-            </button>
-          </div>
+              <div className="flex flex-col items-center text-center gap-4">
+                <div 
+                  className="p-4 rounded-2xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #FF69B4 0%, #DA70D6 50%, #FFD700 100%)',
+                    boxShadow: '0 6px 20px rgba(255, 105, 180, 0.5)'
+                  }}
+                >
+                  <Sparkles className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-xl font-medium text-gray-800 leading-relaxed px-4 min-h-[4rem]">
+                  {displayedText}
+                  {isTyping && <span className="animate-pulse ml-1">|</span>}
+                </p>
+                <button
+                  onClick={() => setShowPositiveMessage(false)}
+                  disabled={isTyping}
+                  className="mt-4 px-6 py-2.5 rounded-full text-sm font-medium transition-all hover:bg-white/90 active:scale-95 disabled:opacity-50 text-gray-700"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.7)',
+                    border: '1px solid rgba(236, 199, 191, 0.4)'
+                  }}
+                >
+                  {t.common.close}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Pensées sauvegardées */}
-          {savedThoughts.length > 0 && (
+          {savedThoughts.length > 0 && !showPositiveMessage && !isAnimating && (
             <div 
               className="rounded-2xl overflow-hidden"
               style={{
@@ -466,10 +468,11 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
                           onClick={() => handleBurnSaved(saved.id)}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs transition-all active:scale-95 text-white"
                           style={{
-                            background: 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)'
+                            background: 'linear-gradient(135deg, #FF69B4 0%, #DA70D6 100%)',
+                            boxShadow: '0 2px 8px rgba(255, 105, 180, 0.4)'
                           }}
                         >
-                          <Flame className="w-3 h-3" />
+                          <Heart className="w-3 h-3" />
                           {t.releaseJournal.burnButton}
                         </button>
                       </div>
@@ -480,7 +483,7 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
             </div>
           )}
 
-          {savedThoughts.length === 0 && (
+          {savedThoughts.length === 0 && !showPositiveMessage && !isAnimating && (
             <div 
               className="text-center py-8 px-4 rounded-2xl"
               style={{
@@ -499,7 +502,6 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
         </div>
       </div>
 
-      {/* Confirmation de suppression */}
       {confirmingBurn && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-20">
           <div 
@@ -529,7 +531,7 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
                 onClick={confirmBurnSaved}
                 className="flex-1 px-4 py-2 rounded-full transition-all active:scale-95 text-white"
                 style={{
-                  background: 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)'
+                  background: 'linear-gradient(135deg, #FF69B4 0%, #DA70D6 100%)'
                 }}
               >
                 {t.releaseJournal.confirm}
@@ -543,20 +545,11 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
         @keyframes slideInScale {
           from {
             opacity: 0;
-            transform: translateY(-20px) scale(0.95);
+            transform: translateY(-30px) scale(0.9);
           }
           to {
             opacity: 1;
             transform: translateY(0) scale(1);
-          }
-        }
-
-        @keyframes fireGlow {
-          from {
-            opacity: 0.6;
-          }
-          to {
-            opacity: 1;
           }
         }
       `}</style>

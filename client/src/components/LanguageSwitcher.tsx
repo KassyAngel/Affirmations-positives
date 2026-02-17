@@ -4,7 +4,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { languages } from '@/locales';
 
 interface LanguageSwitcherProps {
-  variant?: 'header' | 'inline';
+  variant?: 'header' | 'inline' | 'floating';
 }
 
 export function LanguageSwitcher({ variant = 'header' }: LanguageSwitcherProps) {
@@ -32,23 +32,39 @@ export function LanguageSwitcher({ variant = 'header' }: LanguageSwitcherProps) 
     );
   }
 
-  // variant === 'header' : petit bouton compact pour le header
+  if (variant === 'floating') {
+    return (
+      <motion.button
+        onClick={handleToggle}
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.92 }}
+        className="fixed top-4 left-4 z-50 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all"
+        style={{
+          background: 'rgba(255, 255, 255, 0.15)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.25)',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+        }}
+        title={`Switch to ${nextLanguage?.name}`}
+      >
+        <span className="text-base leading-none">{currentLanguage?.flag}</span>
+      </motion.button>
+    );
+  }
+
+  // variant === 'header'
   return (
     <motion.button
       onClick={handleToggle}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      className={`
-        flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all
-        ${theme.cardClass}
-      `}
-      title={`Passer en ${nextLanguage?.name}`}
-      aria-label={`Langue actuelle : ${currentLanguage?.name}. Cliquer pour passer en ${nextLanguage?.name}`}
+      className={`flex items-center justify-center w-10 h-10 rounded-full border transition-all backdrop-blur-sm ${theme.cardClass}`}
+      title={`Switch to ${nextLanguage?.name}`}
     >
-      <span className="text-base leading-none">{currentLanguage?.flag}</span>
-      <span className={`text-xs font-bold uppercase tracking-wider ${theme.textClass}`}>
-        {currentLanguage?.code.toUpperCase()}
-      </span>
+      <span className="text-lg leading-none">{currentLanguage?.flag}</span>
     </motion.button>
   );
 }
+
+// Export par défaut aussi pour compatibilité
+export default LanguageSwitcher;

@@ -1,16 +1,34 @@
 import { Home, Grid, Heart, TrendingUp } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAdMob } from '@/hooks/use-admob';
 
 export function Navigation() {
   const [location, setLocation] = useLocation();
   const { t } = useLanguage();
 
+  // ── AdMob : pub avant Stats et Categories ────────────────────────────────
+  const { showInterstitial } = useAdMob();
+
+  // Pages qui déclenchent une pub avant navigation
+  const AD_TRIGGER_PATHS = new Set(['/stats', '/categories']);
+
+  const handleNav = async (path: string) => {
+    // Ne pas déclencher si déjà sur cette page
+    if (location === path) return;
+
+    if (AD_TRIGGER_PATHS.has(path)) {
+      await showInterstitial(); // attend la fin de la pub
+    }
+
+    setLocation(path);
+  };
+
   const navItems = [
-    { path: '/', icon: Home, label: t.nav.home },
-    { path: '/categories', icon: Grid, label: t.nav.categories },
-    { path: '/favorites', icon: Heart, label: t.nav.favorites },
-    { path: '/stats', icon: TrendingUp, label: t.nav.stats },
+    { path: '/',            icon: Home,       label: t.nav.home       },
+    { path: '/categories',  icon: Grid,       label: t.nav.categories },
+    { path: '/favorites',   icon: Heart,      label: t.nav.favorites  },
+    { path: '/stats',       icon: TrendingUp, label: t.nav.stats      },
   ];
 
   return (
@@ -23,17 +41,15 @@ export function Navigation() {
           return (
             <button
               key={item.path}
-              onClick={() => setLocation(item.path)}
+              onClick={() => handleNav(item.path)}
               className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-all ${
-                isActive 
-                  ? 'text-primary' 
+                isActive
+                  ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              <Icon 
-                className={`w-5 h-5 transition-all ${
-                  isActive ? 'scale-110' : 'scale-100'
-                }`}
+              <Icon
+                className={`w-5 h-5 transition-all ${isActive ? 'scale-110' : 'scale-100'}`}
                 strokeWidth={isActive ? 2.5 : 2}
               />
               <span className="text-xs font-medium">{item.label}</span>

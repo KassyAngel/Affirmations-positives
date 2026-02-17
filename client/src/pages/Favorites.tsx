@@ -1,8 +1,11 @@
 import { useUserState } from '@/hooks/use-user-state';
 import { useQuotes } from '@/hooks/use-quotes';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Navigation } from '@/components/Navigation';
+
 import { QuoteCard } from '@/components/QuoteCard';
 import { Loader2, Heart } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const CATEGORY_STYLES: Record<string, string> = {
   work: 'gradient-work',
@@ -18,18 +21,21 @@ const CATEGORY_STYLES: Record<string, string> = {
 
 export default function Favorites() {
   const { state, toggleFavorite } = useUserState();
-  // Fetch all quotes to filter by ID on client side - in a real app, useQuery accepts list of IDs or we have /api/quotes/favorites
+  const { t } = useLanguage();
   const { data: allQuotes, isLoading } = useQuotes();
 
   const favoriteQuotes = allQuotes?.filter(q => state.favorites.includes(q.id)) || [];
 
+  const countLabel = favoriteQuotes.length === 1
+    ? `1 ${t.favorites.subtitle}`
+    : `${favoriteQuotes.length} ${t.favorites.subtitle}`;
+
   return (
     <div className="min-h-screen bg-background pb-24">
+
       <header className="px-6 py-8">
-        <h1 className="text-3xl font-display font-bold">Favoris</h1>
-        <p className="text-muted-foreground mt-2">
-          {favoriteQuotes.length} {favoriteQuotes.length === 1 ? 'citation gardée' : 'citations gardées'} précieusement
-        </p>
+        <h1 className="text-3xl font-display font-bold">{t.favorites.title}</h1>
+        <p className="text-muted-foreground mt-2">{countLabel}</p>
       </header>
 
       {isLoading ? (
@@ -38,26 +44,36 @@ export default function Favorites() {
         </div>
       ) : favoriteQuotes.length > 0 ? (
         <div className="px-4 space-y-8">
-          {favoriteQuotes.map(quote => (
-            <QuoteCard
+          {favoriteQuotes.map((quote, index) => (
+            <motion.div
               key={quote.id}
-              quote={quote}
-              isFavorite={true}
-              onToggleFavorite={() => toggleFavorite(quote.id)}
-              categoryColors={CATEGORY_STYLES[quote.category] || CATEGORY_STYLES.default}
-            />
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.07 }}
+            >
+              <QuoteCard
+                quote={quote}
+                isFavorite={true}
+                onToggleFavorite={() => toggleFavorite(quote.id)}
+                categoryColors={CATEGORY_STYLES[quote.category] || CATEGORY_STYLES.default}
+              />
+            </motion.div>
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center justify-center py-20 px-6 text-center"
+        >
           <div className="p-4 bg-secondary/50 rounded-full mb-4">
             <Heart className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-bold mb-2">Aucun favori</h3>
+          <h3 className="text-xl font-bold mb-2">{t.favorites.empty}</h3>
           <p className="text-muted-foreground max-w-xs">
-            Touchez le cœur sur une citation pour la retrouver ici.
+            {t.favorites.emptySubtitle}
           </p>
-        </div>
+        </motion.div>
       )}
 
       <Navigation />

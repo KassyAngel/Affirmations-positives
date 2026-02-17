@@ -11,7 +11,7 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
 
   return (
     <div className="max-w-md w-full text-center">
-      {/* Sélecteur de langue adapté au fond clair */}
+      {/* Sélecteur de langue — flag uniquement, sans répéter le code */}
       <motion.button
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -19,7 +19,8 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
         className="absolute top-6 right-6 flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-sm border border-rose-200 rounded-full text-rose-700 hover:bg-white transition-all shadow-sm"
       >
         <Globe className="w-4 h-4" />
-        <span className="text-sm font-medium">{language === 'fr' ? '🇫🇷 FR' : '🇬🇧 EN'}</span>
+        {/* ✅ Juste le flag — pas de code texte en plus */}
+        <span className="text-sm">{language === 'fr' ? '🇫🇷' : '🇬🇧'}</span>
       </motion.button>
 
       {/* Icône centrale */}
@@ -37,7 +38,7 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
                 '0 0 20px rgba(253, 164, 175, 0.4)',
                 '0 0 40px rgba(253, 164, 175, 0.7)',
                 '0 0 20px rgba(253, 164, 175, 0.4)',
-              ]
+              ],
             }}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
           >
@@ -49,8 +50,8 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
               className="absolute w-2 h-2 bg-rose-300 rounded-full"
               style={{ top: '50%', left: '50%' }}
               animate={{
-                x: [0, Math.cos(i * 60 * Math.PI / 180) * 60],
-                y: [0, Math.sin(i * 60 * Math.PI / 180) * 60],
+                x: [0, Math.cos((i * 60 * Math.PI) / 180) * 60],
+                y: [0, Math.sin((i * 60 * Math.PI) / 180) * 60],
                 opacity: [0.8, 0],
                 scale: [1, 0],
               }}

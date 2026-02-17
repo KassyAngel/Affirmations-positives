@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -16,13 +15,29 @@
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
+
+        <!-- ✅ Activité AdMob requise pour les interstitiels -->
+        <activity
+            android:name="com.google.android.gms.ads.AdActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent" />
+
+        <!-- ✅ Ton AdMob App ID production -->
+        <!-- Pour les tests, remplace par : ca-app-pub-3940256099942544~3347511713 -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-5733508257471048~5974451487" />
+
+        <!-- Désactiver la collecte automatique des données utilisateur (RGPD) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
+            android:value="true" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -31,11 +46,18 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
+                android:resource="@xml/file_paths" />
         </provider>
+
     </application>
 
-    <!-- Permissions -->
-
+    <!-- Permissions existantes -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- ✅ Permissions AdMob requises -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Android 13+ : permission pub personnalisée (optionnel mais recommandé) -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+
 </manifest>

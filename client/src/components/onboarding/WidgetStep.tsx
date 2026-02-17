@@ -8,7 +8,7 @@ interface WidgetStepProps {
 }
 
 export function WidgetStep({ onContinue, onBack }: WidgetStepProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   return (
     <div className="max-w-md w-full space-y-6 text-center px-2">
@@ -32,7 +32,7 @@ export function WidgetStep({ onContinue, onBack }: WidgetStepProps) {
         </p>
       </motion.div>
 
-      {/* Maquette téléphone */}
+      {/* Maquette téléphone — votre design original */}
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -42,7 +42,7 @@ export function WidgetStep({ onContinue, onBack }: WidgetStepProps) {
         {/* Encoche */}
         <div className="w-12 h-1.5 bg-rose-200 rounded-full mx-auto mb-6" />
 
-        {/* Widget preview */}
+        {/* Widget preview animé */}
         <motion.div
           className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 text-rose-900 text-sm font-medium shadow-md border border-rose-100 mb-5"
           animate={{ y: [-2, 2, -2] }}
@@ -50,10 +50,14 @@ export function WidgetStep({ onContinue, onBack }: WidgetStepProps) {
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-rose-300 to-pink-400" />
-            <span className="text-xs font-bold text-rose-500 uppercase tracking-wide">Motivation</span>
+            <span className="text-xs font-bold text-rose-500 uppercase tracking-wide">
+              {language === 'fr' ? 'Citation du jour' : 'Quote of the day'}
+            </span>
           </div>
           <p className="text-xs leading-relaxed text-rose-800">
-            Vous êtes plus fort que vous ne le pensez.
+            {language === 'fr'
+              ? 'Vous êtes plus fort que vous ne le pensez.'
+              : 'You are stronger than you think.'}
           </p>
         </motion.div>
 
@@ -63,6 +67,26 @@ export function WidgetStep({ onContinue, onBack }: WidgetStepProps) {
             <div key={i} className="aspect-square bg-white/60 rounded-xl border border-rose-100" />
           ))}
         </div>
+      </motion.div>
+
+      {/* Instructions Android */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="bg-white/70 backdrop-blur-sm rounded-2xl p-4 border border-rose-100 text-left space-y-2"
+      >
+        <p className="text-xs font-bold text-rose-700 uppercase tracking-wide mb-1">
+          🤖 {language === 'fr' ? 'Comment installer (Android)' : 'How to install (Android)'}
+        </p>
+        {[
+          language === 'fr' ? '① Appuyez longtemps sur votre écran d\'accueil' : '① Long press your home screen',
+          language === 'fr' ? '② Sélectionnez "Widgets"' : '② Select "Widgets"',
+          language === 'fr' ? '③ Cherchez "Affirmations Positives"' : '③ Find "Affirmations Positives"',
+          language === 'fr' ? '④ Faites glisser sur l\'écran — Terminé ! 🎉' : '④ Drag to screen — Done! 🎉',
+        ].map((step, i) => (
+          <p key={i} className="text-xs text-rose-700">{step}</p>
+        ))}
       </motion.div>
 
       <motion.div
@@ -75,13 +99,13 @@ export function WidgetStep({ onContinue, onBack }: WidgetStepProps) {
           onClick={onContinue}
           className="w-full py-4 rounded-full bg-gradient-to-r from-rose-400 to-pink-400 text-white font-semibold text-lg shadow-lg shadow-rose-200/60 hover:shadow-xl hover:shadow-rose-300/60 transition-all duration-300 hover:scale-105"
         >
-          Installer le widget
+          {language === 'fr' ? "J'ai compris !" : 'Got it!'}
         </button>
         <button
           onClick={onContinue}
           className="block w-full text-center text-rose-400 hover:text-rose-600 text-sm transition-colors"
         >
-          Me rappeler plus tard
+          {language === 'fr' ? 'Me rappeler plus tard' : 'Remind me later'}
         </button>
       </motion.div>
     </div>

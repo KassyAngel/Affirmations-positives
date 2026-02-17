@@ -24,7 +24,7 @@ export const fr = {
   // Mood Overlay
   mood: {
     title: 'Bonjour',
-    subtitle: 'Comment te sens-tu aujourd\'hui ?',
+    subtitle: "Comment te sens-tu aujourd'hui ?",
     determined: 'Déterminé',
     happy: 'Motivé',
     zen: 'Zen',
@@ -59,7 +59,7 @@ export const fr = {
     title: 'Statistiques',
     subtitle: 'Votre progression et votre humeur',
     currentStreak: 'Série actuelle',
-    moodHistory: 'Historique d\'humeur',
+    moodHistory: "Historique d'humeur",
     lastVisit: 'Dernière visite',
     favoritesCount: 'Favoris',
     noData: 'Pas assez de données pour le moment',
@@ -69,7 +69,7 @@ export const fr = {
   // Notifications
   notifications: {
     title: '🌟 Ta citation du jour',
-    body: 'Ta dose de motivation quotidienne t\'attend !',
+    body: "Ta dose de motivation quotidienne t'attend !",
     permissionTitle: 'Activer les notifications',
     permissionMessage: 'Recevez une citation inspirante chaque jour à 8h',
     permissionGranted: 'Notifications activées ! 🎉',
@@ -83,7 +83,7 @@ export const fr = {
   onboarding: {
     welcome: {
       title: 'Bienvenue',
-      subtitle: 'Découvrez votre dose quotidienne d\'inspiration',
+      subtitle: "Découvrez votre dose quotidienne d'inspiration",
       description: 'Chaque jour, une citation pour vous accompagner, vous motiver et vous inspirer.',
       continue: 'Commencer'
     },
@@ -126,13 +126,13 @@ export const fr = {
       title: 'Avec quel thème souhaitez-vous commencer ?',
     },
     widget: {
-      title: 'Ajouter un widget à votre écran d\'accueil',
-      subtitle: 'Sur l\'écran d\'accueil de votre téléphone, maintenez le doigt appuyé sur une zone vide, puis sélectionnez le widget Motivation dans la liste',
+      title: "Ajouter un widget à votre écran d'accueil",
+      subtitle: "Sur l'écran d'accueil de votre téléphone, maintenez le doigt appuyé sur une zone vide, puis sélectionnez le widget Motivation dans la liste",
     },
     complete: {
       title: 'Tout est prêt !',
       subtitle: 'Votre voyage commence maintenant',
-      description: 'Chaque jour est une nouvelle opportunité de grandir et de s\'inspirer.',
+      description: "Chaque jour est une nouvelle opportunité de grandir et de s'inspirer.",
       start: 'Découvrir'
     },
     skip: 'Ignorer'
@@ -153,16 +153,16 @@ export const fr = {
     cancel: 'Annuler',
     confirm: 'Libérer',
     positiveMessages: [
-      '✨ Vous venez de libérer un poids. Respirez profondément.',
-      '🌟 Cette pensée ne vous définit pas. Vous êtes plus fort(e) que cela.',
-      '💫 Chaque libération est un pas vers la légèreté.',
-      '🌸 Vous méritez la paix intérieure. Continuez d\'avancer.',
-      '🦋 Comme un papillon, vous vous libérez pour mieux vous envoler.',
-      '🌊 Laissez cette vague négative s\'éloigner. Le calme revient.',
-      '🌈 Après la pluie vient toujours le beau temps.',
-      '💝 Vous faites preuve de courage en libérant vos pensées.',
-      '🕊️ La légèreté vous attend. Vous l\'avez mérité.',
-      '⭐ Chaque pensée libérée est une victoire sur vous-même.'
+      "✨ Vous venez de libérer un poids. Respirez profondément.",
+      "🌟 Cette pensée ne vous définit pas. Vous êtes plus fort que cela.",
+      "💫 Chaque libération est un pas vers la légèreté.",
+      "🌸 Vous méritez la paix intérieure. Continuez d'avancer.",
+      "🦋 Comme un papillon, vous vous libérez pour mieux vous envoler.",
+      "🌊 Laissez cette vague négative s'éloigner. Le calme revient.",
+      "🌈 Après la pluie vient toujours le beau temps.",
+      "💝 Vous faites preuve de courage en libérant vos pensées.",
+      "🕊️ La légèreté vous attend. Vous l'avez mérité.",
+      "⭐ Chaque pensée libérée est une victoire sur vous-même."
     ]
   },
   // Settings

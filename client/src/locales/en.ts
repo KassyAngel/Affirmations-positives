@@ -107,7 +107,7 @@ export const en: TranslationKeys = {
       }
     },
     name: {
-      title: 'What\'s your name?',
+      title: 'What is your name?',
       placeholder: 'Your first name',
       continue: 'Continue'
     },
@@ -129,7 +129,7 @@ export const en: TranslationKeys = {
     },
     widget: {
       title: 'Add a widget to your home screen',
-      subtitle: 'On your phone\'s home screen, press and hold an empty area, then select the Motivation widget from the list',
+      subtitle: 'On your phone home screen, press and hold an empty area, then select the Motivation widget from the list',
     },
     complete: {
       title: 'All set!',
@@ -155,16 +155,16 @@ export const en: TranslationKeys = {
     cancel: 'Cancel',
     confirm: 'Release',
     positiveMessages: [
-      '✨ You just released a burden. Take a deep breath.',
-      '🌟 This thought doesn\'t define you. You are stronger than that.',
-      '💫 Every release is a step towards lightness.',
-      '🌸 You deserve inner peace. Keep moving forward.',
-      '🦋 Like a butterfly, you release yourself to soar higher.',
-      '🌊 Let this negative wave drift away. Calm is returning.',
-      '🌈 After the rain always comes sunshine.',
-      '💝 You show courage by releasing your thoughts.',
-      '🕊️ Lightness awaits you. You\'ve earned it.',
-      '⭐ Every thought released is a victory over yourself.'
+      "✨ You just released a burden. Take a deep breath.",
+      "🌟 This thought does not define you. You are stronger than that.",
+      "💫 Every release is a step towards lightness.",
+      "🌸 You deserve inner peace. Keep moving forward.",
+      "🦋 Like a butterfly, you release yourself to soar higher.",
+      "🌊 Let this negative wave drift away. Calm is returning.",
+      "🌈 After the rain always comes sunshine.",
+      "💝 You show courage by releasing your thoughts.",
+      "🕊️ Lightness awaits you. You have earned it.",
+      "⭐ Every thought released is a victory over yourself."
     ]
   },
   // Settings
