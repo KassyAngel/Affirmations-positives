@@ -7,7 +7,12 @@ channel = "stable-24_05"
 packages = ["vim", "psmisc", "nano"]
 
 [[ports]]
+localPort = 3001
+externalPort = 3001
+
+[[ports]]
 localPort = 5000
+externalPort = 80
 
 [env]
 PORT = "5000"
