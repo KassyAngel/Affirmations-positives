@@ -1,15 +1,29 @@
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme, type ThemeId } from '@/contexts/ThemeContext';
 import { languages } from '@/locales';
 
 interface LanguageSwitcherProps {
   variant?: 'header' | 'inline' | 'floating';
 }
 
+// Thèmes à fond CLAIR — le bouton doit être sombre pour contraster
+const LIGHT_THEMES: ThemeId[] = [
+  'minimaliste-1',
+  'minimaliste-2',
+  'minimaliste-3',
+  'minimaliste-5',
+  'minimaliste-6',
+  'minimaliste-7',
+  'minimaliste-8',
+  'zen-cascademinimaliste',
+];
+
 export function LanguageSwitcher({ variant = 'header' }: LanguageSwitcherProps) {
   const { language, setLanguage } = useLanguage();
-  const { theme } = useTheme();
+  const { themeId } = useTheme();
+
+  const isLightTheme = LIGHT_THEMES.includes(themeId);
 
   const handleToggle = () => {
     const currentIndex = languages.findIndex(lang => lang.code === language);
@@ -19,6 +33,21 @@ export function LanguageSwitcher({ variant = 'header' }: LanguageSwitcherProps) 
 
   const currentLanguage = languages.find(lang => lang.code === language);
   const nextLanguage = languages[(languages.findIndex(l => l.code === language) + 1) % languages.length];
+
+  // ── Styles adaptatifs : toujours contrasté quelle que soit la luminosité ──
+  const headerStyleLight = {
+    background: 'rgba(0, 0, 0, 0.07)',
+    border: '1.5px solid rgba(0, 0, 0, 0.15)',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+    backdropFilter: 'blur(8px)',
+  };
+
+  const headerStyleDark = {
+    background: 'rgba(255, 255, 255, 0.15)',
+    border: '1.5px solid rgba(255, 255, 255, 0.25)',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+    backdropFilter: 'blur(12px)',
+  };
 
   if (variant === 'inline') {
     return (
@@ -52,13 +81,14 @@ export function LanguageSwitcher({ variant = 'header' }: LanguageSwitcherProps) 
     );
   }
 
-  // variant === 'header'
+  // variant === 'header' — style adaptatif clair/sombre
   return (
     <motion.button
       onClick={handleToggle}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      className={`flex items-center justify-center w-10 h-10 rounded-full border transition-all backdrop-blur-sm ${theme.cardClass}`}
+      className="flex items-center justify-center w-10 h-10 rounded-full transition-all"
+      style={isLightTheme ? headerStyleLight : headerStyleDark}
       title={`Switch to ${nextLanguage?.name}`}
     >
       <span className="text-lg leading-none">{currentLanguage?.flag}</span>
@@ -66,5 +96,4 @@ export function LanguageSwitcher({ variant = 'header' }: LanguageSwitcherProps) 
   );
 }
 
-// Export par défaut aussi pour compatibilité
 export default LanguageSwitcher;

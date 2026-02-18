@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Heart, Wind, Eye, PenLine } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { usePremium } from '@/hooks/use-premium';
+import { PremiumPaywall } from '@/components/PremiumPaywall';
 import emergencyQuotes from '@/data/emergency-quotes.json';
 
 type Phase = 'quote' | 'exercise' | 'anchor';
@@ -16,8 +18,8 @@ interface EmergencyModeProps {
 const BG = 'linear-gradient(160deg, #0a0e1a 0%, #0d1526 50%, #09101d 100%)';
 
 const R = {
-  accent:       '#60a5fa',  // bleu clair
-  text:         '#bfdbfe',  // bleu très clair
+  accent:       '#60a5fa',
+  text:         '#bfdbfe',
   soft:         'rgba(96,165,250,0.18)',
   border:       'rgba(96,165,250,0.35)',
   glow:         'rgba(96,165,250,0.25)',
@@ -32,7 +34,6 @@ const R = {
   cardHover:    'rgba(96,165,250,0.14)',
 };
 
-// ── Breathing ─────────────────────────────────────────────────────────────────
 const BREATH_CYCLE: { phase: BreathPhase; duration: number; labelFr: string; labelEn: string }[] = [
   { phase: 'inhale',   duration: 4000, labelFr: 'Inspire',   labelEn: 'Inhale'   },
   { phase: 'hold-in',  duration: 4000, labelFr: 'Retiens',   labelEn: 'Hold'     },
@@ -41,7 +42,6 @@ const BREATH_CYCLE: { phase: BreathPhase; duration: number; labelFr: string; lab
 ];
 const TOTAL_CYCLES = 3;
 
-// ── Grounding ─────────────────────────────────────────────────────────────────
 const GROUNDING_FR = [
   { count: 5, labelFr: 'Tu vois',    labelEn: 'You see',   instruction: '5 choses que tu vois autour de toi' },
   { count: 4, labelFr: 'Tu touches', labelEn: 'You touch', instruction: '4 choses que tu peux toucher' },
@@ -57,7 +57,6 @@ const GROUNDING_EN = [
   { count: 1, labelFr: 'Tu goûtes',  labelEn: 'You taste', instruction: '1 thing you can taste' },
 ];
 
-// ── Writing ───────────────────────────────────────────────────────────────────
 const WRITING_FR = [
   'En ce moment, je ressens...',
   "Ce qui me pèse le plus c'est...",
@@ -71,7 +70,6 @@ const WRITING_EN = [
   'One thing I can do for myself is...',
 ];
 
-// ── Anchor ────────────────────────────────────────────────────────────────────
 const ANCHOR_FR = [
   'Tu es encore là.',
   'Tu as bien fait.',
@@ -87,7 +85,6 @@ const ANCHOR_EN = [
   'You deserve to take care of yourself.',
 ];
 
-// ── Dots ──────────────────────────────────────────────────────────────────────
 function StepDots({ total, current }: { total: number; current: number }) {
   return (
     <div className="flex gap-2 items-center justify-center">
@@ -104,7 +101,6 @@ function StepDots({ total, current }: { total: number; current: number }) {
   );
 }
 
-// ── AnchorSequence ────────────────────────────────────────────────────────────
 function AnchorSequence({
   messages,
   onAllDone,
@@ -180,21 +176,20 @@ function AnchorSequence({
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
 export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
   const { language } = useLanguage();
+  const { isPremium } = usePremium();
+  const [showPaywall, setShowPaywall] = useState(false);
   const isFr = language === 'fr';
 
   const [phase, setPhase] = useState<Phase>('quote');
   const [quote, setQuote] = useState(emergencyQuotes[0]);
   const [activeTab, setActiveTab] = useState<ExerciseTab>('breathing');
 
-  // Quote typewriter
   const [quoteDisplayed, setQuoteDisplayed] = useState('');
   const [quoteDone, setQuoteDone] = useState(false);
   const [authorDisplayed, setAuthorDisplayed] = useState('');
 
-  // Breathing
   const [breathPhaseIdx, setBreathPhaseIdx] = useState(0);
   const [cycleCount, setCycleCount] = useState(0);
   const [breathProgress, setBreathProgress] = useState(0);
@@ -202,20 +197,16 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
   const breathTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Grounding
   const [groundingStep, setGroundingStep] = useState(0);
   const [groundingDone, setGroundingDone] = useState(false);
 
-  // Writing
   const [writingStep, setWritingStep] = useState(0);
   const [writingAnswers, setWritingAnswers] = useState(['', '', '', '']);
   const [writingDone, setWritingDone] = useState(false);
 
-  // Anchor
   const [anchorDone, setAnchorDone] = useState(false);
   const [anchorKey, setAnchorKey] = useState(0);
 
-  // ── Reset ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isOpen) return;
     const random = emergencyQuotes[Math.floor(Math.random() * emergencyQuotes.length)];
@@ -247,7 +238,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
     }
   }, [phase]);
 
-  // ── Quote typewriter ───────────────────────────────────────────────────────
   useEffect(() => {
     if (phase !== 'quote' || !isOpen) return;
     const text = isFr ? quote.content : quote.contentEn;
@@ -272,7 +262,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
     return () => clearInterval(iv);
   }, [quoteDone]);
 
-  // ── Breathing ─────────────────────────────────────────────────────────────
   const startBreathTimer = useCallback((phaseIdx: number, cycle: number) => {
     if (breathTimerRef.current) clearTimeout(breathTimerRef.current);
     if (progressTimerRef.current) clearInterval(progressTimerRef.current);
@@ -311,26 +300,41 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
   const writingPrompts = isFr ? WRITING_FR : WRITING_EN;
   const anchorMessages = isFr ? ANCHOR_FR : ANCHOR_EN;
 
+  // ✅ Définir les exercices (gratuit vs premium)
   const TABS = [
     {
       id: 'breathing' as ExerciseTab,
       Icon: Wind,
       fr: 'Respiration', en: 'Breathing',
       desc_fr: 'Cohérence cardiaque', desc_en: 'Cardiac coherence',
+      premium: false, // ✅ GRATUIT
     },
     {
       id: 'grounding' as ExerciseTab,
       Icon: Eye,
       fr: '5-4-3-2-1', en: '5-4-3-2-1',
       desc_fr: 'Ancrage sensoriel', desc_en: 'Sensory grounding',
+      premium: true, // 💎 PREMIUM
     },
     {
       id: 'writing' as ExerciseTab,
       Icon: PenLine,
       fr: 'Écriture', en: 'Writing',
       desc_fr: 'Exprime tes émotions', desc_en: 'Express your feelings',
+      premium: true, // 💎 PREMIUM
     },
   ];
+
+  // ✅ Handler pour sélection exercice
+  const handleExerciseSelect = (exerciseId: ExerciseTab, isPremiumExercise: boolean) => {
+    if (isPremiumExercise && !isPremium()) {
+      setShowPaywall(true);
+      return;
+    }
+
+    setActiveTab(exerciseId);
+    setPhase('exercise');
+  };
 
   if (!isOpen) return null;
 
@@ -342,14 +346,12 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
         className="fixed inset-0 z-[100] flex items-center justify-center"
         style={{ background: BG }}
       >
-        {/* Glow bleu ambiant */}
         <motion.div className="absolute pointer-events-none"
           style={{ width: 600, height: 600, borderRadius: '50%', background: `radial-gradient(circle, ${R.blueGlow} 0%, transparent 70%)` }}
           animate={{ scale: [1, 1.1, 1], opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         />
 
-        {/* Close */}
         <button onClick={onClose}
           className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center transition-all z-10"
           style={{ color: R.veryDim, background: 'rgba(255,255,255,0.06)', border: `1px solid rgba(255,255,255,0.12)` }}
@@ -359,7 +361,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
           <X className="w-5 h-5" />
         </button>
 
-        {/* Phase dots */}
         <div className="absolute top-5 left-1/2 -translate-x-1/2 flex gap-2 items-center z-10">
           {(['quote', 'exercise', 'anchor'] as Phase[]).map((p, i) => {
             const order = ['quote', 'exercise', 'anchor'];
@@ -377,18 +378,15 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
           })}
         </div>
 
-        {/* Container avec hauteur fixe pour éviter les sauts */}
         <div className="w-full max-w-sm px-6 flex items-center justify-center" style={{ minHeight: '80vh' }}>
           <AnimatePresence mode="wait">
 
-            {/* ═══════════════ PHASE 1 — CITATION ═══════════════ */}
             {phase === 'quote' && (
               <motion.div key="quote"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.4 }}
                 className="flex flex-col items-center w-full text-center gap-6"
               >
-                {/* Icône */}
                 <motion.div
                   animate={{ 
                     scale: [1, 1.05, 1], 
@@ -400,7 +398,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
                   <Heart className="w-6 h-6" style={{ color: '#60a5fa' }} />
                 </motion.div>
 
-                {/* Citation avec auteur intégré - hauteur fixe */}
                 <div style={{ minHeight: 160 }} className="flex flex-col items-center gap-3">
                   <p className="text-lg font-light leading-relaxed"
                     style={{ color: R.bodyText, fontFamily: "'Georgia', serif", fontStyle: 'italic' }}>
@@ -411,7 +408,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
                     )}"
                   </p>
 
-                  {/* Auteur sous la citation */}
                   {quoteDone && authorDisplayed && (
                     <motion.p 
                       initial={{ opacity: 0, y: -5 }} 
@@ -425,7 +421,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
                   )}
                 </div>
 
-                {/* Exercices */}
                 <div style={{ minHeight: quoteDone ? 'auto' : 0, opacity: quoteDone ? 1 : 0 }} className="w-full transition-opacity duration-500">
                   {quoteDone && (
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
@@ -435,43 +430,55 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
                         {isFr ? 'Choisis un exercice' : 'Choose an exercise'}
                       </p>
 
-                      {TABS.map(({ id, Icon, fr, en, desc_fr, desc_en }) => (
-                        <motion.button key={id}
-                          onClick={() => { setActiveTab(id); setPhase('exercise'); }}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          className="flex items-center gap-3 px-4 py-3 rounded-xl w-full text-left"
-                          style={{ 
-                            background: R.cardBg, 
-                            border: `1.5px solid ${R.cardBorder}`,
-                            boxShadow: `0 2px 8px rgba(96,165,250,0.06)`
-                          }}
-                        >
-                          <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                            style={{ background: R.soft, border: `1px solid ${R.border}` }}>
-                            <Icon className="w-4 h-4" style={{ color: R.accent }} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold" style={{ color: R.text }}>{isFr ? fr : en}</p>
-                            <p className="text-xs truncate" style={{ color: R.dimText }}>{isFr ? desc_fr : desc_en}</p>
-                          </div>
-                          <span className="text-base flex-shrink-0 font-semibold" style={{ color: R.text }}>›</span>
-                        </motion.button>
-                      ))}
+                      {/* ✅ Exercices avec badge Premium si bloqué */}
+                      {TABS.map(({ id, Icon, fr, en, desc_fr, desc_en, premium }) => {
+                        const isLocked = premium && !isPremium();
+
+                        return (
+                          <motion.button key={id}
+                            onClick={() => handleExerciseSelect(id, premium)}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="relative flex items-center gap-3 px-4 py-3 rounded-xl w-full text-left"
+                            style={{ 
+                              background: R.cardBg, 
+                              border: `1.5px solid ${R.cardBorder}`,
+                              boxShadow: `0 2px 8px rgba(96,165,250,0.06)`,
+                              opacity: isLocked ? 0.7 : 1,
+                            }}
+                          >
+                            <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                              style={{ background: R.soft, border: `1px solid ${R.border}` }}>
+                              <Icon className="w-4 h-4" style={{ color: R.accent }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-semibold" style={{ color: R.text }}>{isFr ? fr : en}</p>
+                                {isLocked && (
+                                  <span className="text-lg leading-none">👑</span>
+                                )}
+                              </div>
+                              <p className="text-xs truncate" style={{ color: R.dimText }}>{isFr ? desc_fr : desc_en}</p>
+                            </div>
+                            <span className="text-base flex-shrink-0 font-semibold" style={{ color: isLocked ? R.veryDim : R.text }}>
+                              {isLocked ? '🔒' : '›'}
+                            </span>
+                          </motion.button>
+                        );
+                      })}
                     </motion.div>
                   )}
                 </div>
               </motion.div>
             )}
 
-            {/* ═══════════════ PHASE 2 — EXERCICE ═══════════════ */}
+            {/* Le reste du code (exercices + anchor) reste identique */}
             {phase === 'exercise' && (
               <motion.div key={`exercise-${activeTab}`}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.4 }}
                 className="flex flex-col items-center w-full gap-5"
               >
-                {/* Label module */}
                 {(() => {
                   const tab = TABS.find(t => t.id === activeTab)!;
                   return (
@@ -486,7 +493,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
                 })()}
 
                 <AnimatePresence mode="wait">
-                  {/* ── Respiration ── */}
                   {activeTab === 'breathing' && (
                     <motion.div key="b" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                       className="flex flex-col items-center gap-5 w-full text-center"
@@ -496,7 +502,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
                           <p className="text-xs tracking-wider font-medium" style={{ color: R.dimText }}>
                             {isFr ? `Cycle ${Math.min(cycleCount + 1, TOTAL_CYCLES)} / ${TOTAL_CYCLES}` : `Cycle ${Math.min(cycleCount + 1, TOTAL_CYCLES)} / ${TOTAL_CYCLES}`}
                           </p>
-                          {/* Cercle - taille fixe */}
                           <div className="relative flex items-center justify-center" style={{ width: 200, height: 200 }}>
                             <div className="absolute inset-0 rounded-full" style={{ border: '1px solid rgba(96,165,250,0.12)' }} />
                             <motion.div
@@ -525,7 +530,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
                               <p className="text-xs font-medium" style={{ color: R.dimText }}>{currentBreath.duration / 1000}s</p>
                             </div>
                           </div>
-                          {/* Barre */}
                           <div className="w-48 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(96,165,250,0.12)' }}>
                             <motion.div className="h-full rounded-full"
                               style={{ 
@@ -554,7 +558,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
                     </motion.div>
                   )}
 
-                  {/* ── Grounding ── */}
                   {activeTab === 'grounding' && (
                     <motion.div key="g" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                       className="flex flex-col items-center gap-5 w-full text-center"
@@ -569,7 +572,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
                                 transition={{ duration: 0.25 }}
                                 className="flex flex-col items-center gap-4"
                               >
-                                {/* Nombre */}
                                 <div className="w-20 h-20 rounded-xl flex items-center justify-center"
                                   style={{ background: R.soft, border: `1.5px solid ${R.border}`, boxShadow: `0 4px 16px ${R.glow}` }}>
                                   <span className="text-5xl font-bold" style={{ color: R.accent }}>
@@ -613,7 +615,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
                     </motion.div>
                   )}
 
-                  {/* ── Writing ── */}
                   {activeTab === 'writing' && (
                     <motion.div key="w" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                       className="flex flex-col items-center gap-4 w-full"
@@ -683,7 +684,6 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
               </motion.div>
             )}
 
-            {/* ═══════════════ PHASE 3 — ANCRAGE ═══════════════ */}
             {phase === 'anchor' && (
               <motion.div key="anchor"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -734,12 +734,18 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
 
           </AnimatePresence>
         </div>
+
+        {/* Premium Paywall */}
+        <PremiumPaywall 
+          isOpen={showPaywall} 
+          onClose={() => setShowPaywall(false)}
+          trigger="exercise_locked"
+        />
       </motion.div>
     </AnimatePresence>
   );
 }
 
-// ── Bouton Continuer ──────────────────────────────────────────────────────────
 function ContinueButton({ isFr, onClick, glow }: { isFr: boolean; onClick: () => void; glow: string }) {
   return (
     <motion.button onClick={onClick} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}

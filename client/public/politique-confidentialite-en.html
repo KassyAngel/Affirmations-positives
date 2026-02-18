@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Positive Affirmations</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --rose: #E8547A; --rose-light: #F2789A; --rose-pale: #FFB6C8;
+            --pink-mid: #FFD6E0; --text-dark: #2D1B25; --text-mid: #6B3D4E; --text-light: #A07080;
+            --card-bg: rgba(255,255,255,0.78);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif; font-weight: 300; line-height: 1.75;
+            color: var(--text-dark);
+            background: linear-gradient(160deg, #FFF0F3 0%, #FFE4EC 40%, #FFF5F7 100%);
+            min-height: 100vh; padding: 40px 20px 60px;
+        }
+        .container { max-width: 860px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 50px; }
+        .header::before {
+            content: ''; display: block; width: 60px; height: 4px;
+            background: linear-gradient(90deg, var(--rose), var(--rose-pale));
+            margin: 0 auto 24px; border-radius: 2px;
+        }
+        .app-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: linear-gradient(135deg, var(--rose), var(--rose-light));
+            color: white; font-weight: 500; font-size: 0.8rem;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            padding: 6px 16px; border-radius: 20px; margin-bottom: 18px;
+        }
+        h1 {
+            font-family: 'Playfair Display', serif; font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700; color: var(--text-dark); line-height: 1.2; margin-bottom: 10px;
+        }
+        h1 span {
+            background: linear-gradient(135deg, var(--rose), var(--rose-light));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .date { color: var(--text-light); font-size: 0.85rem; margin-top: 8px; }
+        .section {
+            background: var(--card-bg); backdrop-filter: blur(12px);
+            border-radius: 20px; padding: 36px 40px; margin-bottom: 20px;
+            border: 1px solid rgba(232, 84, 122, 0.12);
+            box-shadow: 0 4px 24px rgba(232, 84, 122, 0.06);
+        }
+        h2 {
+            font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--rose);
+            margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--pink-mid);
+            display: flex; align-items: center; gap: 10px;
+        }
+        h2 .num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px;
+            background: linear-gradient(135deg, var(--rose), var(--rose-light));
+            color: white; border-radius: 50%; font-size: 0.75rem; font-weight: 500; flex-shrink: 0;
+        }
+        h3 { font-weight: 500; color: var(--text-mid); font-size: 1rem; margin-top: 20px; margin-bottom: 10px; }
+        h4 { font-weight: 500; color: var(--text-mid); font-size: 0.95rem; margin-top: 15px; margin-bottom: 8px; }
+        p { margin-bottom: 14px; color: var(--text-dark); font-size: 0.95rem; }
+        ul, ol { margin-left: 18px; margin-bottom: 14px; }
+        li { margin-bottom: 7px; color: var(--text-dark); font-size: 0.95rem; }
+        strong { font-weight: 500; color: var(--text-mid); }
+        a { color: var(--rose); text-decoration: none; border-bottom: 1px solid rgba(232,84,122,0.3); }
+        a:hover { border-color: var(--rose); }
+        .info-box {
+            background: linear-gradient(135deg, rgba(232,84,122,0.05), rgba(255,182,200,0.1));
+            border-left: 3px solid var(--rose-light);
+            border-radius: 0 12px 12px 0; padding: 18px 22px; margin: 16px 0;
+        }
+        .info-box p:last-child, .warning-box p:last-child, .success-box p:last-child { margin-bottom: 0; }
+        .warning-box {
+            background: rgba(255,214,224,0.35); border: 1.5px solid var(--rose-pale);
+            border-radius: 12px; padding: 18px 22px; margin: 16px 0;
+        }
+        .warning-box .wtitle { color: var(--rose); font-weight: 500; font-size: 0.9rem; margin-bottom: 10px; }
+        .success-box {
+            background: rgba(200,240,220,0.35); border: 1.5px solid #A8DFC0;
+            border-radius: 12px; padding: 18px 22px; margin: 16px 0;
+        }
+        footer { text-align: center; margin-top: 50px; padding-top: 30px; border-top: 1px solid var(--pink-mid); }
+        footer p { color: var(--text-light); font-size: 0.82rem; }
+        .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--rose); margin-bottom: 8px; }
+        @media (max-width: 640px) { .section { padding: 24px 22px; } h2 { font-size: 1.2rem; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="app-badge">✨ Positive Affirmations</div>
+        <h1>Privacy <span>Policy</span></h1>
+        <p class="date">Last updated: February 2026</p>
+    </div>
+
+    <div class="section">
+        <h2>Introduction</h2>
+        <p>Respecting your privacy is important to us. This privacy policy explains what personal data we collect through the <strong>Positive Affirmations</strong> application, how we use it, how we protect it, and what your rights are.</p>
+        <p>We invite you to read these terms carefully before providing your personal data.</p>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">1</span>Data Controller</h2>
+        <div class="info-box">
+            <p><strong>Kc Dev</strong> — Sole trader (Auto-entrepreneur)</p>
+            <p><strong>SIRET:</strong> 992 482 745 00013</p>
+            <p><strong>Location:</strong> France</p>
+            <p><strong>Email:</strong> <a href="mailto:cartomystik@gmail.com">cartomystik@gmail.com</a></p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">2</span>Minimum Age and Child Protection</h2>
+        <div class="warning-box">
+            <p class="wtitle">⚠️ Minimum Age Required</p>
+            <p>Use of Positive Affirmations is reserved for persons <strong>aged 13 and over</strong>. For users under 18, parental or legal guardian consent is required before using the app, providing personal data, or making Premium purchases.</p>
+        </div>
+        <p>We do not knowingly collect personal data from persons under 13. If you are under 13, you must not use this application or provide any personal data.</p>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">3</span>Data Protection Principles</h2>
+        <ul>
+            <li><strong>Lawfulness, fairness and transparency:</strong> We will always require your consent to process personal data and will inform you transparently.</li>
+            <li><strong>Data minimization:</strong> We collect only strictly necessary data.</li>
+            <li><strong>Storage limitation:</strong> Your data will only be retained as long as necessary.</li>
+            <li><strong>Integrity and confidentiality:</strong> We implement all necessary measures to ensure the security of your data.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">4</span>Data Collected</h2>
+        <h3>4.1 Data stored locally (on your device)</h3>
+        <p>The following data is stored <strong>only on your device</strong> and is <strong>never sent to our servers</strong>:</p>
+        <ul>
+            <li>Your first name</li>
+            <li>Your preferred language</li>
+            <li>Your favorite affirmations</li>
+            <li>Your consultation history</li>
+            <li>Your application preferences</li>
+        </ul>
+        <div class="info-box">
+            <p><strong>✨ Important:</strong> This data remains only on your device. If you uninstall the app or delete the data, this information will be permanently lost.</p>
+        </div>
+        <h3>4.2 Data collected for the Premium version</h3>
+        <p>Only collected if you subscribe to the Premium version:</p>
+        <ul>
+            <li><strong>Email address:</strong> To associate your subscription with your account</li>
+            <li><strong>RevenueCat user ID:</strong> For purchase management via Google Play</li>
+            <li><strong>Subscription and expiration dates:</strong> To manage the validity of your Premium access</li>
+            <li><strong>Payment status:</strong> Confirmation of payment via Google Play Billing</li>
+        </ul>
+        <h3>4.3 Technical data collected automatically</h3>
+        <ul>
+            <li>IP address</li>
+            <li>Device type and operating system</li>
+            <li>Mobile advertising identifier (IDFA/AAID) for Google AdMob</li>
+            <li>Application usage data (pages visited, duration)</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">5</span>Purposes of Processing</h2>
+        <h3>5.1 Application operation</h3>
+        <ul>
+            <li>Personalize your experience (name, preferences)</li>
+            <li>Save your favorite affirmations</li>
+            <li>Display the interface in your preferred language</li>
+        </ul>
+        <h3>5.2 Premium subscription management</h3>
+        <ul>
+            <li>Activate your Premium access after payment</li>
+            <li>Restore your subscription after reinstallation</li>
+            <li>Notify you before your access expires</li>
+            <li>Synchronize your Premium status across devices</li>
+        </ul>
+        <h3>5.3 Advertising (free users only)</h3>
+        <ul>
+            <li>Display relevant ads via Google AdMob</li>
+            <li>Measure advertising effectiveness</li>
+        </ul>
+        <h3>5.4 Application improvement</h3>
+        <ul>
+            <li>Analyze application usage</li>
+            <li>Fix bugs and improve performance</li>
+            <li>Develop new features</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">6</span>Legal Basis for Processing</h2>
+        <ul>
+            <li><strong>Consent:</strong> For use of the application and display of personalized ads</li>
+            <li><strong>Contract performance:</strong> For managing your Premium subscription</li>
+            <li><strong>Legitimate interest:</strong> For app improvement and fraud prevention</li>
+            <li><strong>Legal obligations:</strong> For compliance with applicable law</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">7</span>Data Retention</h2>
+        <h3>7.1 Locally stored data</h3>
+        <p>Retained until you delete them (uninstalling the app, deleting app data, or clearing the cache).</p>
+        <h3>7.2 Premium data</h3>
+        <ul>
+            <li><strong>Email and subscription data:</strong> Retained for the duration of your subscription + 3 years (accounting and tax obligations)</li>
+            <li><strong>Google Play payment data:</strong> Managed by Google Play and RevenueCat per their own policies</li>
+        </ul>
+        <h3>7.3 Data deletion</h3>
+        <p>You may request deletion of your data at any time by contacting <a href="mailto:cartomystik@gmail.com">cartomystik@gmail.com</a>. We will process your request within a maximum of 30 days.</p>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">8</span>Sharing Data with Third Parties</h2>
+        <p>We do not sell, rent or transfer your personal data to third parties, except in the following cases:</p>
+        <h3>8.1 Essential services</h3>
+        <div class="info-box">
+            <p><strong>Google Play Billing</strong> — United States</p>
+            <p>Purpose: Premium payment processing. We do not collect or store your payment information.</p>
+            <p><a href="https://policies.google.com/privacy" target="_blank">https://policies.google.com/privacy</a></p>
+        </div>
+        <div class="info-box">
+            <p><strong>RevenueCat, Inc.</strong> — United States</p>
+            <p>Purpose: Purchase management and synchronization. Data shared: email, subscription status, expiration dates.</p>
+            <p><a href="https://www.revenuecat.com/privacy" target="_blank">https://www.revenuecat.com/privacy</a></p>
+        </div>
+        <div class="info-box">
+            <p><strong>Google AdMob</strong> — United States</p>
+            <p>Purpose: Displaying advertisements for free users.</p>
+            <p><a href="https://policies.google.com/privacy" target="_blank">https://policies.google.com/privacy</a></p>
+        </div>
+        <h3>8.2 International transfers</h3>
+        <p>Transfers to the United States are governed by standard contractual clauses from the European Commission and the Data Privacy Framework (DPF).</p>
+        <h3>8.3 Legal obligations</h3>
+        <p>We may be required to disclose your data if required by law (court order, competent authorities).</p>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">9</span>Cookies and Tracking Technologies</h2>
+        <h4>Strictly necessary storage</h4>
+        <ul>
+            <li><strong>localStorage:</strong> Saving your preferences (client-side only)</li>
+            <li><strong>User session:</strong> Authentication for Premium users</li>
+        </ul>
+        <h4>Advertising cookies (free users)</h4>
+        <ul>
+            <li><strong>Google AdMob:</strong> Ad display and personalization</li>
+            <li><strong>Mobile advertising ID (IDFA/AAID):</strong> Anonymized ad tracking</li>
+        </ul>
+        <h4>Purchase management technologies</h4>
+        <ul>
+            <li><strong>RevenueCat SDK:</strong> Purchase management and Premium status synchronization</li>
+            <li><strong>Google Play Billing:</strong> In-app payment processing</li>
+        </ul>
+        <h3>Disabling advertising cookies</h3>
+        <ul>
+            <li><strong>Android:</strong> Settings → Google → Ads → Opt out of Ads Personalization</li>
+            <li><strong>iOS:</strong> Settings → Privacy → Tracking → Disable "Allow Tracking"</li>
+            <li><strong>Permanent solution:</strong> Subscribe to the ad-free Premium version</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">10</span>Your Rights (GDPR)</h2>
+        <p>Under the General Data Protection Regulation (GDPR), you have the following rights:</p>
+        <ul>
+            <li><strong>Right of access:</strong> Request access to all your personal data</li>
+            <li><strong>Right to rectification:</strong> Request correction of inaccurate data</li>
+            <li><strong>Right to erasure:</strong> Request deletion of your data ("right to be forgotten")</li>
+            <li><strong>Right to restriction:</strong> Request limitation of processing in certain circumstances</li>
+            <li><strong>Right to object:</strong> Object to processing (personalized ads, analytics)</li>
+            <li><strong>Right to portability:</strong> Receive your data in a machine-readable format</li>
+        </ul>
+        <h3>How to exercise your rights</h3>
+        <div class="info-box">
+            <p><strong>Email:</strong> <a href="mailto:cartomystik@gmail.com">cartomystik@gmail.com</a></p>
+            <p>Response time: <strong>1 month maximum</strong>. Proof of identity may be required.</p>
+        </div>
+        <h3>Right to lodge a complaint</h3>
+        <div class="info-box">
+            <p><strong>CNIL — Commission Nationale de l'Informatique et des Libertés</strong></p>
+            <p>3 Place de Fontenoy, TSA 80715, 75334 Paris Cedex 07, France</p>
+            <p>Phone: +33 1 53 73 22 22 — <a href="https://www.cnil.fr" target="_blank">https://www.cnil.fr</a></p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">11</span>Data Security</h2>
+        <h3>11.1 Technical measures</h3>
+        <ul>
+            <li><strong>Secure local storage:</strong> Your personal data remains on your device</li>
+            <li><strong>Secure payments:</strong> No banking data stored by us</li>
+            <li><strong>Encrypted communications:</strong> All communications with our services are secured</li>
+        </ul>
+        <h3>11.2 Breach notification</h3>
+        <p>In the event of a data breach likely to create a high risk to your rights and freedoms, we will notify you within <strong>72 hours</strong> of discovering the incident, in accordance with GDPR.</p>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">12</span>Policy Updates</h2>
+        <p>We reserve the right to modify this privacy policy at any time to comply with evolving legislation, reflect changes in our practices, or improve clarity.</p>
+        <div class="info-box">
+            <p>In the event of a substantial change, you will be notified via an in-app notification.</p>
+            <p>Last modified: <strong>February 2026</strong></p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2><span class="num">13</span>Contact</h2>
+        <div class="info-box">
+            <p><strong>Email:</strong> <a href="mailto:cartomystik@gmail.com">cartomystik@gmail.com</a></p>
+            <p>Response time: maximum 1 month.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p class="footer-logo">✨ Positive Affirmations</p>
+        <p>Privacy Policy — Kc Dev — February 2026</p>
+        <p>Compliant with GDPR (EU Regulation 2016/679)</p>
+    </footer>
+</div>
+</body>
+</html>

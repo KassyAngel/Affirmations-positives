@@ -14,10 +14,10 @@ export type ThemeId =
   | 'minimaliste-1'
   | 'minimaliste-2'
   | 'minimaliste-3'
+  | 'minimaliste-5'
   | 'minimaliste-6'
   | 'minimaliste-7'
   | 'minimaliste-8'
-  | 'minimalite-5'
   | 'motivation-levedusoleil'
   | 'nature'
   | 'plage'
@@ -25,7 +25,11 @@ export type ThemeId =
   | 'sunset'
   | 'zen'
   | 'zen-cascade'
-  | 'zen-montagnes';
+  | 'zen-cascademinimaliste'
+  | 'zen-jardinjaponais'
+  | 'zen-montagnebrume'
+  | 'zen-montagnes'
+  | 'zen-vague';
 
 export interface ThemeConfig {
   id: ThemeId;
@@ -194,6 +198,22 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     accentClass: 'text-neutral-600',
     progressClass: 'from-neutral-400 to-stone-400',
   },
+  // ✅ CORRIGÉ : était 'minimalite-5' (faute de frappe), maintenant 'minimaliste-5'
+  'minimaliste-5': {
+    id: 'minimaliste-5',
+    label: { fr: 'Minimaliste 5', en: 'Minimal 5' },
+    imagePath: getImagePath('minimaliste-5.webp'),
+    bgClass: 'bg-gradient-to-br from-gray-100 via-slate-100 to-zinc-100',
+    textClass: 'text-gray-900',
+    textMutedClass: 'text-gray-700',
+    cardClass: 'bg-white/90 border-gray-300',
+    borderClass: 'border-gray-300',
+    buttonClass: 'bg-gray-800 text-gray-50 hover:bg-gray-700',
+    subtleTextClass: 'text-gray-500 hover:text-gray-700',
+    inputClass: 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-500',
+    accentClass: 'text-gray-700',
+    progressClass: 'from-gray-500 to-slate-500',
+  },
   'minimaliste-6': {
     id: 'minimaliste-6',
     label: { fr: 'Minimaliste 6', en: 'Minimal 6' },
@@ -238,21 +258,6 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     inputClass: 'bg-white border-stone-200 text-stone-900 placeholder:text-stone-400',
     accentClass: 'text-stone-600',
     progressClass: 'from-stone-400 to-neutral-400',
-  },
-  'minimalite-5': {
-    id: 'minimalite-5',
-    label: { fr: 'Minimaliste 5', en: 'Minimal 5' },
-    imagePath: getImagePath('minimalite-5.webp'),
-    bgClass: 'bg-gradient-to-br from-gray-100 via-slate-100 to-zinc-100',
-    textClass: 'text-gray-900',
-    textMutedClass: 'text-gray-700',
-    cardClass: 'bg-white/90 border-gray-300',
-    borderClass: 'border-gray-300',
-    buttonClass: 'bg-gray-800 text-gray-50 hover:bg-gray-700',
-    subtleTextClass: 'text-gray-500 hover:text-gray-700',
-    inputClass: 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-500',
-    accentClass: 'text-gray-700',
-    progressClass: 'from-gray-500 to-slate-500',
   },
   'motivation-levedusoleil': {
     id: 'motivation-levedusoleil',
@@ -359,6 +364,54 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     accentClass: 'text-cyan-400',
     progressClass: 'from-cyan-400 to-teal-400',
   },
+  // ✅ NOUVEAU
+  'zen-cascademinimaliste': {
+    id: 'zen-cascademinimaliste',
+    label: { fr: 'Cascade minimaliste', en: 'Minimal waterfall' },
+    imagePath: getImagePath('zen-cascademinimaliste.webp'),
+    bgClass: 'bg-gradient-to-br from-slate-100 via-teal-50 to-cyan-100',
+    textClass: 'text-slate-900',
+    textMutedClass: 'text-slate-600',
+    cardClass: 'bg-white/80 border-slate-200',
+    borderClass: 'border-slate-200',
+    buttonClass: 'bg-slate-700 text-slate-50 hover:bg-slate-600',
+    subtleTextClass: 'text-slate-400 hover:text-slate-600',
+    inputClass: 'bg-white border-slate-200 text-slate-900 placeholder:text-slate-400',
+    accentClass: 'text-teal-600',
+    progressClass: 'from-teal-400 to-cyan-400',
+  },
+  // ✅ NOUVEAU
+  'zen-jardinjaponais': {
+    id: 'zen-jardinjaponais',
+    label: { fr: 'Jardin japonais zen', en: 'Zen japanese garden' },
+    imagePath: getImagePath('zen-jardinjaponais.webp'),
+    bgClass: 'bg-gradient-to-br from-green-900 via-emerald-800 to-stone-900',
+    textClass: 'text-white',
+    textMutedClass: 'text-green-100/80',
+    cardClass: 'bg-white/10 border-green-400/20',
+    borderClass: 'border-green-400/30',
+    buttonClass: 'bg-green-400 text-green-950 hover:bg-green-300',
+    subtleTextClass: 'text-green-200/60 hover:text-green-100',
+    inputClass: 'bg-white/10 border-green-400/30 text-white placeholder:text-green-200/40',
+    accentClass: 'text-green-400',
+    progressClass: 'from-green-400 to-emerald-400',
+  },
+  // ✅ NOUVEAU
+  'zen-montagnebrume': {
+    id: 'zen-montagnebrume',
+    label: { fr: 'Montagne brumeuse', en: 'Misty mountain' },
+    imagePath: getImagePath('zen-montagnebrume.webp'),
+    bgClass: 'bg-gradient-to-br from-slate-600 via-gray-500 to-stone-600',
+    textClass: 'text-white',
+    textMutedClass: 'text-slate-200/80',
+    cardClass: 'bg-white/10 border-slate-300/20',
+    borderClass: 'border-slate-300/30',
+    buttonClass: 'bg-slate-200 text-slate-900 hover:bg-slate-100',
+    subtleTextClass: 'text-slate-300/60 hover:text-slate-200',
+    inputClass: 'bg-white/10 border-slate-300/30 text-white placeholder:text-slate-300/40',
+    accentClass: 'text-slate-300',
+    progressClass: 'from-slate-400 to-gray-400',
+  },
   'zen-montagnes': {
     id: 'zen-montagnes',
     label: { fr: 'Montagnes zen', en: 'Zen mountains' },
@@ -373,6 +426,22 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     inputClass: 'bg-white/10 border-indigo-400/30 text-white placeholder:text-indigo-200/40',
     accentClass: 'text-indigo-400',
     progressClass: 'from-indigo-400 to-blue-400',
+  },
+  // ✅ NOUVEAU
+  'zen-vague': {
+    id: 'zen-vague',
+    label: { fr: 'Vague zen', en: 'Zen wave' },
+    imagePath: getImagePath('zen-vague.webp'),
+    bgClass: 'bg-gradient-to-br from-blue-900 via-cyan-800 to-teal-900',
+    textClass: 'text-white',
+    textMutedClass: 'text-blue-100/80',
+    cardClass: 'bg-white/10 border-blue-400/20',
+    borderClass: 'border-blue-400/30',
+    buttonClass: 'bg-blue-300 text-blue-950 hover:bg-blue-200',
+    subtleTextClass: 'text-blue-200/60 hover:text-blue-100',
+    inputClass: 'bg-white/10 border-blue-400/30 text-white placeholder:text-blue-200/40',
+    accentClass: 'text-cyan-400',
+    progressClass: 'from-blue-400 to-cyan-400',
   },
 };
 

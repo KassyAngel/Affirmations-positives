@@ -106,7 +106,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
@@ -115,11 +115,11 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
           exit={{ opacity: 0, y: 100, scale: 0.9 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-md mx-4 rounded-t-3xl sm:rounded-3xl overflow-hidden"
+          className="relative w-full max-w-md mx-4 rounded-t-3xl sm:rounded-3xl overflow-hidden z-[201]"
           style={{
             background: theme.bgClass === 'bg-black' 
               ? 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1e 100%)'
-              : 'linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%)',
+              : 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)', // ✅ Fond sombre pour TOUS les thèmes
             maxHeight: '90vh',
           }}
         >
@@ -150,10 +150,10 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
                 <Sparkles className="w-10 h-10 text-white" />
               </motion.div>
 
-              <h2 className="text-2xl font-bold mb-2" style={{ color: theme.textClass === 'text-white' ? '#fff' : '#000' }}>
+              <h2 className="text-2xl font-bold mb-2 text-white">
                 {message.title}
               </h2>
-              <p className="text-sm" style={{ color: theme.textClass === 'text-white' ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)' }}>
+              <p className="text-sm text-slate-300">
                 {message.subtitle}
               </p>
             </div>
@@ -168,9 +168,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
                   transition={{ delay: 0.1 * index }}
                   className="flex items-start gap-3 p-3 rounded-xl"
                   style={{
-                    background: theme.bgClass === 'bg-black' 
-                      ? 'rgba(255,255,255,0.05)'
-                      : 'rgba(0,0,0,0.03)',
+                    background: 'rgba(255,255,255,0.05)', // ✅ Fond sombre semi-transparent
                   }}
                 >
                   <div 
@@ -180,10 +178,10 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
                     <feature.icon className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold" style={{ color: theme.textClass === 'text-white' ? '#fff' : '#000' }}>
+                    <p className="text-sm font-semibold text-white">
                       {feature.title}
                     </p>
-                    <p className="text-xs" style={{ color: theme.textClass === 'text-white' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>
+                    <p className="text-xs text-slate-400">
                       {feature.description}
                     </p>
                   </div>
@@ -194,7 +192,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
 
             {/* Plans */}
             <div className="px-6 pb-6 space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-center mb-4" style={{ color: theme.textClass === 'text-white' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wider text-center mb-4 text-slate-400">
                 {isFr ? 'Choisissez votre plan' : 'Choose your plan'}
               </p>
 
@@ -208,9 +206,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
                   style={{
                     background: selectedPlan === plan.id
                       ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.15) 100%)'
-                      : theme.bgClass === 'bg-black'
-                      ? 'rgba(255,255,255,0.05)'
-                      : 'rgba(0,0,0,0.03)',
+                      : 'rgba(255,255,255,0.05)', // ✅ Fond sombre pour tous
                     border: selectedPlan === plan.id
                       ? '2px solid #fbbf24'
                       : '2px solid transparent',
@@ -227,10 +223,10 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
 
                   <div className="flex items-center justify-between">
                     <div className="flex-1 text-left">
-                      <p className="text-base font-bold" style={{ color: theme.textClass === 'text-white' ? '#fff' : '#000' }}>
+                      <p className="text-base font-bold text-white">
                         {plan.name}
                       </p>
-                      <p className="text-xs" style={{ color: theme.textClass === 'text-white' ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>
+                      <p className="text-xs text-slate-400">
                         {plan.price} {plan.period}
                       </p>
                       {plan.savings && (
@@ -270,7 +266,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
                 <span>{isFr ? '✨ Débloquer Premium' : '✨ Unlock Premium'}</span>
               </motion.button>
 
-              <p className="text-center text-xs mt-3" style={{ color: theme.textClass === 'text-white' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)' }}>
+              <p className="text-center text-xs mt-3 text-slate-400">
                 {isFr ? '7 jours gratuits sur l\'abonnement annuel' : '7 days free on yearly subscription'}
               </p>
             </div>

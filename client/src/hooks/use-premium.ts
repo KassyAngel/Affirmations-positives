@@ -24,7 +24,7 @@ interface PremiumState {
   isPremium: () => boolean;
 }
 
-const DAILY_QUOTE_LIMIT_FREE = 3;
+const DAILY_QUOTE_LIMIT_FREE = 6;
 
 export const usePremium = create<PremiumState>()(
   persist(
