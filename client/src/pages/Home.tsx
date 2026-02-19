@@ -146,7 +146,9 @@ export default function Home() {
         <ReleaseJournal isOpen={showReleaseJournal} onClose={() => setShowReleaseJournal(false)} />
         <EmergencyMode isOpen={showEmergency} onClose={() => setShowEmergency(false)} />
         <FloatingJournalButton onClick={() => setShowReleaseJournal(true)} />
-        <DevResetButton />
+        <div className="hidden">
+          <DevResetButton />
+        </div>
         <NotificationBanner />
 
         {/* ── Header ── */}
