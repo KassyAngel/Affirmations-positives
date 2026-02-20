@@ -148,7 +148,7 @@ export default function Home() {
         <FloatingJournalButton onClick={() => setShowReleaseJournal(true)} />
         <div className="hidden">
           <DevResetButton />
-        </div>
+           </div>
         <NotificationBanner />
 
         {/* ── Header ── */}

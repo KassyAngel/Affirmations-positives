@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fichier : android/app/src/main/res/layout/widget_quote.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingTop="14dp"
+    android:paddingBottom="14dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:background="@drawable/widget_background"
+    android:gravity="center_vertical">
+
+    <!-- Titre : "✨ Message du jour" -->
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="✨ Message du jour"
+        android:textColor="#F43F5E"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.12"
+        android:textAllCaps="true"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Message inspirant -->
+    <TextView
+        android:id="@+id/widget_quote"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Vous êtes plus fort(e) que vous ne le pensez."
+        android:textColor="#881337"
+        android:textSize="13sp"
+        android:lineSpacingMultiplier="1.35"
+        android:maxLines="4"
+        android:ellipsize="end" />
+
+</LinearLayout>

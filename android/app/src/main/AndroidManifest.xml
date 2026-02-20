@@ -21,23 +21,42 @@
             </intent-filter>
         </activity>
 
-        <!-- ✅ Activité AdMob requise pour les interstitiels -->
+        <!-- ✅ AdMob -->
         <activity
             android:name="com.google.android.gms.ads.AdActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
             android:exported="false"
             android:theme="@android:style/Theme.Translucent" />
 
-        <!-- ✅ Ton AdMob App ID production -->
-        <!-- Pour les tests, remplace par : ca-app-pub-3940256099942544~3347511713 -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-5733508257471048~5974451487" />
-
-        <!-- Désactiver la collecte automatique des données utilisateur (RGPD) -->
         <meta-data
             android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
             android:value="true" />
+
+        <!-- ✅ Widget Android natif -->
+        <receiver
+            android:name=".QuoteWidget"
+            android:exported="true"
+            android:label="Affirmation du jour">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
+
+        <!-- ✅ Receiver pour relancer les notifs après reboot du téléphone -->
+        <receiver
+            android:name="com.capacitorjs.plugins.localnotifications.LocalNotificationRestoreReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -51,13 +70,22 @@
 
     </application>
 
-    <!-- Permissions existantes -->
+    <!-- Réseau -->
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <!-- ✅ Permissions AdMob requises -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <!-- Android 13+ : permission pub personnalisée (optionnel mais recommandé) -->
+    <!-- ✅ Notifications locales (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- ✅ Alarmes exactes — nécessaires pour que Capacitor LocalNotifications
+         planifie à l'heure exacte (9h, 10h30, etc.) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <!-- ✅ Replanifier après reboot -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- AdMob -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
 </manifest>
