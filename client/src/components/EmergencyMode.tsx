@@ -455,7 +455,7 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
                               <div className="flex items-center gap-2">
                                 <p className="text-sm font-semibold" style={{ color: R.text }}>{isFr ? fr : en}</p>
                                 {isLocked && (
-                                  <span className="text-lg leading-none">👑</span>
+                                  <span className="text-lg leading-none"></span>
                                 )}
                               </div>
                               <p className="text-xs truncate" style={{ color: R.dimText }}>{isFr ? desc_fr : desc_en}</p>

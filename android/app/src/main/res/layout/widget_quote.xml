@@ -11,13 +11,13 @@
     android:background="@drawable/widget_background"
     android:gravity="center_vertical">
 
-    <!-- Titre : "✨ Message du jour" -->
+    <!-- Titre -->
     <TextView
         android:id="@+id/widget_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="✨ Message du jour"
-        android:textColor="#F43F5E"
+        android:textColor="#A0845C"
         android:textSize="10sp"
         android:textStyle="bold"
         android:letterSpacing="0.12"
@@ -30,7 +30,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Vous êtes plus fort(e) que vous ne le pensez."
-        android:textColor="#881337"
+        android:textColor="#5C4A32"
         android:textSize="13sp"
         android:lineSpacingMultiplier="1.35"
         android:maxLines="4"

@@ -16,8 +16,34 @@ export function SettingsMenu() {
   const { themeId } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const isLightTheme = LIGHT_THEMES.includes(themeId);
-  const isFr = language === 'fr';
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // ── Positionnement intelligent : évite que le dropdown sorte de l'écran ──────
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({ right: 0 });
+
+  useEffect(() => {
+    if (!isOpen || !menuRef.current) return;
+
+    const rect = menuRef.current.getBoundingClientRect();
+    const dropdownWidth = 224; // w-56 = 14rem = 224px
+    const screenWidth = window.innerWidth;
+    const spaceOnRight = screenWidth - rect.right;
+    const spaceOnLeft = rect.left;
+
+    // Si pas assez de place à droite ET assez à gauche → aligner à gauche
+    if (spaceOnRight < dropdownWidth && spaceOnLeft >= dropdownWidth) {
+      setDropdownStyle({ left: 0 });
+    }
+    // Si pas de place ni à gauche ni à droite → centrer sur l'écran
+    else if (spaceOnRight < dropdownWidth && spaceOnLeft < dropdownWidth) {
+      const offset = rect.right - screenWidth + dropdownWidth + 8;
+      setDropdownStyle({ right: -Math.min(offset, rect.left - 8) });
+    }
+    // Par défaut : aligner à droite du bouton
+    else {
+      setDropdownStyle({ right: 0 });
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -29,6 +55,9 @@ export function SettingsMenu() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
+  const isLightTheme = LIGHT_THEMES.includes(themeId);
+  const isFr = language === 'fr';
+
   const legalLinks = isFr
     ? [
         { label: 'Mentions légales', href: '/mentions-legales-fr.html', icon: FileText },
@@ -39,13 +68,12 @@ export function SettingsMenu() {
         { label: 'Privacy Policy', href: '/politique-confidentialite-en.html', icon: Shield },
       ];
 
-  // Styles adaptatifs clair/sombre
   const btnStyle = isLightTheme
     ? { background: 'rgba(0,0,0,0.07)', border: '1.5px solid rgba(0,0,0,0.15)', backdropFilter: 'blur(8px)' }
     : { background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.25)', backdropFilter: 'blur(12px)' };
 
-  const dropdownStyle = {
-    background: isLightTheme ? 'rgba(255,255,255,0.94)' : 'rgba(18,18,28,0.90)',
+  const panelStyle = {
+    background: isLightTheme ? 'rgba(255,255,255,0.96)' : 'rgba(18,18,28,0.92)',
     border: isLightTheme ? '1px solid rgba(0,0,0,0.1)' : '1px solid rgba(255,255,255,0.12)',
     backdropFilter: 'blur(24px)',
     boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
@@ -73,10 +101,7 @@ export function SettingsMenu() {
           animate={{ rotate: isOpen ? 90 : 0 }}
           transition={{ duration: 0.25, ease: 'easeInOut' }}
         >
-          <Settings
-            className="w-4 h-4"
-            style={{ color: isLightTheme ? '#2D1B25' : 'white' }}
-          />
+          <Settings className="w-4 h-4" style={{ color: isLightTheme ? '#2D1B25' : 'white' }} />
         </motion.div>
       </motion.button>
 
@@ -84,15 +109,15 @@ export function SettingsMenu() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            ref={dropdownRef}
             initial={{ opacity: 0, y: -10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="absolute right-0 top-12 z-50 rounded-2xl overflow-hidden w-56"
-            style={dropdownStyle}
+            className="absolute top-12 z-50 rounded-2xl overflow-hidden w-56"
+            style={{ ...panelStyle, ...dropdownStyle }}
           >
-
-            {/* ── Section Langue ── */}
+            {/* ── Langue ── */}
             <div className="px-4 pt-3 pb-1">
               <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#E8547A' }}>
                 {isFr ? 'Langue' : 'Language'}
@@ -120,19 +145,16 @@ export function SettingsMenu() {
                     >
                       <span className="text-lg leading-none">{lang.flag}</span>
                       <span className="text-sm font-medium flex-1">{lang.name}</span>
-                      {isActive && (
-                        <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#E8547A' }} />
-                      )}
+                      {isActive && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#E8547A' }} />}
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* ── Divider ── */}
             <div className="mx-4 my-2" style={{ height: '1px', background: dividerColor }} />
 
-            {/* ── Section Légal ── */}
+            {/* ── Légal ── */}
             <div className="px-4 pb-1">
               <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: '#E8547A' }}>
                 {isFr ? 'Légal' : 'Legal'}
@@ -147,12 +169,8 @@ export function SettingsMenu() {
                     onClick={() => setIsOpen(false)}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
                     style={{ color: textColor, textDecoration: 'none' }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.background = hoverBg;
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.background = 'transparent';
-                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = hoverBg; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" style={{ color: '#E8547A' }} />
                     <span className="text-sm font-medium">{label}</span>
@@ -163,11 +181,8 @@ export function SettingsMenu() {
 
             {/* ── Footer ── */}
             <div className="px-4 py-2.5 mt-1" style={{ borderTop: `1px solid ${dividerColor}` }}>
-              <p className="text-xs text-center" style={{ color: subTextColor }}>
-                Kc Dev © 2026
-              </p>
+              <p className="text-xs text-center" style={{ color: subTextColor }}>Kc Dev © 2026</p>
             </div>
-
           </motion.div>
         )}
       </AnimatePresence>

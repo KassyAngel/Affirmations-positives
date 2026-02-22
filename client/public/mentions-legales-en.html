@@ -7,34 +7,62 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
     <style>
         :root {
-            --rose: #E8547A; --rose-light: #F2789A; --rose-pale: #FFB6C8;
-            --pink-mid: #FFD6E0; --text-dark: #2D1B25; --text-mid: #6B3D4E; --text-light: #A07080;
+            --rose: #E8547A;
+            --rose-light: #F2789A;
+            --rose-pale: #FFB6C8;
+            --pink-bg: #FFF0F3;
+            --pink-mid: #FFD6E0;
+            --text-dark: #2D1B25;
+            --text-mid: #6B3D4E;
+            --text-light: #A07080;
             --card-bg: rgba(255,255,255,0.78);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'DM Sans', sans-serif; font-weight: 300; line-height: 1.75;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 300;
+            line-height: 1.75;
             color: var(--text-dark);
             background: linear-gradient(160deg, #FFF0F3 0%, #FFE4EC 40%, #FFF5F7 100%);
-            min-height: 100vh; padding: 40px 20px 60px;
+            min-height: 100vh;
+            padding: 72px 20px 60px;
         }
+        /* ── Back button ── */
+        .back-btn {
+            position: fixed; top: 16px; left: 16px; z-index: 999;
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 18px;
+            background: rgba(255,255,255,0.92); border: none; border-radius: 50px;
+            color: #E8547A; font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem; font-weight: 500; cursor: pointer;
+            box-shadow: 0 4px 16px rgba(232,84,122,0.18);
+            backdrop-filter: blur(12px); transition: all 0.2s ease;
+        }
+        .back-btn:hover { background: #E8547A; color: white; transform: translateY(-1px); }
+        .back-btn svg { width:16px; height:16px; flex-shrink:0; transition:transform 0.2s; }
+        .back-btn:hover svg { transform: translateX(-3px); }
         .container { max-width: 860px; margin: 0 auto; }
         .header { text-align: center; margin-bottom: 50px; }
         .header::before {
-            content: ''; display: block; width: 60px; height: 4px;
+            content: '';
+            display: block;
+            width: 60px; height: 4px;
             background: linear-gradient(90deg, var(--rose), var(--rose-pale));
-            margin: 0 auto 24px; border-radius: 2px;
+            margin: 0 auto 24px;
+            border-radius: 2px;
         }
         .app-badge {
             display: inline-flex; align-items: center; gap: 8px;
             background: linear-gradient(135deg, var(--rose), var(--rose-light));
-            color: white; font-weight: 500; font-size: 0.8rem;
-            letter-spacing: 0.12em; text-transform: uppercase;
+            color: white;
+            font-family: 'DM Sans', sans-serif; font-weight: 500;
+            font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
             padding: 6px 16px; border-radius: 20px; margin-bottom: 18px;
         }
         h1 {
-            font-family: 'Playfair Display', serif; font-size: clamp(2rem, 5vw, 3rem);
-            font-weight: 700; color: var(--text-dark); line-height: 1.2; margin-bottom: 10px;
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3rem); font-weight: 700;
+            color: var(--text-dark); line-height: 1.2; margin-bottom: 10px;
         }
         h1 span {
             background: linear-gradient(135deg, var(--rose), var(--rose-light));
@@ -42,21 +70,24 @@
         }
         .date { color: var(--text-light); font-size: 0.85rem; margin-top: 8px; }
         .section {
-            background: var(--card-bg); backdrop-filter: blur(12px);
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
             border-radius: 20px; padding: 36px 40px; margin-bottom: 20px;
             border: 1px solid rgba(232, 84, 122, 0.12);
             box-shadow: 0 4px 24px rgba(232, 84, 122, 0.06);
         }
         h2 {
-            font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--rose);
-            margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--pink-mid);
+            font-family: 'Playfair Display', serif; font-size: 1.4rem;
+            color: var(--rose); margin-bottom: 18px;
+            padding-bottom: 12px; border-bottom: 1px solid var(--pink-mid);
             display: flex; align-items: center; gap: 10px;
         }
         h2 .num {
             display: inline-flex; align-items: center; justify-content: center;
             width: 28px; height: 28px;
             background: linear-gradient(135deg, var(--rose), var(--rose-light));
-            color: white; border-radius: 50%; font-size: 0.75rem; font-weight: 500; flex-shrink: 0;
+            color: white; border-radius: 50%;
+            font-size: 0.75rem; font-family: 'DM Sans', sans-serif; font-weight: 500; flex-shrink: 0;
         }
         h3 { font-weight: 500; color: var(--text-mid); font-size: 1rem; margin-top: 20px; margin-bottom: 10px; }
         p { margin-bottom: 14px; color: var(--text-dark); font-size: 0.95rem; }
@@ -72,7 +103,8 @@
         }
         .info-box p:last-child, .warning-box p:last-child, .success-box p:last-child { margin-bottom: 0; }
         .warning-box {
-            background: rgba(255,214,224,0.35); border: 1.5px solid var(--rose-pale);
+            background: rgba(255,214,224,0.35);
+            border: 1.5px solid var(--rose-pale);
             border-radius: 12px; padding: 18px 22px; margin: 16px 0;
         }
         .warning-box .wtitle { color: var(--rose); font-weight: 500; font-size: 0.9rem; margin-bottom: 10px; }
@@ -88,6 +120,12 @@
     </style>
 </head>
 <body>
+
+<button class="back-btn" onclick="if(window.history.length>1){window.history.back();}else{window.close();}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    ← Back
+</button>
+
 <div class="container">
     <div class="header">
         <div class="app-badge">✨ Positive Affirmations</div>
@@ -98,7 +136,7 @@
     <div class="section">
         <div class="success-box">
             <p class="stitle">ℹ️ Important Information</p>
-            <p>This section contains all information regarding the general terms and conditions that govern the relationship between you and us, the owners of this application. As a user, it is important that you read these terms before continuing to use the app.</p>
+            <p>In this section, you will find all information regarding the general terms and conditions that govern the relationship between you and us, the owners of this application. As a user, it is important that you read these terms before continuing to use the app.</p>
         </div>
     </div>
 
@@ -129,7 +167,7 @@
 
     <div class="section">
         <h2><span class="num">4</span>General Terms of Use</h2>
-        <p>These General Terms govern the use (including mere access) of the Positive Affirmations application, its content and the services offered. Any person accessing the application ("user") agrees to be bound by the current General Terms.</p>
+        <p>These General Terms govern the use (including mere access) of the Positive Affirmations application, its content and the services offered. Any person accessing the application agrees to be bound by the current General Terms.</p>
         <h3>4.1 Acceptance of Terms</h3>
         <p>Use of Positive Affirmations implies full and complete acceptance of this legal notice. If you do not accept these terms, you must not use this application.</p>
         <h3>4.2 Modification of Terms</h3>
@@ -138,7 +176,7 @@
 
     <div class="section">
         <h2><span class="num">5</span>Personal Data</h2>
-        <p>Personal data collected by the application is processed in accordance with applicable regulations, in particular the General Data Protection Regulation (GDPR). For more details, please read our <a href="#">Privacy Policy</a>.</p>
+        <p>Personal data collected by the application is processed in accordance with the GDPR. For more information, please consult our <a href="#">Privacy Policy</a>.</p>
     </div>
 
     <div class="section">
@@ -149,13 +187,13 @@
         <ul>
             <li>For illegal or harmful purposes</li>
             <li>To cause damage or interfere with normal operation</li>
-            <li>To reproduce, distribute or modify content without authorization</li>
+            <li>To reproduce, distribute or modify its content without authorization</li>
             <li>To infringe the rights of Kc Dev or third parties</li>
             <li>For unauthorized commercial or advertising purposes</li>
             <li>To extract or compile data in an automated manner</li>
         </ul>
         <h3>6.3 User Conduct</h3>
-        <p>The user agrees not to take any action that could harm Kc Dev's image or rights, damage or overload the application, prevent normal use, or introduce viruses or any other harmful elements.</p>
+        <p>The user agrees not to take any action that could harm Kc Dev's image, damage or overload the application, prevent normal use, or introduce viruses or any other harmful elements.</p>
     </div>
 
     <div class="section">
@@ -163,7 +201,7 @@
         <p>This application displays advertising content provided by <strong>Google AdMob</strong> for users of the free version.</p>
         <h3>7.1 Advertising Liability</h3>
         <div class="info-box">
-            <p>Kc Dev is not responsible for the accuracy of ads, the quality of advertised products or services, or contractual relationships between users and advertisers.</p>
+            <p>Kc Dev is not responsible for the accuracy of ads, the quality of advertised products, or contractual relationships between the user and advertisers.</p>
         </div>
         <h3>7.2 Google AdMob Policy</h3>
         <p><a href="https://policies.google.com/privacy" target="_blank">https://policies.google.com/privacy</a></p>
@@ -174,18 +212,19 @@
     <div class="section">
         <h2><span class="num">8</span>Security Measures</h2>
         <h3>8.1 Data Protection</h3>
-        <p>Personal data is stored locally on the user's device and is not transmitted to our servers, except for Premium subscription management.</p>
+        <p>Personal data is stored locally on the device and is not transmitted to our servers, except for Premium subscription management.</p>
         <h3>8.2 Security Limitations</h3>
         <div class="warning-box">
             <p class="wtitle">⚠️ Important Information</p>
-            <p>Users should be aware that internet security measures are not entirely reliable. Kc Dev cannot guarantee the complete absence of malware or other harmful elements, although we implement all necessary means to prevent them.</p>
+            <p>Users should be aware that internet security measures are not entirely reliable. Kc Dev cannot guarantee the complete absence of malware, although we implement all necessary means to prevent them.</p>
         </div>
     </div>
 
     <div class="section">
         <h2><span class="num">9</span>Intellectual Property</h2>
-        <p>All content in the Positive Affirmations application (texts, affirmations, images, icons, design, source code, algorithms) is the exclusive property of Kc Dev. Reproduction, distribution, modification, commercial use, or extraction of content is strictly prohibited without prior written authorization from Kc Dev.</p>
-        <p>Violations may result in civil and criminal liability under applicable law. Report infringements to: <a href="mailto:cartomystik@gmail.com">cartomystik@gmail.com</a></p>
+        <p>All content in the application (texts, affirmations, images, icons, design, source code, algorithms) is the exclusive property of Kc Dev. The following are expressly prohibited without prior written authorization: reproduction, distribution, modification, commercial use or extraction of content.</p>
+        <p>Any infringement constitutes a violation engaging civil and criminal liability in accordance with applicable intellectual property law.</p>
+        <p>Report infringements to: <a href="mailto:cartomystik@gmail.com">cartomystik@gmail.com</a></p>
     </div>
 
     <div class="section">
@@ -210,12 +249,12 @@
         <h3>11.2 Payment Method</h3>
         <div class="info-box">
             <p><strong>📱 Android Application</strong></p>
-            <p>Purchases are made via <strong>Google Play Billing</strong>, processed directly by Google Play Store under their terms.</p>
+            <p>Purchases are made via <strong>Google Play Billing</strong>, processed directly by Google Play Store under their terms and conditions.</p>
             <p><a href="https://policies.google.com/privacy" target="_blank">Google Play Privacy Policy</a></p>
         </div>
-        <h3>11.3 Purchase Management via RevenueCat</h3>
+        <h3>11.3 Management via RevenueCat</h3>
         <div class="info-box">
-            <p>We use <strong>RevenueCat</strong> to manage and synchronize your purchases. RevenueCat validates purchases with Google Play, synchronizes your Premium status across devices, and does not process any payments directly. Only your email is shared to identify your account.</p>
+            <p>We use <strong>RevenueCat</strong> to manage and synchronize your purchases. RevenueCat validates your purchases with Google Play, synchronizes your Premium status across devices, and does not process any payments directly. Only your email is shared to identify your account.</p>
             <p><a href="https://www.revenuecat.com/privacy" target="_blank">RevenueCat Privacy Policy</a></p>
         </div>
         <h3>11.4 Subscription Restoration</h3>
@@ -227,7 +266,7 @@
         </ol>
         <h3>11.5 Refund Policy</h3>
         <div class="info-box">
-            <p>Refunds are managed according to <strong>Google Play's refund policy</strong>: access your Google Play purchase history, select the Positive Affirmations purchase and follow the refund request procedure.</p>
+            <p>Refunds are managed according to <strong>Google Play's refund policy</strong>: access your Google Play purchase history, select the Positive Affirmations purchase and follow the procedure.</p>
             <p><a href="https://support.google.com/googleplay/answer/2479637" target="_blank">Google Play Support</a></p>
         </div>
         <h3>11.6 Payment Security</h3>
@@ -240,7 +279,7 @@
     </div>
 
     <div class="section">
-        <h2><span class="num">13</span>Dispute Resolution Platform</h2>
+        <h2><span class="num">13</span>Dispute Resolution</h2>
         <p>In accordance with EU Regulation No. 524/2013:</p>
         <div class="info-box">
             <p><strong>ODR Platform (Online Dispute Resolution)</strong></p>

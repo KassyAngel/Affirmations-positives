@@ -5,6 +5,7 @@ import { useUserState } from '@/hooks/use-user-state';
 import { usePremium } from '@/hooks/use-premium';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useDeviceType } from '@/hooks/use-device-type';
 import { QuoteCard } from '@/components/QuoteCard';
 import { MoodOverlay } from '@/components/MoodOverlay';
 import { Navigation } from '@/components/Navigation';
@@ -44,15 +45,11 @@ const CATEGORY_STYLES: Record<string, string> = {
 export default function Home() {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
+  const device = useDeviceType();
   const [location] = useLocation();
-  const {
-    state, logMood, updateStreak,
-    hasLoggedMoodToday, toggleFavorite, getTodaysMood,
-  } = useUserState();
-
+  const { state, logMood, updateStreak, hasLoggedMoodToday, toggleFavorite, getTodaysMood } = useUserState();
   const { isPremium, canViewQuote, incrementQuotesViewed, getRemainingQuotes } = usePremium();
   const [showPaywall, setShowPaywall] = useState(false);
-
   const [showMoodOverlay, setShowMoodOverlay] = useState(() => !hasLoggedMoodToday());
   const [showReleaseJournal, setShowReleaseJournal] = useState(false);
   const [showEmergency, setShowEmergency] = useState(false);
@@ -68,10 +65,7 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const categoryParam = params.get('category');
-    if (categoryParam) {
-      setActiveCategory(categoryParam);
-      setCurrentIndex(0);
-    }
+    if (categoryParam) { setActiveCategory(categoryParam); setCurrentIndex(0); }
   }, [location]);
 
   useEffect(() => { updateStreak(); }, []);
@@ -86,10 +80,7 @@ export default function Home() {
   };
 
   const handleNext = async () => {
-    if (!canViewQuote()) {
-      setShowPaywall(true);
-      return;
-    }
+    if (!canViewQuote()) { setShowPaywall(true); return; }
     if (!quotes) return;
     setCurrentIndex((prev) => (prev + 1) % quotes.length);
     incrementQuotesViewed();
@@ -101,9 +92,7 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${theme.imagePath})` }} />
         <div className={`absolute inset-0 ${theme.bgClass} opacity-10`} />
-        <div className="relative z-10">
-          <Loader2 className={`w-8 h-8 animate-spin ${theme.accentClass}`} />
-        </div>
+        <div className="relative z-10"><Loader2 className={`w-8 h-8 animate-spin ${theme.accentClass}`} /></div>
       </div>
     );
   }
@@ -115,9 +104,7 @@ export default function Home() {
         <div className={`absolute inset-0 ${theme.bgClass} opacity-10`} />
         <div className="relative z-10">
           <p className={`mb-4 drop-shadow-lg ${theme.textClass}`}>{t.home.error}</p>
-          <button onClick={() => refetch()} className={`px-4 py-2 rounded-lg transition-colors ${theme.buttonClass}`}>
-            {t.home.retry}
-          </button>
+          <button onClick={() => refetch()} className={`px-4 py-2 rounded-lg transition-colors ${theme.buttonClass}`}>{t.home.retry}</button>
         </div>
       </div>
     );
@@ -127,17 +114,12 @@ export default function Home() {
   const isFavorite = state.favorites.includes(currentQuote.id);
   const bgStyle = CATEGORY_STYLES[currentQuote.category] || CATEGORY_STYLES.default;
   const remaining = getRemainingQuotes();
-
-  const formattedDate = new Date().toLocaleDateString(t.home.dateFormat, {
-    weekday: 'long', day: 'numeric', month: 'long',
-  });
+  const formattedDate = new Date().toLocaleDateString(t.home.dateFormat, { weekday: 'long', day: 'numeric', month: 'long' });
+  const isTabletOrDesktop = device === 'tablet' || device === 'desktop';
 
   return (
-    <div className="min-h-screen pb-24 overflow-hidden relative transition-all duration-700">
-      <div
-        className="fixed inset-0 bg-cover bg-center transition-all duration-700"
-        style={{ backgroundImage: `url(${theme.imagePath})` }}
-      />
+    <div className="min-h-screen pb-20 overflow-hidden relative transition-all duration-700">
+      <div className="fixed inset-0 bg-cover bg-center transition-all duration-700" style={{ backgroundImage: `url(${theme.imagePath})` }} />
       <div className={`fixed inset-0 ${theme.bgClass} opacity-10 transition-all duration-700`} />
 
       <MoodOverlay isOpen={showMoodOverlay} onSelectMood={handleMoodSelect} />
@@ -146,67 +128,31 @@ export default function Home() {
         <ReleaseJournal isOpen={showReleaseJournal} onClose={() => setShowReleaseJournal(false)} />
         <EmergencyMode isOpen={showEmergency} onClose={() => setShowEmergency(false)} />
         <FloatingJournalButton onClick={() => setShowReleaseJournal(true)} />
-        <div className="hidden">
-          <DevResetButton />
-           </div>
+        <div className="hidden"><DevResetButton /></div>
         <NotificationBanner />
 
         {/* ── Header ── */}
         <header className="px-6 py-6 flex justify-between items-center">
-          {/* Titre + date */}
           <div>
-            <p className={`text-sm font-medium uppercase tracking-widest drop-shadow-lg ${theme.textClass}`}>
-              {formattedDate}
-            </p>
-            <h1 className={`text-2xl font-display font-bold drop-shadow-lg ${theme.textClass}`}>
-              {t.home.quoteOfTheDay}
-            </h1>
+            <p className={`text-sm font-medium uppercase tracking-widest drop-shadow-lg ${theme.textClass}`}>{formattedDate}</p>
+            <h1 className={`text-2xl font-display font-bold drop-shadow-lg ${theme.textClass}`}>{t.home.quoteOfTheDay}</h1>
           </div>
-
-          {/* Actions droite : langue · thème · badge premium/compteur · streak */}
           <div className="flex items-center gap-2">
             <SettingsMenu />
             <ThemeSelector />
-             
-
-            {/* ── Badge premium OU compteur gratuit (fusionnés) ── */}
             {isPremium() ? (
-              // Premium : petite étoile dorée discrète
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center shadow-md"
-                style={{
-                  background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                  boxShadow: '0 2px 8px rgba(251,191,36,0.35)',
-                }}
-              >
+              <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-md"
+                style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 2px 8px rgba(251,191,36,0.35)' }}>
                 <Sparkles className="w-4 h-4 text-white" />
               </div>
             ) : (
-              // Gratuit : badge ✨ + compteur citations du jour, cliquable → paywall
-              <motion.button
-                onClick={() => setShowPaywall(true)}
-                whileHover={{ scale: 1.06 }}
-                whileTap={{ scale: 0.94 }}
+              <motion.button onClick={() => setShowPaywall(true)} whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full backdrop-blur-md"
-                style={{
-                  background: 'rgba(251,191,36,0.15)',
-                  border: '1.5px solid rgba(251,191,36,0.5)',
-                }}
-                // Tooltip explicatif au survol
-                title={
-                  language === 'fr'
-                    ? `Citations gratuites du jour : ${remaining}/6`
-                    : `Free quotes today: ${remaining}/6`
-                }
-              >
+                style={{ background: 'rgba(251,191,36,0.15)', border: '1.5px solid rgba(251,191,36,0.5)' }}>
                 <Sparkles className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#fbbf24' }} />
-                <span className="text-xs font-bold tabular-nums leading-none" style={{ color: '#fbbf24' }}>
-                  {remaining}/6
-                </span>
+                <span className="text-xs font-bold tabular-nums leading-none" style={{ color: '#fbbf24' }}>{remaining}/6</span>
               </motion.button>
             )}
-
-            {/* Streak */}
             <div className={`border rounded-full px-2.5 py-1 flex items-center gap-1 backdrop-blur-md ${theme.cardClass}`}>
               <span className="text-amber-500 text-sm">🔥</span>
               <span className={`font-bold text-sm ${theme.textClass}`}>{state.streak}</span>
@@ -214,80 +160,98 @@ export default function Home() {
           </div>
         </header>
 
-        {/* ── Contenu principal ── */}
-        <main className="px-4 mt-4 flex flex-col items-center gap-8">
-          <QuoteCard
-            key={currentQuote.id}
-            quote={currentQuote}
-            isFavorite={isFavorite}
-            onToggleFavorite={() => toggleFavorite(currentQuote.id)}
-            categoryColors={bgStyle}
-          />
-
-          <button
-            onClick={handleNext}
-            className={`flex items-center gap-2 px-6 py-3 rounded-full border transition-all active:scale-95 shadow-lg backdrop-blur-md ${theme.cardClass} ${theme.textClass}`}
-          >
-            <RefreshCcw className="w-4 h-4" />
-            <span>{t.home.newQuote}</span>
-          </button>
-
-          {/* Bouton urgence émotionnelle */}
-          <motion.button
-            onClick={() => setShowEmergency(true)}
-            whileHover={{ scale: 1.05, y: -3 }}
-            whileTap={{ scale: 0.95 }}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6, type: 'spring' }}
-            className="relative flex items-center justify-center gap-3 px-7 py-4 rounded-2xl backdrop-blur-lg transition-all shadow-2xl overflow-hidden"
-            style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)',
-              border: '2px solid rgba(255,255,255,0.25)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2)',
-            }}
-          >
-            <motion.div
-              className="absolute inset-0 rounded-2xl opacity-0"
-              animate={{ opacity: [0, 0.15, 0] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ background: 'radial-gradient(circle at center, rgba(239,68,68,0.4), transparent 70%)' }}
+        {/* ══════════════════════════════════════════════════════
+            📱 MOBILE : layout colonne, compact, comme avant
+            ══════════════════════════════════════════════════════ */}
+        {!isTabletOrDesktop && (
+          <main className="px-4 mt-4 flex flex-col items-center gap-8">
+            <QuoteCard
+              key={currentQuote.id}
+              quote={currentQuote}
+              isFavorite={isFavorite}
+              onToggleFavorite={() => toggleFavorite(currentQuote.id)}
+              categoryColors={bgStyle}
             />
-            <span className="relative flex h-3.5 w-3.5 flex-shrink-0 z-10">
-              <motion.span
-                animate={{ scale: [1, 2.2, 1], opacity: [1, 0, 1] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute inline-flex h-full w-full rounded-full"
-                style={{ backgroundColor: 'rgba(239,68,68,0.6)' }}
+            <button onClick={handleNext}
+              className={`flex items-center gap-2 px-6 py-3 rounded-full border transition-all active:scale-95 shadow-lg backdrop-blur-md ${theme.cardClass} ${theme.textClass}`}>
+              <RefreshCcw className="w-4 h-4" />
+              <span>{t.home.newQuote}</span>
+            </button>
+            <EmergencyButton language={language} theme={theme} onPress={() => setShowEmergency(true)} />
+          </main>
+        )}
+
+        {/* ══════════════════════════════════════════════════════
+            📟 TABLETTE/DESKTOP : layout centré, carte + boutons côte à côte
+            ══════════════════════════════════════════════════════ */}
+        {isTabletOrDesktop && (
+          <main className="px-8 mt-6 flex items-center justify-center gap-10 min-h-[calc(100vh-180px)]">
+            {/* Carte — occupe tout l'espace disponible */}
+            <div className="flex items-center justify-center">
+              <QuoteCard
+                key={currentQuote.id}
+                quote={currentQuote}
+                isFavorite={isFavorite}
+                onToggleFavorite={() => toggleFavorite(currentQuote.id)}
+                categoryColors={bgStyle}
               />
-              <span
-                className="relative inline-flex rounded-full h-3.5 w-3.5"
-                style={{ backgroundColor: '#ef4444', boxShadow: '0 0 8px rgba(239,68,68,0.5)' }}
-              />
-            </span>
-            <span className={`text-base font-bold tracking-wide z-10 ${theme.textClass}`}>
-              {language === 'fr' ? "J'ai besoin d'aide" : 'I need help'}
-            </span>
-            <motion.span
-              animate={{ rotate: [0, 12, -12, 0] }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-              className="text-2xl leading-none z-10"
-              style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
-            >
-              🆘
-            </motion.span>
-          </motion.button>
-        </main>
+            </div>
+            {/* Boutons empilés à droite */}
+            <div className="flex flex-col items-start gap-4 shrink-0">
+              <button onClick={handleNext}
+                className={`flex items-center gap-2 px-6 py-3 rounded-full border transition-all active:scale-95 shadow-lg backdrop-blur-md ${theme.cardClass} ${theme.textClass}`}>
+                <RefreshCcw className="w-4 h-4" />
+                <span>{t.home.newQuote}</span>
+              </button>
+              <EmergencyButton language={language} theme={theme} onPress={() => setShowEmergency(true)} />
+            </div>
+          </main>
+        )}
 
         <Navigation />
       </div>
 
-      {/* Premium Paywall */}
-      <PremiumPaywall
-        isOpen={showPaywall}
-        onClose={() => setShowPaywall(false)}
-        trigger="quote_limit"
-      />
+      <PremiumPaywall isOpen={showPaywall} onClose={() => setShowPaywall(false)} trigger="quote_limit" />
     </div>
+  );
+}
+
+// ── Bouton urgence extrait pour ne pas dupliquer ─────────────────────────────
+function EmergencyButton({ language, theme, onPress }: { language: string; theme: any; onPress: () => void }) {
+  return (
+    <motion.button
+      onClick={onPress}
+      whileHover={{ scale: 1.05, y: -3 }}
+      whileTap={{ scale: 0.95 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4, duration: 0.6, type: 'spring' }}
+      className="relative flex items-center justify-center gap-3 px-7 py-4 rounded-2xl backdrop-blur-lg transition-all shadow-2xl overflow-hidden"
+      style={{
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)',
+        border: '2px solid rgba(255,255,255,0.25)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2)',
+      }}
+    >
+      <motion.div className="absolute inset-0 rounded-2xl opacity-0"
+        animate={{ opacity: [0, 0.15, 0] }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ background: 'radial-gradient(circle at center, rgba(239,68,68,0.4), transparent 70%)' }}
+      />
+      <span className="relative flex h-3.5 w-3.5 flex-shrink-0 z-10">
+        <motion.span animate={{ scale: [1, 2.2, 1], opacity: [1, 0, 1] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute inline-flex h-full w-full rounded-full"
+          style={{ backgroundColor: 'rgba(239,68,68,0.6)' }} />
+        <span className="relative inline-flex rounded-full h-3.5 w-3.5"
+          style={{ backgroundColor: '#ef4444', boxShadow: '0 0 8px rgba(239,68,68,0.5)' }} />
+      </span>
+      <span className={`text-base font-bold tracking-wide z-10 ${theme.textClass}`}>
+        {language === 'fr' ? "J'ai besoin d'aide" : 'I need help'}
+      </span>
+      <motion.span animate={{ rotate: [0, 12, -12, 0] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+        className="text-2xl leading-none z-10">🆘</motion.span>
+    </motion.button>
   );
 }
