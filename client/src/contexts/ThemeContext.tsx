@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-// ✅ BON CHEMIN : /themes/webp/mobile/ (et non /themes/mobile/webp/)
 const getImagePath = (filename: string) => `/themes/webp/mobile/${filename}`;
 
 export type ThemeId =
@@ -29,7 +28,20 @@ export type ThemeId =
   | 'zen-jardinjaponais'
   | 'zen-montagnebrume'
   | 'zen-montagnes'
-  | 'zen-vague';
+  | 'champs-de-fleurs'
+  | 'plage-1'
+  | 'lac-montagne'
+  | 'montagne-1'
+  | 'montagne-2'
+  | 'montagne-3'
+  | 'montagne-4'
+  | 'fleur-1'
+  | 'abstrait-1'
+  | 'mer-1'
+  | 'pink-1'
+  | 'montagne-5'
+  | 'zen-vague'
+  ;
 
 export interface ThemeConfig {
   id: ThemeId;
@@ -48,6 +60,9 @@ export interface ThemeConfig {
 }
 
 export const THEMES: Record<ThemeId, ThemeConfig> = {
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // THÈMES EXISTANTS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   afrique: {
     id: 'afrique',
     label: { fr: 'Afrique', en: 'Africa' },
@@ -198,7 +213,6 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     accentClass: 'text-neutral-600',
     progressClass: 'from-neutral-400 to-stone-400',
   },
-  // ✅ CORRIGÉ : était 'minimalite-5' (faute de frappe), maintenant 'minimaliste-5'
   'minimaliste-5': {
     id: 'minimaliste-5',
     label: { fr: 'Minimaliste 5', en: 'Minimal 5' },
@@ -364,7 +378,6 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     accentClass: 'text-cyan-400',
     progressClass: 'from-cyan-400 to-teal-400',
   },
-  // ✅ NOUVEAU
   'zen-cascademinimaliste': {
     id: 'zen-cascademinimaliste',
     label: { fr: 'Cascade minimaliste', en: 'Minimal waterfall' },
@@ -380,7 +393,6 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     accentClass: 'text-teal-600',
     progressClass: 'from-teal-400 to-cyan-400',
   },
-  // ✅ NOUVEAU
   'zen-jardinjaponais': {
     id: 'zen-jardinjaponais',
     label: { fr: 'Jardin japonais zen', en: 'Zen japanese garden' },
@@ -396,7 +408,6 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     accentClass: 'text-green-400',
     progressClass: 'from-green-400 to-emerald-400',
   },
-  // ✅ NOUVEAU
   'zen-montagnebrume': {
     id: 'zen-montagnebrume',
     label: { fr: 'Montagne brumeuse', en: 'Misty mountain' },
@@ -427,7 +438,6 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     accentClass: 'text-indigo-400',
     progressClass: 'from-indigo-400 to-blue-400',
   },
-  // ✅ NOUVEAU
   'zen-vague': {
     id: 'zen-vague',
     label: { fr: 'Vague zen', en: 'Zen wave' },
@@ -442,6 +452,202 @@ export const THEMES: Record<ThemeId, ThemeConfig> = {
     inputClass: 'bg-white/10 border-blue-400/30 text-white placeholder:text-blue-200/40',
     accentClass: 'text-cyan-400',
     progressClass: 'from-blue-400 to-cyan-400',
+  },
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // ✅ NOUVEAUX THÈMES
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  'champs-de-fleurs': {
+    id: 'champs-de-fleurs',
+    label: { fr: 'Champs de fleurs', en: 'Flower fields' },
+    imagePath: getImagePath('champs-de-fleurs.webp'),
+    bgClass: 'bg-gradient-to-br from-violet-400 via-purple-300 to-pink-400',
+    textClass: 'text-white',
+    textMutedClass: 'text-violet-100/80',
+    cardClass: 'bg-white/15 border-violet-300/25',
+    borderClass: 'border-violet-300/30',
+    buttonClass: 'bg-white/90 text-violet-800 hover:bg-white',
+    subtleTextClass: 'text-violet-100/60 hover:text-violet-100',
+    inputClass: 'bg-white/15 border-violet-300/30 text-white placeholder:text-violet-200/50',
+    accentClass: 'text-pink-200',
+    progressClass: 'from-pink-300 to-violet-400',
+  },
+
+  'plage-1': {
+    id: 'plage-1',
+    label: { fr: 'Plage tropicale', en: 'Tropical beach' },
+    imagePath: getImagePath('plage-1.webp'),
+    bgClass: 'bg-gradient-to-br from-sky-500 via-cyan-400 to-teal-500',
+    textClass: 'text-white',
+    textMutedClass: 'text-sky-100/80',
+    cardClass: 'bg-white/15 border-sky-300/25',
+    borderClass: 'border-sky-300/30',
+    buttonClass: 'bg-white/90 text-sky-800 hover:bg-white',
+    subtleTextClass: 'text-sky-100/60 hover:text-sky-100',
+    inputClass: 'bg-white/15 border-sky-300/30 text-white placeholder:text-sky-200/50',
+    accentClass: 'text-cyan-200',
+    progressClass: 'from-sky-300 to-cyan-400',
+  },
+
+  'lac-montagne': {
+    id: 'lac-montagne',
+    label: { fr: 'Lac de montagne', en: 'Mountain lake' },
+    imagePath: getImagePath('lac-montagne.webp'),
+    bgClass: 'bg-gradient-to-br from-blue-900 via-slate-800 to-teal-900',
+    textClass: 'text-white',
+    textMutedClass: 'text-blue-100/80',
+    cardClass: 'bg-white/10 border-blue-300/20',
+    borderClass: 'border-blue-300/30',
+    buttonClass: 'bg-blue-200 text-blue-950 hover:bg-blue-100',
+    subtleTextClass: 'text-blue-200/60 hover:text-blue-100',
+    inputClass: 'bg-white/10 border-blue-300/30 text-white placeholder:text-blue-200/40',
+    accentClass: 'text-blue-300',
+    progressClass: 'from-blue-400 to-teal-400',
+  },
+
+  'montagne-1': {
+    id: 'montagne-1',
+    label: { fr: 'Montagne 1', en: 'Mountain 1' },
+    imagePath: getImagePath('montagne-1.webp'),
+    bgClass: 'bg-gradient-to-br from-slate-800 via-stone-700 to-gray-800',
+    textClass: 'text-white',
+    textMutedClass: 'text-slate-200/80',
+    cardClass: 'bg-white/10 border-slate-400/20',
+    borderClass: 'border-slate-400/30',
+    buttonClass: 'bg-slate-200 text-slate-900 hover:bg-white',
+    subtleTextClass: 'text-slate-300/60 hover:text-slate-200',
+    inputClass: 'bg-white/10 border-slate-400/30 text-white placeholder:text-slate-300/40',
+    accentClass: 'text-slate-300',
+    progressClass: 'from-slate-400 to-stone-400',
+  },
+
+  'montagne-2': {
+    id: 'montagne-2',
+    label: { fr: 'Montagne 2', en: 'Mountain 2' },
+    imagePath: getImagePath('montagne-2.webp'),
+    bgClass: 'bg-gradient-to-br from-indigo-900 via-slate-800 to-blue-900',
+    textClass: 'text-white',
+    textMutedClass: 'text-indigo-100/80',
+    cardClass: 'bg-white/10 border-indigo-300/20',
+    borderClass: 'border-indigo-300/30',
+    buttonClass: 'bg-indigo-200 text-indigo-950 hover:bg-indigo-100',
+    subtleTextClass: 'text-indigo-200/60 hover:text-indigo-100',
+    inputClass: 'bg-white/10 border-indigo-300/30 text-white placeholder:text-indigo-200/40',
+    accentClass: 'text-indigo-300',
+    progressClass: 'from-indigo-400 to-blue-500',
+  },
+
+  'montagne-3': {
+    id: 'montagne-3',
+    label: { fr: 'Montagne 3', en: 'Mountain 3' },
+    imagePath: getImagePath('montagne-3.webp'),
+    bgClass: 'bg-gradient-to-br from-orange-900 via-amber-800 to-stone-900',
+    textClass: 'text-white',
+    textMutedClass: 'text-orange-100/80',
+    cardClass: 'bg-white/10 border-orange-400/20',
+    borderClass: 'border-orange-400/30',
+    buttonClass: 'bg-amber-200 text-amber-950 hover:bg-amber-100',
+    subtleTextClass: 'text-orange-200/60 hover:text-orange-100',
+    inputClass: 'bg-white/10 border-orange-400/30 text-white placeholder:text-orange-200/40',
+    accentClass: 'text-amber-300',
+    progressClass: 'from-orange-400 to-amber-400',
+  },
+
+  'montagne-4': {
+    id: 'montagne-4',
+    label: { fr: 'Montagne 4', en: 'Mountain 4' },
+    imagePath: getImagePath('montagne-4.webp'),
+    bgClass: 'bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900',
+    textClass: 'text-white',
+    textMutedClass: 'text-emerald-100/80',
+    cardClass: 'bg-white/10 border-emerald-400/20',
+    borderClass: 'border-emerald-400/30',
+    buttonClass: 'bg-emerald-200 text-emerald-950 hover:bg-emerald-100',
+    subtleTextClass: 'text-emerald-200/60 hover:text-emerald-100',
+    inputClass: 'bg-white/10 border-emerald-400/30 text-white placeholder:text-emerald-200/40',
+    accentClass: 'text-emerald-300',
+    progressClass: 'from-emerald-400 to-teal-400',
+  },
+
+  'montagne-5': {
+    id: 'montagne-5',
+    label: { fr: 'Montagne 5', en: 'Mountain 5' },
+    imagePath: getImagePath('montagne-5.webp'),
+    bgClass: 'bg-gradient-to-br from-rose-900 via-pink-900 to-orange-900',
+    textClass: 'text-white',
+    textMutedClass: 'text-rose-100/80',
+    cardClass: 'bg-white/10 border-rose-400/20',
+    borderClass: 'border-rose-400/30',
+    buttonClass: 'bg-rose-200 text-rose-950 hover:bg-rose-100',
+    subtleTextClass: 'text-rose-200/60 hover:text-rose-100',
+    inputClass: 'bg-white/10 border-rose-400/30 text-white placeholder:text-rose-200/40',
+    accentClass: 'text-rose-300',
+    progressClass: 'from-rose-400 to-orange-400',
+  },
+
+  'fleur-1': {
+    id: 'fleur-1',
+    label: { fr: 'Fleurs en bloom', en: 'Blooming flowers' },
+    imagePath: getImagePath('fleur-1.webp'),
+    bgClass: 'bg-gradient-to-br from-pink-500 via-rose-400 to-fuchsia-500',
+    textClass: 'text-white',
+    textMutedClass: 'text-pink-100/80',
+    cardClass: 'bg-white/15 border-pink-300/25',
+    borderClass: 'border-pink-300/30',
+    buttonClass: 'bg-white/90 text-pink-800 hover:bg-white',
+    subtleTextClass: 'text-pink-100/60 hover:text-pink-100',
+    inputClass: 'bg-white/15 border-pink-300/30 text-white placeholder:text-pink-200/50',
+    accentClass: 'text-pink-200',
+    progressClass: 'from-pink-300 to-fuchsia-400',
+  },
+
+  'abstrait-1': {
+    id: 'abstrait-1',
+    label: { fr: 'Abstrait', en: 'Abstract' },
+    imagePath: getImagePath('abstrait-1.webp'),
+    bgClass: 'bg-gradient-to-br from-violet-900 via-purple-800 to-indigo-900',
+    textClass: 'text-white',
+    textMutedClass: 'text-violet-200/80',
+    cardClass: 'bg-white/10 border-violet-400/20',
+    borderClass: 'border-violet-400/30',
+    buttonClass: 'bg-violet-300 text-violet-950 hover:bg-violet-200',
+    subtleTextClass: 'text-violet-300/60 hover:text-violet-200',
+    inputClass: 'bg-white/10 border-violet-400/30 text-white placeholder:text-violet-300/40',
+    accentClass: 'text-violet-300',
+    progressClass: 'from-violet-400 to-indigo-400',
+  },
+
+  'mer-1': {
+    id: 'mer-1',
+    label: { fr: 'Mer profonde', en: 'Deep sea' },
+    imagePath: getImagePath('mer-1.webp'),
+    bgClass: 'bg-gradient-to-br from-blue-950 via-cyan-900 to-teal-950',
+    textClass: 'text-white',
+    textMutedClass: 'text-cyan-100/80',
+    cardClass: 'bg-white/10 border-cyan-400/20',
+    borderClass: 'border-cyan-400/30',
+    buttonClass: 'bg-cyan-300 text-cyan-950 hover:bg-cyan-200',
+    subtleTextClass: 'text-cyan-200/60 hover:text-cyan-100',
+    inputClass: 'bg-white/10 border-cyan-400/30 text-white placeholder:text-cyan-200/40',
+    accentClass: 'text-cyan-300',
+    progressClass: 'from-cyan-400 to-blue-500',
+  },
+
+  'pink-1': {
+    id: 'pink-1',
+    label: { fr: 'Rose doux', en: 'Soft pink' },
+    imagePath: getImagePath('pink-1.webp'),
+    bgClass: 'bg-gradient-to-br from-pink-100 via-rose-50 to-fuchsia-100',
+    textClass: 'text-rose-900',
+    textMutedClass: 'text-rose-700',
+    cardClass: 'bg-white/80 border-pink-200',
+    borderClass: 'border-pink-200',
+    buttonClass: 'bg-rose-500 text-white hover:bg-rose-400',
+    subtleTextClass: 'text-rose-400 hover:text-rose-600',
+    inputClass: 'bg-white border-pink-200 text-rose-900 placeholder:text-rose-400',
+    accentClass: 'text-rose-500',
+    progressClass: 'from-pink-400 to-rose-400',
   },
 };
 
@@ -468,9 +674,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.documentElement.setAttribute('data-theme', id);
   };
 
-  const getThemeLabel = (id: ThemeId, lang: 'fr' | 'en') => {
-    return THEMES[id].label[lang];
-  };
+  const getThemeLabel = (id: ThemeId, lang: 'fr' | 'en') => THEMES[id].label[lang];
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', themeId);

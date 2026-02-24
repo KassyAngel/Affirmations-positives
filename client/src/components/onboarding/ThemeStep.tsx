@@ -11,7 +11,7 @@ interface ThemeStepProps {
   onBack?: () => void;
 }
 
-// ✅ Thèmes GRATUITS pour l'onboarding
+// ✅ Uniquement les thèmes GRATUITS — les nouveaux sont tous PREMIUM
 const FREE_THEMES_ONBOARDING: ThemeId[] = [
   'afrique',
   'ethereal',
@@ -26,6 +26,9 @@ const FREE_THEMES_ONBOARDING: ThemeId[] = [
   'zen',
 ];
 
+// ✅ Thèmes PREMIUM — tous les nouveaux + les anciens payants
+// (tout ce qui n'est pas dans FREE_THEMES_ONBOARDING est automatiquement locked)
+
 export function ThemeStep({ selectedTheme, onThemeSelect, onBack }: ThemeStepProps) {
   const { t, language } = useLanguage();
   const [selected, setSelected] = useState<ThemeId>(selectedTheme);
@@ -33,7 +36,6 @@ export function ThemeStep({ selectedTheme, onThemeSelect, onBack }: ThemeStepPro
   const themeIds = Object.keys(THEMES) as ThemeId[];
 
   const handlePreview = (id: ThemeId) => {
-    // ✅ Bloquer les thèmes premium — ouvrir le paywall au lieu de sélectionner
     if (!FREE_THEMES_ONBOARDING.includes(id)) {
       setShowPaywall(true);
       return;
@@ -48,7 +50,8 @@ export function ThemeStep({ selectedTheme, onThemeSelect, onBack }: ThemeStepPro
         {onBack && (
           <button
             onClick={onBack}
-            className="absolute top-6 left-6 text-rose-400 hover:text-rose-600 transition-colors"
+            className="absolute top-6 left-6 transition-colors"
+            style={{ color: '#FF8C69' }}
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
@@ -59,10 +62,10 @@ export function ThemeStep({ selectedTheme, onThemeSelect, onBack }: ThemeStepPro
           animate={{ y: 0, opacity: 1 }}
           className="text-center pt-4"
         >
-          <h2 className="text-3xl font-display font-bold text-rose-900 leading-tight">
+          <h2 className="text-3xl font-display font-bold leading-tight" style={{ color: '#2D1A12' }}>
             {t.onboarding.theme.title}
           </h2>
-          <p className="text-sm mt-1 text-rose-500">
+          <p className="text-sm mt-1" style={{ color: '#B07060' }}>
             {language === 'fr' ? 'Touchez un thème pour le sélectionner' : 'Tap a theme to select it'}
           </p>
         </motion.div>
@@ -70,7 +73,7 @@ export function ThemeStep({ selectedTheme, onThemeSelect, onBack }: ThemeStepPro
         {/* Grille scrollable */}
         <div
           className="grid grid-cols-2 gap-3 max-h-[52vh] overflow-y-auto pr-1 pb-1"
-          style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(251,113,133,0.3) transparent' }}
+          style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,140,105,0.3) transparent' }}
         >
           {themeIds.map((id, index) => {
             const cfg = THEMES[id];
@@ -84,36 +87,33 @@ export function ThemeStep({ selectedTheme, onThemeSelect, onBack }: ThemeStepPro
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: Math.min(index * 0.04, 0.6) }}
                 onClick={() => handlePreview(id)}
-                className={`relative aspect-[3/4] rounded-2xl overflow-hidden border-2 transition-all duration-300 ${
-                  isSelected
-                    ? 'border-rose-400 ring-4 ring-rose-300/50 scale-[1.04]'
-                    : 'border-rose-100 hover:border-rose-300 hover:scale-[1.02]'
-                }`}
-                style={{ opacity: isLocked ? 0.65 : 1 }}
+                className="relative aspect-[3/4] rounded-2xl overflow-hidden border-2 transition-all duration-300"
+                style={{
+                  opacity: isLocked ? 0.7 : 1,
+                  borderColor: isSelected ? '#FF8C69' : 'rgba(255,203,184,0.6)',
+                  boxShadow: isSelected ? '0 0 0 4px rgba(255,140,105,0.3)' : 'none',
+                  transform: isSelected ? 'scale(1.04)' : 'scale(1)',
+                }}
               >
-                {/* Image */}
                 <img
                   src={cfg.imagePath}
                   alt=""
                   className="absolute inset-0 w-full h-full object-cover"
                   loading="lazy"
-                  onError={(e) => {
-                    console.error(`❌ Image non chargée: ${cfg.imagePath}`);
-                    e.currentTarget.style.display = 'none';
-                  }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
 
-                {/* Overlay sombre sur les thèmes lockés */}
+                {/* Overlay sombre pour les thèmes locked */}
                 {isLocked && (
                   <div className="absolute inset-0 bg-black/25" />
                 )}
 
-                {/* 🔒 Cadenas Premium */}
+                {/* Cadenas premium */}
                 {isLocked && (
                   <div
                     className="absolute top-2 right-2 w-8 h-8 rounded-lg flex items-center justify-center"
                     style={{
-                      background: 'rgba(0,0,0,0.7)',
+                      background: 'rgba(0,0,0,0.65)',
                       backdropFilter: 'blur(8px)',
                       border: '1px solid rgba(255,255,255,0.2)',
                     }}
@@ -122,7 +122,20 @@ export function ThemeStep({ selectedTheme, onThemeSelect, onBack }: ThemeStepPro
                   </div>
                 )}
 
-                {/* ✅ Coche si sélectionné */}
+                {/* Badge "PREMIUM" sous le cadenas */}
+                {isLocked && (
+                  <div
+                    className="absolute bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest whitespace-nowrap"
+                    style={{
+                      background: 'linear-gradient(135deg, #FF8C69, #FFA882)',
+                      color: 'white',
+                    }}
+                  >
+                    Premium
+                  </div>
+                )}
+
+                {/* Checkmark sélectionné */}
                 <AnimatePresence>
                   {isSelected && (
                     <motion.div
@@ -141,7 +154,6 @@ export function ThemeStep({ selectedTheme, onThemeSelect, onBack }: ThemeStepPro
         </div>
       </div>
 
-      {/* Paywall déclenché si l'uti tente de choisir un thème premium */}
       <PremiumPaywall
         isOpen={showPaywall}
         onClose={() => setShowPaywall(false)}

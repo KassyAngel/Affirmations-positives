@@ -20,19 +20,12 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
   const handleRequestPermission = async () => {
     setLoading(true);
     try {
-      // ✅ Fonctionne sur Android (Capacitor) ET sur le web
       const granted = await notificationService.requestPermission();
-
       const settings = { enabled: granted, frequency, startTime, endTime };
-
       notificationService.saveSettings(settings);
-
       if (granted) {
-        // ✅ Planifie toutes les notifications du jour (Capacitor)
-        // ou démarre le service web (browser)
         await notificationService.start(language);
       }
-
       onContinue(settings);
     } finally {
       setLoading(false);
@@ -43,7 +36,8 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
     <div className="max-w-md w-full space-y-6 px-2">
       <button
         onClick={onBack}
-        className="absolute top-6 left-6 text-rose-400 hover:text-rose-600 transition-colors"
+        className="absolute top-6 left-6 text-peach-400 hover:text-peach-600 transition-colors"
+        style={{ color: '#FF8C69' }}
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
@@ -53,10 +47,10 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
         animate={{ y: 0, opacity: 1 }}
         className="text-center space-y-2 pt-4"
       >
-        <h2 className="text-3xl font-display font-bold text-rose-900">
+        <h2 className="text-3xl font-display font-bold" style={{ color: '#2D1A12' }}>
           {t.onboarding.notifications.title}
         </h2>
-        <p className="text-rose-600/80 text-sm">
+        <p className="text-sm" style={{ color: '#B07060' }}>
           {t.onboarding.notifications.subtitle}
         </p>
       </motion.div>
@@ -65,19 +59,22 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.15 }}
-        className="bg-white/70 backdrop-blur-sm rounded-3xl p-5 border border-rose-100 shadow-md space-y-5"
+        className="backdrop-blur-sm rounded-3xl p-5 shadow-md space-y-5"
+        style={{ background: 'rgba(255,255,255,0.70)', border: '1px solid #FFCBB8' }}
       >
         {/* Preview notification */}
-        <div className="bg-rose-50 rounded-2xl p-4 flex items-start gap-3 border border-rose-100">
-          <div className="bg-gradient-to-br from-rose-300 to-pink-400 p-2 rounded-xl shrink-0">
+        <div className="rounded-2xl p-4 flex items-start gap-3" style={{ background: '#FFF5F0', border: '1px solid #FFCBB8' }}>
+          <div className="p-2 rounded-xl shrink-0" style={{ background: 'linear-gradient(135deg, #FF8C69, #FFA882)' }}>
             <Bell className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex justify-between items-center">
-              <span className="font-bold text-sm text-rose-900">💪 Motivation</span>
-              <span className="text-xs text-rose-400">maintenant</span>
+              <span className="font-bold text-sm" style={{ color: '#2D1A12' }}>💪 Motivation</span>
+              <span className="text-xs" style={{ color: '#B07060' }}>
+                {language === 'fr' ? 'maintenant' : 'now'}
+              </span>
             </div>
-            <p className="text-sm mt-1 text-rose-800/80">
+            <p className="text-sm mt-1" style={{ color: '#7A4030' }}>
               {language === 'fr'
                 ? 'Vous êtes plus fort(e) que vous ne le pensez !'
                 : 'You are stronger than you think!'}
@@ -88,10 +85,10 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
         {/* Fréquence */}
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="font-medium text-sm text-rose-900">
+            <span className="font-medium text-sm" style={{ color: '#2D1A12' }}>
               {language === 'fr' ? 'Combien par jour' : 'Per day'}
             </span>
-            <span className="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-sm font-bold">
+            <span className="px-3 py-1 rounded-full text-sm font-bold" style={{ background: '#FFE4D9', color: '#FF8C69' }}>
               {frequency}x
             </span>
           </div>
@@ -100,41 +97,53 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
             onValueChange={([v]) => setFrequency(v)}
             max={20}
             step={1}
-            className="py-1 [&_[role=slider]]:bg-rose-400 [&_[role=slider]]:border-rose-400 [&_.relative]:bg-rose-100 [&_[data-orientation=horizontal]_.absolute]:bg-rose-400"
+            className="py-1 [&_[role=slider]]:bg-[#FF8C69] [&_[role=slider]]:border-[#FF8C69] [&_.relative]:bg-[#FFE4D9] [&_[data-orientation=horizontal]_.absolute]:bg-[#FF8C69]"
           />
-          <div className="flex justify-between text-xs text-rose-300 font-medium">
+          <div className="flex justify-between text-xs font-medium" style={{ color: '#FFCBB8' }}>
             <span>0</span><span>20</span>
           </div>
         </div>
 
         {/* Plage horaire */}
-        <div className="bg-rose-50 rounded-2xl overflow-hidden border border-rose-100 divide-y divide-rose-100">
-          <div className="p-4 flex justify-between items-center">
-            <span className="text-sm font-medium text-rose-900">
+        <div className="rounded-2xl overflow-hidden" style={{ border: '1px solid #FFCBB8' }}>
+          <div className="p-4 flex justify-between items-center" style={{ borderBottom: '1px solid #FFE4D9' }}>
+            <span className="text-sm font-medium" style={{ color: '#2D1A12' }}>
               {language === 'fr' ? 'Début' : 'Start'}
             </span>
             <input
               type="time"
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
-              className="bg-white border border-rose-200 rounded-xl px-3 py-1.5 text-sm font-bold text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-300"
+              className="rounded-xl px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2"
+              style={{
+                background: 'white',
+                border: '1px solid #FFCBB8',
+                color: '#2D1A12',
+                // @ts-ignore
+                '--tw-ring-color': '#FFA882',
+              }}
             />
           </div>
           <div className="p-4 flex justify-between items-center">
-            <span className="text-sm font-medium text-rose-900">
+            <span className="text-sm font-medium" style={{ color: '#2D1A12' }}>
               {language === 'fr' ? 'Fin' : 'End'}
             </span>
             <input
               type="time"
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
-              className="bg-white border border-rose-200 rounded-xl px-3 py-1.5 text-sm font-bold text-rose-900 focus:outline-none focus:ring-2 focus:ring-rose-300"
+              className="rounded-xl px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2"
+              style={{
+                background: 'white',
+                border: '1px solid #FFCBB8',
+                color: '#2D1A12',
+              }}
             />
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-xl p-3 border border-rose-100">
-          <p className="text-xs text-rose-700 text-center">
+        <div className="rounded-xl p-3" style={{ background: 'linear-gradient(to right, #FFF5F0, #FFF0EA)', border: '1px solid #FFE4D9' }}>
+          <p className="text-xs text-center" style={{ color: '#7A4030' }}>
             {language === 'fr'
               ? '📚 100+ messages inspirants + citations aléatoires'
               : '📚 100+ inspiring messages + random quotes'}
@@ -151,7 +160,8 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
         <button
           onClick={handleRequestPermission}
           disabled={loading}
-          className="w-full py-4 rounded-full bg-gradient-to-r from-rose-400 to-pink-400 text-white font-semibold text-lg shadow-lg hover:scale-105 transition-all disabled:opacity-60 disabled:scale-100"
+          className="w-full py-4 rounded-full text-white font-semibold text-lg shadow-lg hover:scale-105 transition-all disabled:opacity-60 disabled:scale-100"
+          style={{ background: 'linear-gradient(to right, #FF8C69, #FFA882)' }}
         >
           {loading
             ? '...'

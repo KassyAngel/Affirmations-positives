@@ -117,6 +117,27 @@ export default function Home() {
   const formattedDate = new Date().toLocaleDateString(t.home.dateFormat, { weekday: 'long', day: 'numeric', month: 'long' });
   const isTabletOrDesktop = device === 'tablet' || device === 'desktop';
 
+  // ✅ Bouton "Nouvelle citation" — style glass FIXE, indépendant du thème
+  const NewQuoteButton = ({ onClick }: { onClick: () => void }) => (
+    <motion.button
+      onClick={onClick}
+      whileHover={{ scale: 1.04, y: -2 }}
+      whileTap={{ scale: 0.96 }}
+      className="flex items-center gap-2 px-6 py-3 rounded-full transition-all"
+      style={{
+        background: 'rgba(255,255,255,0.18)',
+        backdropFilter: 'blur(16px)',
+        border: '1.5px solid rgba(255,255,255,0.35)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+        color: 'white',
+        textShadow: '0 1px 4px rgba(0,0,0,0.25)',
+      }}
+    >
+      <RefreshCcw className="w-4 h-4" />
+      <span className="font-medium">{t.home.newQuote}</span>
+    </motion.button>
+  );
+
   return (
     <div className="min-h-screen pb-20 overflow-hidden relative transition-all duration-700">
       <div className="fixed inset-0 bg-cover bg-center transition-all duration-700" style={{ backgroundImage: `url(${theme.imagePath})` }} />
@@ -128,10 +149,10 @@ export default function Home() {
         <ReleaseJournal isOpen={showReleaseJournal} onClose={() => setShowReleaseJournal(false)} />
         <EmergencyMode isOpen={showEmergency} onClose={() => setShowEmergency(false)} />
         <FloatingJournalButton onClick={() => setShowReleaseJournal(true)} />
-        <div className="hidden"><DevResetButton /></div>
+        <DevResetButton />
         <NotificationBanner />
 
-        {/* ── Header ── */}
+        {/* Header */}
         <header className="px-6 py-6 flex justify-between items-center">
           <div>
             <p className={`text-sm font-medium uppercase tracking-widest drop-shadow-lg ${theme.textClass}`}>{formattedDate}</p>
@@ -160,9 +181,7 @@ export default function Home() {
           </div>
         </header>
 
-        {/* ══════════════════════════════════════════════════════
-            📱 MOBILE : layout colonne, compact, comme avant
-            ══════════════════════════════════════════════════════ */}
+        {/* 📱 MOBILE */}
         {!isTabletOrDesktop && (
           <main className="px-4 mt-4 flex flex-col items-center gap-8">
             <QuoteCard
@@ -172,21 +191,14 @@ export default function Home() {
               onToggleFavorite={() => toggleFavorite(currentQuote.id)}
               categoryColors={bgStyle}
             />
-            <button onClick={handleNext}
-              className={`flex items-center gap-2 px-6 py-3 rounded-full border transition-all active:scale-95 shadow-lg backdrop-blur-md ${theme.cardClass} ${theme.textClass}`}>
-              <RefreshCcw className="w-4 h-4" />
-              <span>{t.home.newQuote}</span>
-            </button>
+            <NewQuoteButton onClick={handleNext} />
             <EmergencyButton language={language} theme={theme} onPress={() => setShowEmergency(true)} />
           </main>
         )}
 
-        {/* ══════════════════════════════════════════════════════
-            📟 TABLETTE/DESKTOP : layout centré, carte + boutons côte à côte
-            ══════════════════════════════════════════════════════ */}
+        {/* 📟 TABLETTE/DESKTOP */}
         {isTabletOrDesktop && (
           <main className="px-8 mt-6 flex items-center justify-center gap-10 min-h-[calc(100vh-180px)]">
-            {/* Carte — occupe tout l'espace disponible */}
             <div className="flex items-center justify-center">
               <QuoteCard
                 key={currentQuote.id}
@@ -196,13 +208,8 @@ export default function Home() {
                 categoryColors={bgStyle}
               />
             </div>
-            {/* Boutons empilés à droite */}
             <div className="flex flex-col items-start gap-4 shrink-0">
-              <button onClick={handleNext}
-                className={`flex items-center gap-2 px-6 py-3 rounded-full border transition-all active:scale-95 shadow-lg backdrop-blur-md ${theme.cardClass} ${theme.textClass}`}>
-                <RefreshCcw className="w-4 h-4" />
-                <span>{t.home.newQuote}</span>
-              </button>
+              <NewQuoteButton onClick={handleNext} />
               <EmergencyButton language={language} theme={theme} onPress={() => setShowEmergency(true)} />
             </div>
           </main>
@@ -216,7 +223,6 @@ export default function Home() {
   );
 }
 
-// ── Bouton urgence extrait pour ne pas dupliquer ─────────────────────────────
 function EmergencyButton({ language, theme, onPress }: { language: string; theme: any; onPress: () => void }) {
   return (
     <motion.button

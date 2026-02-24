@@ -25,7 +25,8 @@ export function NameStep({ value, onChange, onContinue, onBack }: NameStepProps)
     <div className="max-w-md w-full">
       <button
         onClick={onBack}
-        className="absolute top-6 left-6 text-rose-400 hover:text-rose-600 transition-colors"
+        className="absolute top-6 left-6 transition-colors"
+        style={{ color: '#FF8C69' }}
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
@@ -33,7 +34,8 @@ export function NameStep({ value, onChange, onContinue, onBack }: NameStepProps)
       <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-4xl font-display font-bold text-rose-900 mb-10 text-center"
+        className="text-4xl font-display font-bold mb-10 text-center"
+        style={{ color: '#2D1A12' }}
       >
         {t.onboarding.name.title}
       </motion.h1>
@@ -50,9 +52,16 @@ export function NameStep({ value, onChange, onContinue, onBack }: NameStepProps)
           onChange={(e) => setLocalValue(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleContinue()}
           placeholder={t.onboarding.name.placeholder}
-          className="w-full px-6 py-4 bg-white/80 backdrop-blur-sm border border-rose-200 rounded-2xl text-rose-900 placeholder:text-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-transparent text-lg shadow-sm"
+          className="w-full px-6 py-4 backdrop-blur-sm rounded-2xl text-lg shadow-sm focus:outline-none focus:ring-2"
+          style={{
+            background: 'rgba(255,255,255,0.80)',
+            border: '1px solid #FFCBB8',
+            color: '#2D1A12',
+            // placeholder color handled via CSS below
+          }}
           autoFocus
         />
+        <style>{`input::placeholder { color: #FFCBB8; }`}</style>
       </motion.div>
 
       <motion.button
@@ -61,7 +70,11 @@ export function NameStep({ value, onChange, onContinue, onBack }: NameStepProps)
         transition={{ delay: 0.4 }}
         onClick={handleContinue}
         disabled={!localValue.trim()}
-        className="w-full px-8 py-4 bg-gradient-to-r from-rose-400 to-pink-400 text-white rounded-full font-semibold text-lg shadow-lg shadow-rose-200/60 hover:shadow-xl hover:shadow-rose-300/60 transition-all duration-300 hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+        className="w-full px-8 py-4 text-white rounded-full font-semibold text-lg shadow-lg transition-all duration-300 hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+        style={{
+          background: 'linear-gradient(to right, #FF8C69, #FFA882)',
+          boxShadow: '0 8px 24px rgba(255,140,105,0.35)',
+        }}
       >
         {t.onboarding.name.continue}
       </motion.button>

@@ -11,15 +11,19 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
 
   return (
     <div className="max-w-md w-full text-center">
-      {/* Sélecteur de langue — flag uniquement, sans répéter le code */}
+      {/* Sélecteur de langue */}
       <motion.button
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         onClick={() => setLanguage(language === 'fr' ? 'en' : 'fr')}
-        className="absolute top-6 right-6 flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-sm border border-rose-200 rounded-full text-rose-700 hover:bg-white transition-all shadow-sm"
+        className="absolute top-6 right-6 flex items-center gap-2 px-4 py-2 backdrop-blur-sm rounded-full transition-all shadow-sm"
+        style={{
+          background: 'rgba(255,255,255,0.70)',
+          border: '1px solid #FFCBB8',
+          color: '#7A4030',
+        }}
       >
         <Globe className="w-4 h-4" />
-        {/* ✅ Juste le flag — pas de code texte en plus */}
         <span className="text-sm">{language === 'fr' ? '🇫🇷' : '🇬🇧'}</span>
       </motion.button>
 
@@ -32,12 +36,13 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
       >
         <div className="relative">
           <motion.div
-            className="w-24 h-24 rounded-full bg-gradient-to-br from-rose-300 to-pink-400 flex items-center justify-center shadow-xl shadow-rose-200/60"
+            className="w-24 h-24 rounded-full flex items-center justify-center shadow-xl"
+            style={{ background: 'linear-gradient(135deg, #FF8C69, #FFA882)' }}
             animate={{
               boxShadow: [
-                '0 0 20px rgba(253, 164, 175, 0.4)',
-                '0 0 40px rgba(253, 164, 175, 0.7)',
-                '0 0 20px rgba(253, 164, 175, 0.4)',
+                '0 0 20px rgba(255,140,105,0.4)',
+                '0 0 40px rgba(255,140,105,0.7)',
+                '0 0 20px rgba(255,140,105,0.4)',
               ],
             }}
             transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
@@ -47,8 +52,12 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
           {[...Array(6)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute w-2 h-2 bg-rose-300 rounded-full"
-              style={{ top: '50%', left: '50%' }}
+              className="absolute w-2 h-2 rounded-full"
+              style={{
+                background: '#FFA882',
+                top: '50%',
+                left: '50%',
+              }}
               animate={{
                 x: [0, Math.cos((i * 60 * Math.PI) / 180) * 60],
                 y: [0, Math.sin((i * 60 * Math.PI) / 180) * 60],
@@ -65,7 +74,8 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="text-5xl font-display font-bold text-rose-900 mb-4"
+        className="text-5xl font-display font-bold mb-4"
+        style={{ color: '#2D1A12' }}
       >
         {t.onboarding.welcome.title}
       </motion.h1>
@@ -74,7 +84,8 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="text-xl text-rose-600 mb-3 font-light"
+        className="text-xl mb-3 font-light"
+        style={{ color: '#FF8C69' }}
       >
         {t.onboarding.welcome.subtitle}
       </motion.p>
@@ -83,7 +94,8 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
-        className="text-rose-800/70 mb-12 max-w-sm mx-auto leading-relaxed"
+        className="mb-12 max-w-sm mx-auto leading-relaxed"
+        style={{ color: 'rgba(122,64,48,0.70)' }}
       >
         {t.onboarding.welcome.description}
       </motion.p>
@@ -93,7 +105,11 @@ export function WelcomeStep({ onContinue }: WelcomeStepProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.9 }}
         onClick={onContinue}
-        className="w-full px-8 py-4 bg-gradient-to-r from-rose-400 to-pink-400 text-white rounded-full font-semibold text-lg shadow-lg shadow-rose-200/60 hover:shadow-xl hover:shadow-rose-300/60 transition-all duration-300 hover:scale-105"
+        className="w-full px-8 py-4 text-white rounded-full font-semibold text-lg shadow-lg transition-all duration-300 hover:scale-105"
+        style={{
+          background: 'linear-gradient(to right, #FF8C69, #FFA882)',
+          boxShadow: '0 8px 24px rgba(255,140,105,0.35)',
+        }}
       >
         {t.onboarding.welcome.continue}
       </motion.button>

@@ -12,50 +12,62 @@ interface MoodOverlayProps {
 const moodsConfig: {
   id: Mood;
   iconComponent: React.ElementType;
+  emoji: string;
   iconColor: string;
   cardBg: string;
   circleBg: string;
-  emoji: string;
+  borderColor: string;
+  hoverBorderColor: string;
 }[] = [
   {
     id: 'determined',
     iconComponent: Zap,
-    iconColor: 'text-amber-500',
-    cardBg: 'bg-amber-50 hover:bg-amber-100 border-amber-100 hover:border-amber-200',
-    circleBg: 'bg-amber-100',
     emoji: '⚡',
+    iconColor: '#D97706',
+    cardBg: 'rgba(255,251,235,0.85)',
+    circleBg: 'rgba(253,230,138,0.50)',
+    borderColor: 'rgba(253,230,138,0.60)',
+    hoverBorderColor: 'rgba(251,191,36,0.50)',
   },
   {
     id: 'happy',
     iconComponent: Smile,
-    iconColor: 'text-emerald-500',
-    cardBg: 'bg-emerald-50 hover:bg-emerald-100 border-emerald-100 hover:border-emerald-200',
-    circleBg: 'bg-emerald-100',
     emoji: '😊',
+    iconColor: '#059669',
+    cardBg: 'rgba(236,253,245,0.85)',
+    circleBg: 'rgba(167,243,208,0.50)',
+    borderColor: 'rgba(167,243,208,0.60)',
+    hoverBorderColor: 'rgba(52,211,153,0.50)',
   },
   {
     id: 'zen',
     iconComponent: Coffee,
-    iconColor: 'text-blue-400',
-    cardBg: 'bg-blue-50 hover:bg-blue-100 border-blue-100 hover:border-blue-200',
-    circleBg: 'bg-blue-100',
     emoji: '🍃',
+    iconColor: '#2563EB',
+    cardBg: 'rgba(239,246,255,0.85)',
+    circleBg: 'rgba(191,219,254,0.50)',
+    borderColor: 'rgba(191,219,254,0.60)',
+    hoverBorderColor: 'rgba(96,165,250,0.50)',
   },
   {
     id: 'tired',
     iconComponent: CloudRain,
-    iconColor: 'text-slate-400',
-    cardBg: 'bg-slate-50 hover:bg-slate-100 border-slate-100 hover:border-slate-200',
-    circleBg: 'bg-slate-100',
     emoji: '☁️',
+    iconColor: '#64748B',
+    cardBg: 'rgba(248,250,252,0.85)',
+    circleBg: 'rgba(226,232,240,0.50)',
+    borderColor: 'rgba(226,232,240,0.60)',
+    hoverBorderColor: 'rgba(148,163,184,0.50)',
   },
   {
     id: 'frustrated',
     iconComponent: Frown,
-    iconColor: 'text-rose-400',
-    cardBg: 'bg-rose-50 hover:bg-rose-100 border-rose-100 hover:border-rose-200',
-    circleBg: 'bg-rose-100',
     emoji: '😤',
+    iconColor: '#FF8C69',
+    cardBg: 'rgba(255,245,240,0.85)',
+    circleBg: 'rgba(255,203,184,0.50)',
+    borderColor: 'rgba(255,203,184,0.60)',
+    hoverBorderColor: 'rgba(255,168,130,0.50)',
   },
 ];
 
@@ -81,31 +93,36 @@ export function MoodOverlay({ isOpen, onSelectMood }: MoodOverlayProps) {
       transition={{ duration: 0.3 }}
       className="fixed inset-0 z-[9999] flex items-center justify-center p-5"
       style={{
-        background: 'linear-gradient(135deg, #fff1f2 0%, #fce7f3 40%, #f3e8ff 100%)',
+        background: 'linear-gradient(160deg, #FFF5F0 0%, #FFE8DC 45%, #FFF8F5 100%)',
       }}
     >
-      {/* Bulles décoratives */}
+      {/* Bulles décoratives pêche */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
-          className="absolute top-16 left-8 w-56 h-56 bg-rose-200/40 rounded-full blur-3xl"
+          className="absolute top-16 left-8 w-56 h-56 rounded-full blur-3xl"
+          style={{ background: 'rgba(255,168,130,0.22)' }}
           animate={{ scale: [1, 1.15, 1], opacity: [0.35, 0.55, 0.35] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute bottom-16 right-8 w-72 h-72 bg-pink-200/35 rounded-full blur-3xl"
+          className="absolute bottom-16 right-8 w-72 h-72 rounded-full blur-3xl"
+          style={{ background: 'rgba(255,228,217,0.30)' }}
           animate={{ scale: [1.1, 1, 1.1], opacity: [0.3, 0.5, 0.3] }}
           transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-purple-200/20 rounded-full blur-3xl"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-3xl"
+          style={{ background: 'rgba(255,203,184,0.15)' }}
           animate={{ scale: [1, 1.08, 1], opacity: [0.2, 0.35, 0.2] }}
           transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
         />
+        {/* Particules subtiles */}
         {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-1.5 h-1.5 rounded-full bg-rose-300/50"
+            className="absolute w-1.5 h-1.5 rounded-full"
             style={{
+              background: 'rgba(255,140,105,0.35)',
               top: `${15 + (i * 13) % 70}%`,
               left: `${8 + (i * 17) % 84}%`,
             }}
@@ -123,21 +140,16 @@ export function MoodOverlay({ isOpen, onSelectMood }: MoodOverlayProps) {
           transition={{ delay: 0.05 }}
           className="text-center mb-8"
         >
-          <motion.div
-            className="flex justify-center mb-4"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 220, delay: 0.05 }}
+          <h2
+            className="text-4xl font-display font-bold mb-2"
+            style={{ color: '#2D1A12' }}
           >
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-rose-300 to-pink-400 flex items-center justify-center shadow-lg shadow-rose-200/50">
-              <span className="text-xl">✨</span>
-            </div>
-          </motion.div>
-
-          <h2 className="text-4xl font-display font-bold text-rose-900 mb-2">
             {t.mood.title}
           </h2>
-          <p className="text-rose-600/80 text-base font-light">
+          <p
+            className="text-base font-light"
+            style={{ color: '#B07060' }}
+          >
             {t.mood.subtitle}
           </p>
         </motion.div>
@@ -159,23 +171,39 @@ export function MoodOverlay({ isOpen, onSelectMood }: MoodOverlayProps) {
                 whileTap={{ scale: 0.96 }}
                 onClick={() => handleSelect(mood.id)}
                 disabled={!!selected}
-                className={`
-                  relative flex flex-col items-center gap-3 p-5 rounded-2xl border
-                  transition-all duration-200 shadow-sm hover:shadow-md
-                  ${mood.cardBg}
-                  ${isSelected ? 'opacity-60 scale-95' : ''}
-                `}
+                className="relative flex flex-col items-center gap-3 p-5 rounded-2xl transition-all duration-200"
+                style={{
+                  background: mood.cardBg,
+                  border: `1.5px solid ${isSelected ? mood.hoverBorderColor : mood.borderColor}`,
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: isSelected
+                    ? '0 4px 20px rgba(0,0,0,0.08)'
+                    : '0 2px 10px rgba(0,0,0,0.04)',
+                  opacity: isSelected ? 0.65 : 1,
+                  transform: isSelected ? 'scale(0.96)' : undefined,
+                }}
               >
+                {/* Cercle icône */}
                 <motion.div
-                  className={`p-3 rounded-2xl ${mood.circleBg}`}
+                  className="p-3 rounded-2xl"
+                  style={{ background: mood.circleBg }}
                   animate={isSelected ? { rotate: [0, -10, 10, 0] } : {}}
                   transition={{ duration: 0.3 }}
                 >
-                  <IconComponent className={`w-7 h-7 ${mood.iconColor}`} />
+                  <IconComponent
+                    className="w-7 h-7"
+                    style={{ color: mood.iconColor }}
+                  />
                 </motion.div>
 
-                <span className="font-semibold text-sm text-stone-700">{label}</span>
+                <span
+                  className="font-semibold text-sm"
+                  style={{ color: '#3D2318' }}
+                >
+                  {label}
+                </span>
 
+                {/* Emoji au hover */}
                 <motion.span
                   className="absolute -top-2 -right-2 text-base"
                   initial={{ opacity: 0, scale: 0 }}
@@ -189,14 +217,21 @@ export function MoodOverlay({ isOpen, onSelectMood }: MoodOverlayProps) {
           })}
 
           {/* Cellule vide pour équilibrer la grille */}
-          <div className="rounded-2xl border border-dashed border-rose-100 bg-rose-50/30" />
+          <div
+            className="rounded-2xl"
+            style={{
+              border: '1.5px dashed rgba(255,203,184,0.50)',
+              background: 'rgba(255,245,240,0.30)',
+            }}
+          />
         </div>
 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="text-center text-xs text-rose-400/70 mt-5 font-light italic"
+          className="text-center text-xs mt-5 font-light italic"
+          style={{ color: 'rgba(176,112,96,0.70)' }}
         >
           {language === 'fr'
             ? 'Chaque émotion mérite une citation 🌸'

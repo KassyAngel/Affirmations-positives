@@ -22,7 +22,8 @@ export function GenderStep({ value, onSelect, onBack }: GenderStepProps) {
     <div className="max-w-md w-full">
       <button
         onClick={onBack}
-        className="absolute top-6 left-6 text-rose-400 hover:text-rose-600 transition-colors"
+        className="absolute top-6 left-6 transition-colors"
+        style={{ color: '#FF8C69' }}
       >
         <ChevronLeft className="w-6 h-6" />
       </button>
@@ -30,7 +31,8 @@ export function GenderStep({ value, onSelect, onBack }: GenderStepProps) {
       <motion.h1
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-4xl font-display font-bold text-rose-900 mb-10 text-center"
+        className="text-4xl font-display font-bold mb-10 text-center"
+        style={{ color: '#2D1A12' }}
       >
         {t.onboarding.gender.title}
       </motion.h1>
@@ -43,11 +45,13 @@ export function GenderStep({ value, onSelect, onBack }: GenderStepProps) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.08 }}
             onClick={() => onSelect(option.key)}
-            className={`w-full px-6 py-4 bg-white/80 backdrop-blur-sm border rounded-2xl text-left font-medium transition-all duration-200 hover:scale-[1.02] shadow-sm hover:shadow-md ${
-              value === option.key
-                ? 'border-rose-400 bg-rose-50 text-rose-700 shadow-rose-100'
-                : 'border-rose-100 text-rose-900 hover:border-rose-300 hover:bg-white'
-            }`}
+            className="w-full px-6 py-4 backdrop-blur-sm rounded-2xl text-left font-medium transition-all duration-200 hover:scale-[1.02] shadow-sm hover:shadow-md"
+            style={{
+              background: value === option.key ? '#FFF0EA' : 'rgba(255,255,255,0.80)',
+              border: `1px solid ${value === option.key ? '#FF8C69' : '#FFCBB8'}`,
+              color: value === option.key ? '#FF8C69' : '#2D1A12',
+              boxShadow: value === option.key ? '0 4px 12px rgba(255,140,105,0.15)' : undefined,
+            }}
           >
             {option.label}
           </motion.button>
