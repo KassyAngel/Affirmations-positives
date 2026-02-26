@@ -7,19 +7,18 @@ import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import { ThemeProvider, useTheme, type ThemeId } from "@/contexts/ThemeContext";
 import { Onboarding, type OnboardingData } from "@/components/Onboarding";
 import { useOnboarding } from "@/hooks/use-onboarding";
+import { usePremium } from "@/hooks/use-premium";
 import { notificationService } from "@/services/notification-service";
 import { initAdMob } from "@/hooks/use-admob";
 import "@/styles/gradients.css";
 
 // ✅ Lazy loading — seul Home est chargé au démarrage
-// Les autres pages sont chargées uniquement quand l'utilisateur y navigue
 const Home       = lazy(() => import("@/pages/Home"));
 const Categories = lazy(() => import("@/pages/Categories"));
 const Favorites  = lazy(() => import("@/pages/Favorites"));
 const Stats      = lazy(() => import("@/pages/Stats"));
 const NotFound   = lazy(() => import("@/pages/NotFound"));
 
-// Écran vide pendant le chargement d'une page (invisible, instantané)
 const PageLoader = () => <div className="min-h-screen bg-black" />;
 
 function Router() {
@@ -40,8 +39,17 @@ function AppContent() {
   const { hasCompletedOnboarding, completeOnboarding } = useOnboarding();
   const { setTheme } = useTheme();
   const { language } = useLanguage();
+  const { syncWithRevenueCat } = usePremium();
 
-  // ✅ AdMob différé de 2s — ne bloque plus le rendu initial
+  // ✅ Sync RevenueCat au démarrage (vérifie si l'utilisateur est déjà premium)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      syncWithRevenueCat();
+    }, 1500); // légèrement différé pour ne pas bloquer le rendu
+    return () => clearTimeout(timer);
+  }, []);
+
+  // ✅ AdMob différé de 2s
   useEffect(() => {
     const timer = setTimeout(() => {
       initAdMob();
@@ -49,10 +57,9 @@ function AppContent() {
     return () => clearTimeout(timer);
   }, []);
 
-  // ✅ Notifications : démarrage différé aussi pour ne pas bloquer l'UI
+  // ✅ Notifications différées
   useEffect(() => {
     if (!hasCompletedOnboarding) return;
-
     const timer = setTimeout(() => {
       const settings = notificationService.getSettings();
       if (settings?.enabled) {
@@ -61,7 +68,6 @@ function AppContent() {
         });
       }
     }, 1000);
-
     return () => {
       clearTimeout(timer);
       notificationService.stop();

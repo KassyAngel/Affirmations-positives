@@ -1,7 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Sparkles, Zap, Star, Heart } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { usePremium, type PremiumPlan } from '@/hooks/use-premium';
 import { useState } from 'react';
 
@@ -13,9 +12,11 @@ interface PremiumPaywallProps {
 
 export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: PremiumPaywallProps) {
   const { language } = useLanguage();
-  const { theme } = useTheme();
-  const { setPremium } = usePremium();
+  // ✅ FIX: on ne destructure que ce qui existe dans PremiumState
+  const { purchase, restore } = usePremium();
   const [selectedPlan, setSelectedPlan] = useState<PremiumPlan>('yearly');
+  const [purchasing, setPurchasing] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const isFr = language === 'fr';
 
   const plans = [
@@ -64,17 +65,38 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
     {
       icon: Sparkles,
       title: isFr ? '15+ thèmes premium' : '15+ premium themes',
-      description: isFr ? 'Fonds d\'écran exclusifs' : 'Exclusive wallpapers',
+      description: isFr ? "Fonds d'écran exclusifs" : 'Exclusive wallpapers',
     },
   ];
 
-  const handlePurchase = () => {
-    // TODO: Integrate Google Play Billing here
-    setPremium(selectedPlan);
-    onClose();
+  const handlePurchase = async () => {
+    if (purchasing) return;
+    setPurchasing(true);
+    try {
+      const success = await purchase(selectedPlan);
+      if (success) {
+        onClose();
+        alert(isFr ? '🎉 Bienvenue en Premium !' : '🎉 Welcome to Premium!');
+      }
+    } finally {
+      setPurchasing(false);
+    }
+  };
 
-    // Show success toast
-    alert(isFr ? '🎉 Bienvenue en Premium !' : '🎉 Welcome to Premium!');
+  const handleRestore = async () => {
+    if (restoring) return;
+    setRestoring(true);
+    try {
+      const success = await restore();
+      if (success) {
+        onClose();
+        alert(isFr ? '✅ Abonnement restauré !' : '✅ Subscription restored!');
+      } else {
+        alert(isFr ? 'Aucun achat trouvé.' : 'No purchase found.');
+      }
+    } finally {
+      setRestoring(false);
+    }
   };
 
   const triggerMessages = {
@@ -92,7 +114,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
     },
     exercise_locked: {
       title: isFr ? '🧘 Exercice Premium' : '🧘 Premium Exercise',
-      subtitle: isFr ? 'Débloquez tous les exercices d\'urgence' : 'Unlock all emergency exercises',
+      subtitle: isFr ? "Débloquez tous les exercices d'urgence" : 'Unlock all emergency exercises',
     },
   };
 
@@ -117,22 +139,17 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
           onClick={(e) => e.stopPropagation()}
           className="relative w-full max-w-md mx-4 rounded-t-3xl sm:rounded-3xl overflow-hidden z-[201]"
           style={{
-            background: theme.bgClass === 'bg-black' 
-              ? 'linear-gradient(180deg, #1a1a2e 0%, #0f0f1e 100%)'
-              : 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)', // ✅ Fond sombre pour TOUS les thèmes
+            background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
             maxHeight: '90vh',
           }}
         >
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm"
-            style={{
-              background: 'rgba(0,0,0,0.1)',
-              border: '1px solid rgba(255,255,255,0.1)',
-            }}
+            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(0,0,0,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}
           >
-            <X className="w-5 h-5" style={{ color: theme.textClass === 'text-white' ? '#fff' : '#000' }} />
+            <X className="w-5 h-5 text-white" />
           </button>
 
           <div className="overflow-y-auto max-h-[90vh] pb-safe">
@@ -149,13 +166,8 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
               >
                 <Sparkles className="w-10 h-10 text-white" />
               </motion.div>
-
-              <h2 className="text-2xl font-bold mb-2 text-white">
-                {message.title}
-              </h2>
-              <p className="text-sm text-slate-300">
-                {message.subtitle}
-              </p>
+              <h2 className="text-2xl font-bold mb-2 text-white">{message.title}</h2>
+              <p className="text-sm text-slate-300">{message.subtitle}</p>
             </div>
 
             {/* Features */}
@@ -167,23 +179,17 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 * index }}
                   className="flex items-start gap-3 p-3 rounded-xl"
-                  style={{
-                    background: 'rgba(255,255,255,0.05)', // ✅ Fond sombre semi-transparent
-                  }}
+                  style={{ background: 'rgba(255,255,255,0.05)' }}
                 >
-                  <div 
+                  <div
                     className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                     style={{ background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' }}
                   >
                     <feature.icon className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-white">
-                      {feature.title}
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      {feature.description}
-                    </p>
+                    <p className="text-sm font-semibold text-white">{feature.title}</p>
+                    <p className="text-xs text-slate-400">{feature.description}</p>
                   </div>
                   <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#10b981' }} />
                 </motion.div>
@@ -195,7 +201,6 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
               <p className="text-xs font-semibold uppercase tracking-wider text-center mb-4 text-slate-400">
                 {isFr ? 'Choisissez votre plan' : 'Choose your plan'}
               </p>
-
               {plans.map((plan) => (
                 <motion.button
                   key={plan.id}
@@ -205,46 +210,35 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
                   className="relative w-full p-4 rounded-xl transition-all"
                   style={{
                     background: selectedPlan === plan.id
-                      ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.15) 100%)'
-                      : 'rgba(255,255,255,0.05)', // ✅ Fond sombre pour tous
-                    border: selectedPlan === plan.id
-                      ? '2px solid #fbbf24'
-                      : '2px solid transparent',
+                      ? 'linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(245,158,11,0.15) 100%)'
+                      : 'rgba(255,255,255,0.05)',
+                    border: selectedPlan === plan.id ? '2px solid #fbbf24' : '2px solid transparent',
                   }}
                 >
                   {plan.popular && (
-                    <div 
+                    <div
                       className="absolute -top-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-xs font-bold text-white"
                       style={{ background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' }}
                     >
                       {isFr ? 'POPULAIRE' : 'POPULAR'}
                     </div>
                   )}
-
                   <div className="flex items-center justify-between">
                     <div className="flex-1 text-left">
-                      <p className="text-base font-bold text-white">
-                        {plan.name}
-                      </p>
-                      <p className="text-xs text-slate-400">
-                        {plan.price} {plan.period}
-                      </p>
+                      <p className="text-base font-bold text-white">{plan.name}</p>
+                      <p className="text-xs text-slate-400">{plan.price} {plan.period}</p>
                       {plan.savings && (
-                        <p className="text-xs font-semibold mt-1" style={{ color: '#10b981' }}>
-                          {plan.savings}
-                        </p>
+                        <p className="text-xs font-semibold mt-1" style={{ color: '#10b981' }}>{plan.savings}</p>
                       )}
                     </div>
-                    <div 
+                    <div
                       className="w-5 h-5 rounded-full flex items-center justify-center"
                       style={{
                         background: selectedPlan === plan.id ? '#fbbf24' : 'transparent',
                         border: `2px solid ${selectedPlan === plan.id ? '#fbbf24' : 'rgba(128,128,128,0.3)'}`,
                       }}
                     >
-                      {selectedPlan === plan.id && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-white" />
-                      )}
+                      {selectedPlan === plan.id && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
                     </div>
                   </div>
                 </motion.button>
@@ -252,23 +246,41 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
             </div>
 
             {/* CTA */}
-            <div className="px-6 pb-8">
+            <div className="px-6 pb-4">
               <motion.button
                 onClick={handlePurchase}
-                whileHover={{ scale: 1.02, y: -2 }}
+                disabled={purchasing}
+                whileHover={{ scale: purchasing ? 1 : 1.02, y: purchasing ? 0 : -2 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full py-4 rounded-xl text-white font-bold text-base shadow-xl"
                 style={{
                   background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
                   boxShadow: '0 8px 32px rgba(251, 191, 36, 0.4)',
+                  opacity: purchasing ? 0.7 : 1,
                 }}
               >
-                <span>{isFr ? '✨ Débloquer Premium' : '✨ Unlock Premium'}</span>
+                {purchasing
+                  ? <span className="animate-pulse">{isFr ? 'Traitement...' : 'Processing...'}</span>
+                  : <span>{isFr ? '✨ Débloquer Premium' : '✨ Unlock Premium'}</span>
+                }
               </motion.button>
-
               <p className="text-center text-xs mt-3 text-slate-400">
-                {isFr ? '7 jours gratuits sur l\'abonnement annuel' : '7 days free on yearly subscription'}
+                {isFr ? "7 jours gratuits sur l'abonnement annuel" : '7 days free on yearly subscription'}
               </p>
+            </div>
+
+            {/* Restore */}
+            <div className="px-6 pb-8">
+              <button
+                onClick={handleRestore}
+                disabled={restoring}
+                className="w-full py-2 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                {restoring
+                  ? (isFr ? 'Restauration...' : 'Restoring...')
+                  : (isFr ? 'Restaurer mes achats' : 'Restore purchases')
+                }
+              </button>
             </div>
           </div>
         </motion.div>
