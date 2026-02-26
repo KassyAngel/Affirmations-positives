@@ -4,36 +4,52 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingTop="14dp"
-    android:paddingBottom="14dp"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="16dp"
+    android:paddingStart="18dp"
+    android:paddingEnd="18dp"
     android:background="@drawable/widget_background"
     android:gravity="center_vertical">
 
-    <!-- Titre -->
-    <TextView
-        android:id="@+id/widget_title"
+    <!-- En-tête : icône + titre -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="✨ Message du jour"
-        android:textColor="#A0845C"
-        android:textSize="10sp"
-        android:textStyle="bold"
-        android:letterSpacing="0.12"
-        android:textAllCaps="true"
-        android:layout_marginBottom="8dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="10dp">
 
-    <!-- Message inspirant -->
+        <!-- Point décoratif doré -->
+        <View
+            android:layout_width="6dp"
+            android:layout_height="6dp"
+            android:background="#C8956C"
+            android:layout_marginEnd="7dp" />
+
+        <!-- Titre "Message du jour" -->
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="MESSAGE DU JOUR"
+            android:textColor="#C8956C"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.15"
+            android:textAllCaps="true" />
+    </LinearLayout>
+
+    <!-- Message inspirant — taille augmentée, lisible -->
     <TextView
         android:id="@+id/widget_quote"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Vous êtes plus fort(e) que vous ne le pensez."
-        android:textColor="#5C4A32"
-        android:textSize="13sp"
-        android:lineSpacingMultiplier="1.35"
+        android:text="Vous méritez tout le bonheur du monde."
+        android:textColor="#4A3728"
+        android:textSize="15sp"
+        android:lineSpacingMultiplier="1.4"
         android:maxLines="4"
-        android:ellipsize="end" />
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-light" />
 
 </LinearLayout>

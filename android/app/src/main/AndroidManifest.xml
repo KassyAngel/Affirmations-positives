@@ -19,6 +19,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <!-- ✅ AdMob -->
         <activity
             android:name="com.google.android.gms.ads.AdActivity"
@@ -31,6 +32,7 @@
         <meta-data
             android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
             android:value="true" />
+
         <!-- ✅ Widget Android natif -->
         <receiver
             android:name=".QuoteWidget"
@@ -38,12 +40,15 @@
             android:label="Affirmation du jour">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <!-- ✅ Action custom pour re-planifier l'alarme quotidienne -->
+                <action android:name="com.kcdev.affirmationspositives.UPDATE_WIDGET" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_info" />
         </receiver>
-        <!-- ✅ Receiver pour relancer les notifs après reboot du téléphone -->
+
+        <!-- ✅ Receiver pour relancer les notifs après reboot -->
         <receiver
             android:name="com.capacitorjs.plugins.localnotifications.LocalNotificationRestoreReceiver"
             android:exported="false">
@@ -52,6 +57,7 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -62,19 +68,19 @@
                 android:resource="@xml/file_paths" />
         </provider>
     </application>
+
     <!-- Réseau -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- ✅ Notifications locales (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- ✅ Alarmes exactes — nécessaires pour que Capacitor LocalNotifications
-         planifie à l'heure exacte (9h, 10h30, etc.) -->
+    <!-- ✅ Alarmes exactes -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <!-- ✅ Replanifier après reboot -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- AdMob -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
-    <!-- ✅ Google Play Billing — obligatoire pour abonnements et achats intégrés -->
+    <!-- ✅ Google Play Billing -->
     <uses-permission android:name="com.android.vending.BILLING" />
 </manifest>

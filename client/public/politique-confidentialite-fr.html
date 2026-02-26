@@ -18,7 +18,6 @@
             background: linear-gradient(160deg, #FFF0F3 0%, #FFE4EC 40%, #FFF5F7 100%);
             min-height: 100vh; padding: 72px 20px 60px;
         }
-        /* ── Bouton retour ── */
         .back-btn {
             position: fixed; top: 16px; left: 16px; z-index: 999;
             display: flex; align-items: center; gap: 8px;
@@ -162,11 +161,29 @@
             <li>Vos affirmations favorites</li>
             <li>Votre historique de consultations</li>
             <li>Vos préférences de l'application</li>
+            <li>Vos contributions soumises (citations et affirmations proposées), conservées localement jusqu'à suppression</li>
         </ul>
         <div class="info-box">
             <p><strong>✨ Important :</strong> Ces données restent uniquement sur votre appareil. Si vous désinstallez l'application ou supprimez les données, ces informations seront perdues définitivement.</p>
         </div>
-        <h3>4.2 Données collectées pour la version Premium</h3>
+
+        <h3>4.2 Données collectées lors de la soumission de contributions</h3>
+        <p>Lorsque vous utilisez la fonctionnalité <strong>« Ajouter les vôtres »</strong> pour proposer une citation ou une affirmation, nous collectons :</p>
+        <ul>
+            <li><strong>Le texte de la citation ou affirmation</strong> soumise volontairement</li>
+            <li><strong>Le type de contenu</strong> (affirmation ou citation)</li>
+            <li><strong>Le nom de l'auteur</strong> (optionnel, si vous choisissez de le renseigner)</li>
+            <li><strong>La date et l'heure de soumission</strong></li>
+        </ul>
+        <div class="info-box">
+            <p><strong>📧 Transmission :</strong> Ces données sont transmises par email via le service EmailJS à l'adresse <a href="mailto:kcevent37@gmail.com">kcevent37@gmail.com</a> à des fins de modération. Aucune donnée personnelle identifiante (nom, email, IP) n'est associée à ces soumissions.</p>
+        </div>
+        <div class="success-box">
+            <p class="stitle">✅ Ce que nous ne collectons PAS lors d'une contribution</p>
+            <p>Votre identité, votre adresse email, votre numéro de téléphone ou toute autre information personnelle ne sont pas requis pour soumettre une contribution. La soumission est volontaire et anonyme.</p>
+        </div>
+
+        <h3>4.3 Données collectées pour la version Premium</h3>
         <p>Uniquement si vous souscrivez à la version Premium :</p>
         <ul>
             <li><strong>Adresse email :</strong> Pour associer votre abonnement à votre compte</li>
@@ -174,7 +191,7 @@
             <li><strong>Date de souscription et d'expiration :</strong> Pour gérer la validité de votre accès Premium</li>
             <li><strong>Statut de paiement :</strong> Confirmation du paiement via Google Play Billing</li>
         </ul>
-        <h3>4.3 Données techniques collectées automatiquement</h3>
+        <h3>4.4 Données techniques collectées automatiquement</h3>
         <ul>
             <li>Adresse IP</li>
             <li>Type d'appareil et système d'exploitation</li>
@@ -191,19 +208,25 @@
             <li>Sauvegarder vos affirmations favorites</li>
             <li>Afficher l'interface dans votre langue préférée</li>
         </ul>
-        <h3>5.2 Gestion de l'abonnement Premium</h3>
+        <h3>5.2 Gestion des contributions utilisateurs</h3>
+        <ul>
+            <li>Recevoir et modérer les citations et affirmations proposées par les utilisateurs</li>
+            <li>Sélectionner les contributions pertinentes pour enrichir le contenu de l'application</li>
+            <li>Aucune publication sans examen préalable — toute contribution est relue avant d'être intégrée</li>
+        </ul>
+        <h3>5.3 Gestion de l'abonnement Premium</h3>
         <ul>
             <li>Activer votre accès Premium après paiement</li>
             <li>Restaurer votre abonnement après réinstallation</li>
             <li>Vous notifier avant l'expiration de votre accès</li>
             <li>Synchroniser votre statut Premium entre vos appareils</li>
         </ul>
-        <h3>5.3 Publicité (utilisateurs gratuits uniquement)</h3>
+        <h3>5.4 Publicité (utilisateurs gratuits uniquement)</h3>
         <ul>
             <li>Afficher des publicités pertinentes via Google AdMob</li>
             <li>Mesurer l'efficacité des publicités</li>
         </ul>
-        <h3>5.4 Amélioration de l'application</h3>
+        <h3>5.5 Amélioration de l'application</h3>
         <ul>
             <li>Analyser l'utilisation de l'application</li>
             <li>Corriger les bugs et améliorer les performances</li>
@@ -214,9 +237,9 @@
     <div class="section">
         <h2><span class="num">6</span>Base juridique du traitement</h2>
         <ul>
-            <li><strong>Consentement :</strong> Pour l'utilisation de l'application et l'affichage de publicités personnalisées</li>
+            <li><strong>Consentement :</strong> Pour l'utilisation de l'application, l'affichage de publicités personnalisées et la soumission volontaire de contributions</li>
             <li><strong>Exécution du contrat :</strong> Pour la gestion de votre abonnement Premium</li>
-            <li><strong>Intérêt légitime :</strong> Pour l'amélioration de l'application et la prévention de la fraude</li>
+            <li><strong>Intérêt légitime :</strong> Pour l'amélioration de l'application, la modération des contributions et la prévention de la fraude</li>
             <li><strong>Obligations légales :</strong> Pour le respect de la législation en vigueur</li>
         </ul>
     </div>
@@ -225,12 +248,14 @@
         <h2><span class="num">7</span>Durée de conservation des données</h2>
         <h3>7.1 Données stockées localement</h3>
         <p>Conservées jusqu'à ce que vous les supprimiez (désinstallation de l'application, suppression des données, ou effacement du cache).</p>
-        <h3>7.2 Données Premium</h3>
+        <h3>7.2 Contributions soumises</h3>
+        <p>Les textes soumis via la fonctionnalité « Ajouter les vôtres » sont conservés dans notre boîte email le temps de la modération, puis supprimés ou intégrés anonymement dans l'application. Aucune donnée personnelle n'est associée à ces contenus après modération.</p>
+        <h3>7.3 Données Premium</h3>
         <ul>
             <li><strong>Email et données d'abonnement :</strong> Conservés pendant la durée de votre abonnement + 3 ans (obligations comptables et fiscales)</li>
             <li><strong>Données de paiement Google Play :</strong> Gérées par Google Play et RevenueCat selon leurs propres politiques</li>
         </ul>
-        <h3>7.3 Suppression des données</h3>
+        <h3>7.4 Suppression des données</h3>
         <p>Vous pouvez demander la suppression de vos données à tout moment à <a href="mailto:cartomystik@gmail.com">cartomystik@gmail.com</a>. Nous procéderons dans un délai maximum de 30 jours.</p>
     </div>
 
@@ -238,6 +263,11 @@
         <h2><span class="num">8</span>Partage des données avec des tiers</h2>
         <p>Nous ne vendons, ne louons ni ne transférons vos données personnelles à des tiers, sauf dans les cas suivants :</p>
         <h3>8.1 Services essentiels</h3>
+        <div class="info-box">
+            <p><strong>EmailJS</strong> — États-Unis</p>
+            <p>Finalité : Transmission des contributions soumises volontairement par les utilisateurs (texte de citation, type, auteur optionnel, date). Aucune donnée personnelle identifiante n'est transmise.</p>
+            <p><a href="https://www.emailjs.com/legal/privacy-policy/" target="_blank">https://www.emailjs.com/legal/privacy-policy/</a></p>
+        </div>
         <div class="info-box">
             <p><strong>Google Play Billing</strong> — États-Unis</p>
             <p>Finalité : Traitement des paiements Premium. Nous ne collectons ni ne stockons vos informations de paiement.</p>
@@ -263,7 +293,7 @@
         <h2><span class="num">9</span>Cookies et technologies de suivi</h2>
         <h4>Stockage strictement nécessaire</h4>
         <ul>
-            <li><strong>localStorage :</strong> Sauvegarde de vos préférences (côté client uniquement)</li>
+            <li><strong>localStorage :</strong> Sauvegarde de vos préférences et de vos contributions soumises (côté client uniquement)</li>
             <li><strong>Session utilisateur :</strong> Authentification pour les utilisateurs Premium</li>
         </ul>
         <h4>Cookies publicitaires (utilisateurs gratuits)</h4>
@@ -313,6 +343,7 @@
         <h3>11.1 Mesures techniques</h3>
         <ul>
             <li><strong>Stockage local sécurisé :</strong> Vos données personnelles restent sur votre appareil</li>
+            <li><strong>Contributions anonymes :</strong> Aucune donnée personnelle identifiante n'est transmise lors d'une soumission de citation</li>
             <li><strong>Paiements sécurisés :</strong> Aucune donnée bancaire stockée par nous</li>
             <li><strong>Communications chiffrées :</strong> Toutes les communications avec nos services sont sécurisées</li>
         </ul>

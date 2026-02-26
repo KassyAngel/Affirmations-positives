@@ -3,7 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme, type ThemeId } from '@/contexts/ThemeContext';
 import { languages } from '@/locales';
-import { Settings, FileText, Shield, Check } from 'lucide-react';
+import { notificationService } from '@/services/notification-service';
+import {
+  Settings, Check, Bell, Globe, LayoutGrid,
+  Star, PenLine, FileText, Shield, X, ChevronRight,
+} from 'lucide-react';
+import { NotificationStep } from '@/components/onboarding/NotificationStep';
+import { WidgetStep } from '@/components/onboarding/WidgetStep';
+import { SubmitQuotePanel } from '@/components/SubmitQuotePanel';
 
 const LIGHT_THEMES: ThemeId[] = [
   'minimaliste-1', 'minimaliste-2', 'minimaliste-3',
@@ -11,163 +18,305 @@ const LIGHT_THEMES: ThemeId[] = [
   'minimaliste-8', 'zen-cascademinimaliste',
 ];
 
+const PLAY_STORE_URL =
+  'https://play.google.com/store/apps/details?id=com.kcdev.affirmationspositives';
+
+type Panel = 'menu' | 'notifications' | 'widget' | 'submit' | 'language';
+
 export function SettingsMenu() {
   const { language, setLanguage } = useLanguage();
   const { themeId } = useTheme();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen]   = useState(false);
+  const [panel, setPanel]     = useState<Panel>('menu');
   const menuRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({ right: 0 });
 
   useEffect(() => {
-    if (!isOpen || !menuRef.current) return;
-    const rect = menuRef.current.getBoundingClientRect();
-    const dropdownWidth = 224;
-    const screenWidth = window.innerWidth;
-    const spaceOnRight = screenWidth - rect.right;
-    const spaceOnLeft = rect.left;
-    if (spaceOnRight < dropdownWidth && spaceOnLeft >= dropdownWidth) {
-      setDropdownStyle({ left: 0 });
-    } else if (spaceOnRight < dropdownWidth && spaceOnLeft < dropdownWidth) {
-      const offset = rect.right - screenWidth + dropdownWidth + 8;
-      setDropdownStyle({ right: -Math.min(offset, rect.left - 8) });
-    } else {
-      setDropdownStyle({ right: 0 });
-    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    if (isOpen) document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [isOpen]);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setIsOpen(false);
-    };
-    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
+  const close = () => { setIsOpen(false); setTimeout(() => setPanel('menu'), 300); };
 
   const isLightTheme = LIGHT_THEMES.includes(themeId);
   const isFr = language === 'fr';
-
-  const legalLinks = isFr
-    ? [
-        { label: 'Mentions légales', href: '/mentions-legales-fr.html', icon: FileText },
-        { label: 'Confidentialité', href: '/politique-confidentialite-fr.html', icon: Shield },
-      ]
-    : [
-        { label: 'Legal Notice', href: '/mentions-legales-en.html', icon: FileText },
-        { label: 'Privacy Policy', href: '/politique-confidentialite-en.html', icon: Shield },
-      ];
 
   const btnStyle = isLightTheme
     ? { background: 'rgba(0,0,0,0.07)', border: '1.5px solid rgba(0,0,0,0.15)', backdropFilter: 'blur(8px)' }
     : { background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.25)', backdropFilter: 'blur(12px)' };
 
-  const panelStyle = {
-    background: isLightTheme ? 'rgba(255,255,255,0.96)' : 'rgba(18,18,28,0.92)',
-    border: isLightTheme ? '1px solid rgba(0,0,0,0.1)' : '1px solid rgba(255,255,255,0.12)',
-    backdropFilter: 'blur(24px)',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
-  };
+  const accent   = '#FF8C69';
+  const textMain = '#2D1A12';
+  const textSub  = '#B07060';
+  const rowHover = 'rgba(255,140,105,0.07)';
 
-  const textColor    = isLightTheme ? '#2D1A12' : '#f0f0f0';
-  const subTextColor = isLightTheme ? 'rgba(45,26,18,0.45)' : 'rgba(240,240,240,0.38)';
-  const dividerColor = isLightTheme ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.07)';
-  const hoverBg      = isLightTheme ? 'rgba(255,140,105,0.08)' : 'rgba(255,255,255,0.07)';
-  // ✅ Pêche au lieu du rose #E8547A
-  const accentColor  = '#FF8C69';
+  // ── Lignes du menu ─────────────────────────────────────────────────────────
+  const menuRows = [
+    {
+      icon: Bell, label: isFr ? 'Notifications' : 'Notifications',
+      sub:  isFr ? 'Modifier la fréquence et les horaires' : 'Edit frequency and schedule',
+      action: () => setPanel('notifications'), badge: false,
+    },
+    {
+      icon: Globe, label: isFr ? 'Langue' : 'Language',
+      sub:  language === 'fr' ? 'Français' : 'English',
+      action: () => setPanel('language'), badge: false,
+    },
+    {
+      icon: LayoutGrid, label: 'Widget',
+      sub:  isFr ? "Ajouter à l'écran d'accueil" : 'Add to home screen',
+      action: () => setPanel('widget'), badge: false,
+    },
+    {
+      icon: PenLine, label: isFr ? 'Ajouter les vôtres' : 'Submit your own',
+      sub:  isFr ? 'Proposer une citation ou affirmation' : 'Suggest a quote or affirmation',
+      action: () => setPanel('submit'), badge: false,
+    },
+    {
+      icon: Star, label: isFr ? 'Laisser un avis' : 'Leave a review',
+      sub:  isFr ? 'Votre avis compte beaucoup !' : 'Your feedback matters!',
+      action: () => { window.open(PLAY_STORE_URL, '_blank'); close(); },
+      badge: true,
+    },
+  ] as const;
+
+  const legalRows = isFr
+    ? [
+        { label: 'Mentions légales',  href: '/mentions-legales-fr.html',          icon: FileText },
+        { label: 'Confidentialité',   href: '/politique-confidentialite-fr.html',  icon: Shield  },
+      ]
+    : [
+        { label: 'Legal Notice',      href: '/mentions-legales-en.html',           icon: FileText },
+        { label: 'Privacy Policy',    href: '/politique-confidentialite-en.html',  icon: Shield  },
+      ];
 
   return (
     <div ref={menuRef} className="relative">
 
+      {/* Bouton déclencheur */}
       <motion.button
-        onClick={() => setIsOpen((p) => !p)}
+        onClick={() => { setPanel('menu'); setIsOpen(true); }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         aria-label="Paramètres"
-        aria-expanded={isOpen}
         className="flex items-center justify-center w-10 h-10 rounded-full transition-all"
         style={btnStyle}
       >
-        <motion.div animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.25, ease: 'easeInOut' }}>
+        <motion.div animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.25 }}>
           <Settings className="w-4 h-4" style={{ color: isLightTheme ? '#2D1A12' : 'white' }} />
         </motion.div>
       </motion.button>
 
+      {/* Modal plein écran */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            ref={dropdownRef}
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="absolute top-12 z-50 rounded-2xl overflow-hidden w-56"
-            style={{ ...panelStyle, ...dropdownStyle }}
-          >
-            {/* Langue */}
-            <div className="px-4 pt-3 pb-1">
-              <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: accentColor }}>
-                {isFr ? 'Langue' : 'Language'}
-              </p>
-              <div className="flex flex-col gap-0.5">
-                {languages.map((lang) => {
-                  const isActive = lang.code === language;
-                  return (
-                    <button
-                      key={lang.code}
-                      onClick={() => setLanguage(lang.code)}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl w-full text-left transition-colors"
-                      style={{
-                        background: isActive
-                          ? (isLightTheme ? 'rgba(255,140,105,0.10)' : 'rgba(255,140,105,0.18)')
-                          : 'transparent',
-                        color: textColor,
-                      }}
-                      onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = hoverBg; }}
-                      onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                    >
-                      <span className="text-lg leading-none">{lang.flag}</span>
-                      <span className="text-sm font-medium flex-1">{lang.name}</span>
-                      {isActive && <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: accentColor }} />}
-                    </button>
-                  );
-                })}
+          <>
+            {/* Overlay */}
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50"
+              style={{ background: 'rgba(0,0,0,0.55)' }}
+              onClick={close}
+            />
+
+            {/* Panneau glissant */}
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 260 }}
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl overflow-hidden"
+              style={{
+                background: 'rgba(255,250,248,0.98)',
+                maxHeight: '92vh',
+                boxShadow: '0 -8px 40px rgba(255,140,105,0.15)',
+              }}
+            >
+              {/* Poignée */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,140,105,0.3)' }} />
               </div>
-            </div>
 
-            <div className="mx-4 my-2" style={{ height: '1px', background: dividerColor }} />
+              <AnimatePresence mode="wait">
 
-            {/* Légal */}
-            <div className="px-4 pb-1">
-              <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: accentColor }}>
-                {isFr ? 'Légal' : 'Legal'}
-              </p>
-              <div className="flex flex-col gap-0.5">
-                {legalLinks.map(({ label, href, icon: Icon }) => (
-                  <a
-                    key={href}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
-                    style={{ color: textColor, textDecoration: 'none' }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = hoverBg; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                {/* ════ MENU PRINCIPAL ════ */}
+                {panel === 'menu' && (
+                  <motion.div key="menu"
+                    initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.18 }}
+                    className="overflow-y-auto" style={{ maxHeight: 'calc(92vh - 40px)' }}
                   >
-                    <Icon className="w-4 h-4 flex-shrink-0" style={{ color: accentColor }} />
-                    <span className="text-sm font-medium">{label}</span>
-                  </a>
-                ))}
-              </div>
-            </div>
+                    <div className="flex items-center justify-between px-6 py-4">
+                      <div>
+                        <h2 className="text-xl font-bold" style={{ color: textMain }}>
+                          {isFr ? 'Paramètres' : 'Settings'}
+                        </h2>
+                        <p className="text-xs mt-0.5" style={{ color: textSub }}>Kc Dev © 2026</p>
+                      </div>
+                      <button onClick={close}
+                        className="w-9 h-9 rounded-full flex items-center justify-center"
+                        style={{ background: 'rgba(255,140,105,0.1)' }}>
+                        <X className="w-4 h-4" style={{ color: accent }} />
+                      </button>
+                    </div>
 
-            {/* Footer */}
-            <div className="px-4 py-2.5 mt-1" style={{ borderTop: `1px solid ${dividerColor}` }}>
-              <p className="text-xs text-center" style={{ color: subTextColor }}>Kc Dev © 2026</p>
-            </div>
-          </motion.div>
+                    <div className="px-4 pb-6 space-y-1">
+                      {menuRows.map(row => {
+                        const Icon = row.icon;
+                        return (
+                          <motion.button key={row.label} onClick={row.action} whileTap={{ scale: 0.98 }}
+                            className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-colors text-left"
+                            style={{ background: rowHover }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,140,105,0.12)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = rowHover)}
+                          >
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                              style={{
+                                background: row.badge
+                                  ? 'linear-gradient(135deg,#FFF3CC,#FFE484)'
+                                  : 'linear-gradient(135deg,#FFF0EA,#FFE4D9)',
+                              }}>
+                              <Icon className="w-5 h-5" style={{ color: row.badge ? '#E8A020' : accent }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold" style={{ color: textMain }}>{row.label}</p>
+                              <p className="text-xs mt-0.5 truncate" style={{ color: textSub }}>{row.sub}</p>
+                            </div>
+                            <ChevronRight className="w-4 h-4 shrink-0" style={{ color: 'rgba(176,112,96,0.4)' }} />
+                          </motion.button>
+                        );
+                      })}
+
+                      {/* Légal */}
+                      <div className="pt-3 pb-1 px-2">
+                        <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: accent }}>
+                          {isFr ? 'Légal' : 'Legal'}
+                        </p>
+                      </div>
+                      {legalRows.map(({ label, href, icon: Icon }) => (
+                        <a key={href} href={href} target="_blank" rel="noopener noreferrer"
+                          onClick={close}
+                          className="flex items-center gap-4 px-4 py-3 rounded-2xl transition-colors"
+                          style={{ textDecoration: 'none' }}
+                          onMouseEnter={e => ((e.currentTarget as HTMLElement).style.background = rowHover)}
+                          onMouseLeave={e => ((e.currentTarget as HTMLElement).style.background = 'transparent')}
+                        >
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                            style={{ background: 'rgba(255,140,105,0.07)' }}>
+                            <Icon className="w-4 h-4" style={{ color: accent }} />
+                          </div>
+                          <span className="text-sm font-medium flex-1" style={{ color: textMain }}>{label}</span>
+                          <ChevronRight className="w-4 h-4" style={{ color: 'rgba(176,112,96,0.4)' }} />
+                        </a>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ════ LANGUE ════ */}
+                {panel === 'language' && (
+                  <motion.div key="language"
+                    initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.18 }}
+                    className="overflow-y-auto" style={{ maxHeight: 'calc(92vh - 40px)' }}
+                  >
+                    <PanelHeader title={isFr ? 'Langue' : 'Language'} onBack={() => setPanel('menu')} onClose={close} accent={accent} textMain={textMain} />
+                    <div className="px-4 pb-8 space-y-2">
+                      {languages.map(lang => {
+                        const isActive = lang.code === language;
+                        return (
+                          <motion.button key={lang.code}
+                            onClick={() => { setLanguage(lang.code); setPanel('menu'); }}
+                            whileTap={{ scale: 0.97 }}
+                            className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl transition-all"
+                            style={{
+                              background: isActive ? 'rgba(255,140,105,0.12)' : rowHover,
+                              border: isActive ? '1.5px solid rgba(255,140,105,0.3)' : '1.5px solid transparent',
+                            }}
+                          >
+                            <span className="text-3xl leading-none">{lang.flag}</span>
+                            <span className="text-sm font-semibold flex-1 text-left" style={{ color: textMain }}>{lang.name}</span>
+                            {isActive && <Check className="w-5 h-5" style={{ color: accent }} />}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ════ NOTIFICATIONS ════ */}
+                {panel === 'notifications' && (
+                  <motion.div key="notifications"
+                    initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.18 }}
+                    className="overflow-y-auto px-2 pb-8" style={{ maxHeight: 'calc(92vh - 40px)' }}
+                  >
+                    <PanelHeader title={isFr ? 'Notifications' : 'Notifications'} onBack={() => setPanel('menu')} onClose={close} accent={accent} textMain={textMain} />
+                    <div className="relative pt-2">
+                      <NotificationStep
+                        onContinue={async data => {
+                          notificationService.saveSettings(data);
+                          if (data.enabled) await notificationService.start(language as 'fr' | 'en');
+                          setPanel('menu');
+                        }}
+                        onBack={() => setPanel('menu')}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ════ WIDGET ════ */}
+                {panel === 'widget' && (
+                  <motion.div key="widget"
+                    initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.18 }}
+                    className="overflow-y-auto px-2 pb-8 flex flex-col items-center" style={{ maxHeight: 'calc(92vh - 40px)' }}
+                  >
+                    <PanelHeader title="Widget" onBack={() => setPanel('menu')} onClose={close} accent={accent} textMain={textMain} />
+                    <div className="relative w-full pt-2">
+                      <WidgetStep onContinue={() => setPanel('menu')} onBack={() => setPanel('menu')} />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* ════ AJOUTER LES VÔTRES ════ */}
+                {panel === 'submit' && (
+                  <motion.div key="submit"
+                    initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.18 }}
+                    className="overflow-y-auto" style={{ maxHeight: 'calc(92vh - 40px)' }}
+                  >
+                    <PanelHeader title={isFr ? 'Ajouter les vôtres' : 'Submit your own'} onBack={() => setPanel('menu')} onClose={close} accent={accent} textMain={textMain} />
+                    <SubmitQuotePanel language={language} onClose={() => setPanel('menu')} />
+                  </motion.div>
+                )}
+
+              </AnimatePresence>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+// ── Header réutilisable ────────────────────────────────────────────────────────
+function PanelHeader({ title, onBack, onClose, accent, textMain }: {
+  title: string; onBack: () => void; onClose: () => void;
+  accent: string; textMain: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-6 py-4">
+      <button onClick={onBack}
+        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+        style={{ background: 'rgba(255,140,105,0.1)' }}>
+        <ChevronRight className="w-4 h-4 rotate-180" style={{ color: accent }} />
+      </button>
+      <h2 className="text-lg font-bold flex-1" style={{ color: textMain }}>{title}</h2>
+      <button onClick={onClose}
+        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+        style={{ background: 'rgba(255,140,105,0.1)' }}>
+        <X className="w-4 h-4" style={{ color: accent }} />
+      </button>
     </div>
   );
 }

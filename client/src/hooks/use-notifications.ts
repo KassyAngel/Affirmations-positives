@@ -1,110 +1,158 @@
+/**
+ * use-notifications.ts
+ * ✅ Utilise @capacitor/local-notifications (natif Android)
+ * ❌ N'utilise PAS l'API Web Notification ni le Service Worker
+ *    (incompatibles avec une WebView Capacitor packagée Play Store)
+ */
+
 import { useState, useEffect } from 'react';
+import { LocalNotifications, PermissionStatus } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
 import { useLanguage } from '@/contexts/LanguageContext';
 
+const NOTIF_TIME_KEY  = 'notif_scheduled_time';
+const DAILY_NOTIF_ID  = 1001;
+
 export function useNotifications() {
-  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [permission, setPermission] = useState<'granted' | 'denied' | 'default'>('default');
   const [isSupported, setIsSupported] = useState(false);
   const { language, t } = useLanguage();
 
+  // ── Init ───────────────────────────────────────────────────────
   useEffect(() => {
-    // Vérifier si les notifications sont supportées
-    if ('Notification' in window && 'serviceWorker' in navigator) {
+    const init = async () => {
+      if (!Capacitor.isNativePlatform()) {
+        // En mode web/dev : on simule "supporté mais pas natif"
+        setIsSupported(false);
+        console.warn('[Notifs] Mode web — LocalNotifications non disponible');
+        return;
+      }
       setIsSupported(true);
-      setPermission(Notification.permission);
-    }
+      const status: PermissionStatus = await LocalNotifications.checkPermissions();
+      setPermission(mapPermission(status.display));
+
+      // Re-planifier au démarrage si déjà accordé
+      if (status.display === 'granted') {
+        await scheduleDailyNotification();
+      }
+    };
+    init();
   }, []);
 
+  // ── Demander la permission ─────────────────────────────────────
   const requestPermission = async (): Promise<boolean> => {
-    if (!isSupported) {
-      console.warn('Notifications not supported');
-      return false;
-    }
-
+    if (!isSupported) return false;
     try {
-      const result = await Notification.requestPermission();
-      setPermission(result);
+      const status = await LocalNotifications.requestPermissions();
+      const granted = status.display === 'granted';
+      setPermission(mapPermission(status.display));
 
-      if (result === 'granted') {
-        // Planifier la notification quotidienne
+      if (granted) {
         await scheduleDailyNotification();
-
-        // Afficher une notification de confirmation
-        showNotification(
-          t.notifications.permissionGranted,
-          t.notifications.body
+        // Notification de confirmation immédiate
+        await showImmediateNotification(
+          language === 'fr' ? '🌟 Notifications activées !' : '🌟 Notifications enabled!',
+          language === 'fr'
+            ? 'Tu recevras ta citation chaque matin à 8h 🎉'
+            : 'You will receive your daily quote every morning at 8am 🎉'
         );
-        return true;
       }
+      return granted;
+    } catch (err) {
+      console.error('[Notifs] requestPermissions error:', err);
       return false;
-    } catch (error) {
-      console.error('Error requesting notification permission:', error);
-      return false;
     }
   };
 
-  const showNotification = async (title: string, body: string, options?: NotificationOptions) => {
-    if (permission !== 'granted') {
-      console.warn('Notification permission not granted');
-      return;
-    }
-
-    if ('serviceWorker' in navigator) {
-      const registration = await navigator.serviceWorker.ready;
-      await registration.showNotification(title, {
+  // ── Notification immédiate ─────────────────────────────────────
+  const showImmediateNotification = async (title: string, body: string) => {
+    if (!isSupported || permission !== 'granted') return;
+    await LocalNotifications.schedule({
+      notifications: [{
+        id: 9999,
+        title,
         body,
-        icon: '/favicon.png',
-        badge: '/favicon.png',
-        tag: 'daily-quote',
-        requireInteraction: false,
-        data: { url: '/' },
-        ...options
-      });
-    } else {
-      // Fallback pour navigateurs sans service worker
-      new Notification(title, {
+        smallIcon: 'ic_stat_notification',
+        iconColor: '#F43F5E',
+        schedule: { at: new Date(Date.now() + 1000) },
+      }],
+    });
+  };
+
+  // ── Planifier chaque jour ──────────────────────────────────────
+  const scheduleDailyNotification = async (timeStr?: string) => {
+    if (!isSupported) return;
+
+    const savedTime = timeStr ?? localStorage.getItem(NOTIF_TIME_KEY) ?? '08:00';
+    if (timeStr) localStorage.setItem(NOTIF_TIME_KEY, timeStr);
+
+    const [hours, minutes] = savedTime.split(':').map(Number);
+    const now  = new Date();
+    const next = new Date();
+    next.setHours(hours, minutes, 0, 0);
+    if (next <= now) next.setDate(next.getDate() + 1);
+
+    const title = language === 'fr' ? '🌟 Ta citation du jour' : '🌟 Your daily quote';
+    const body  = language === 'fr'
+      ? "Ta dose de motivation quotidienne t'attend !"
+      : 'Your daily motivation awaits!';
+
+    await cancelDailyNotification();
+
+    await LocalNotifications.schedule({
+      notifications: [{
+        id:          DAILY_NOTIF_ID,
+        title,
         body,
-        icon: '/favicon.png',
-        ...options
-      });
-    }
+        smallIcon:   'ic_stat_notification',
+        iconColor:   '#F43F5E',
+        schedule: {
+          at:      next,
+          repeats: true,   // ✅ répétition native Android — aucun setTimeout
+          every:   'day',
+        },
+        extra: { url: '/' },
+      }],
+    });
+
+    console.log(`[Notifs] ✅ Planifiée à ${savedTime}, prochaine : ${next.toLocaleString()}`);
   };
 
-  const scheduleDailyNotification = async () => {
-    if ('serviceWorker' in navigator && permission === 'granted') {
-      const registration = await navigator.serviceWorker.ready;
-
-      // Envoyer un message au service worker pour planifier la notification
-      registration.active?.postMessage({
-        type: 'SCHEDULE_NOTIFICATION',
-        time: '08:00', // 8h du matin
-        quote: language === 'fr' 
-          ? 'Ta dose de motivation quotidienne t\'attend !' 
-          : 'Your daily motivation awaits!',
-        lang: language
-      });
-    }
+  // ── Annuler ────────────────────────────────────────────────────
+  const cancelDailyNotification = async () => {
+    try {
+      await LocalNotifications.cancel({ notifications: [{ id: DAILY_NOTIF_ID }] });
+    } catch (_) {}
   };
 
+  // ── Test visible immédiat ──────────────────────────────────────
   const testNotification = async () => {
-    await showNotification(
-      t.notifications.title,
-      t.notifications.body
+    await showImmediateNotification(
+      language === 'fr' ? '🌟 Test de notification' : '🌟 Notification test',
+      language === 'fr' ? 'Vos notifications fonctionnent ! 🎉' : 'Your notifications work! 🎉'
     );
   };
 
-  // Re-planifier quand la langue change
+  // ── Re-planifier si la langue change ──────────────────────────
   useEffect(() => {
-    if (permission === 'granted') {
+    if (permission === 'granted' && isSupported) {
       scheduleDailyNotification();
     }
-  }, [language, permission]);
+  }, [language]);
 
   return {
     permission,
     isSupported,
     requestPermission,
-    showNotification,
     testNotification,
-    scheduleDailyNotification
+    scheduleDailyNotification,
+    cancelDailyNotification,
+    showImmediateNotification,
   };
+}
+
+function mapPermission(display: string): 'granted' | 'denied' | 'default' {
+  if (display === 'granted') return 'granted';
+  if (display === 'denied')  return 'denied';
+  return 'default';
 }

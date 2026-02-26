@@ -20,10 +20,13 @@ interface NotificationContent {
 // ─── Clés localStorage ────────────────────────────────────────────────────────
 const SETTINGS_KEY          = 'notification_settings';
 const LAST_NOTIFICATION_KEY = 'last_notification_time';
-const CURRENT_QUOTE_KEY     = 'current_widget_quote';
 
-// ─── Citations de secours embarquées (fonctionne sans réseau) ─────────────────
-// Utilisées quand le fetch API échoue (app en arrière-plan, pas de réseau, etc.)
+// ✅ Le widget Java lit cette clé dans CapacitorStorage.
+// On stocke UNIQUEMENT le texte brut (pas un objet JSON)
+// pour éviter le double-encodage Capacitor.
+const CURRENT_QUOTE_KEY = 'current_widget_quote';
+
+// ─── Citations de secours ─────────────────────────────────────────────────────
 const FALLBACK_FR = [
   'Vous êtes plus fort(e) que vous ne le pensez.',
   'Chaque jour est une nouvelle opportunité de grandir.',
@@ -77,10 +80,9 @@ export class NotificationService {
     return NotificationService.instance;
   }
 
-  // ── Préférences ─────────────────────────────────────────────────────────────
+  // ── Préférences ──────────────────────────────────────────────────────────────
   saveSettings(settings: NotificationSettings) {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    console.log('✅ Préférences sauvegardées:', settings);
   }
 
   getSettings(): NotificationSettings | null {
@@ -88,22 +90,27 @@ export class NotificationService {
     return raw ? JSON.parse(raw) : null;
   }
 
-  // ── Citation courante (pour le widget) ──────────────────────────────────────
+  // ── Citation courante pour le widget ─────────────────────────────────────────
+  // Retourne l'objet complet pour l'usage interne React
   getCurrentQuote(): NotificationContent | null {
-    const raw = localStorage.getItem(CURRENT_QUOTE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    const body = localStorage.getItem(CURRENT_QUOTE_KEY);
+    if (!body) return null;
+    // On stocke le body brut, on reconstruit l'objet ici
+    return { title: '', body };
   }
 
+  // ✅ FIX WIDGET : stocker UNIQUEMENT le texte brut.
+  // Capacitor encapsule localStorage dans CapacitorStorage en ajoutant
+  // des guillemets JSON autour de la valeur — si on stocke déjà du JSON,
+  // le widget reçoit une chaîne double-encodée que JSONObject ne parse pas.
+  // En stockant le texte directement, le widget lit juste une string simple.
   private saveCurrentQuote(content: NotificationContent) {
-    localStorage.setItem(CURRENT_QUOTE_KEY, JSON.stringify(content));
+    localStorage.setItem(CURRENT_QUOTE_KEY, content.body);
   }
 
-  // ── Calculs horaires ────────────────────────────────────────────────────────
+  // ── Calculs horaires ─────────────────────────────────────────────────────────
   private calculateInterval(frequency: number, startTime: string, endTime: string): number {
-    const toMin = (t: string) => {
-      const [h, m] = t.split(':').map(Number);
-      return h * 60 + m;
-    };
+    const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
     const total = toMin(endTime) - toMin(startTime);
     return Math.max(1, Math.floor(total / frequency));
   }
@@ -115,18 +122,14 @@ export class NotificationService {
     return cur >= toMin(startTime) && cur <= toMin(endTime);
   }
 
-  // ── Contenu aléatoire : essaie l'API, tombe sur le fallback si échec ─────────
-  // ✅ FIX : timeout court + fallback garanti → ne bloque plus la planification
+  // ── Contenu aléatoire ────────────────────────────────────────────────────────
   private async getRandomContent(language: 'fr' | 'en'): Promise<NotificationContent> {
-    // 50% de chance de tenter une citation de la BDD
     if (Math.random() > 0.5) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // timeout 3s
-
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
         const res = await fetch('/api/quotes', { signal: controller.signal });
         clearTimeout(timeoutId);
-
         if (res.ok) {
           const quotes: Quote[] = await res.json();
           if (quotes.length > 0) {
@@ -139,20 +142,14 @@ export class NotificationService {
             };
           }
         }
-      } catch {
-        // réseau indisponible → fallback silencieux
-      }
+      } catch { /* fallback silencieux */ }
     }
 
-    // ✅ Toujours un contenu disponible même hors-ligne
-    try {
-      return getRandomMessage(language);
-    } catch {
-      return getFallbackContent(language);
-    }
+    try { return getRandomMessage(language); }
+    catch { return getFallbackContent(language); }
   }
 
-  // ── Demander la permission ───────────────────────────────────────────────────
+  // ── Permission ───────────────────────────────────────────────────────────────
   async requestPermission(): Promise<boolean> {
     if (isCapacitor()) {
       try {
@@ -170,10 +167,11 @@ export class NotificationService {
     }
   }
 
-  // ── Envoi d'une notification immédiate ──────────────────────────────────────
+  // ── Envoi d'une notification ─────────────────────────────────────────────────
   private async sendNotification(language: 'fr' | 'en' = 'fr') {
     const content = await this.getRandomContent(language);
 
+    // ✅ Sauvegarde le texte brut pour le widget
     this.saveCurrentQuote(content);
     localStorage.setItem(LAST_NOTIFICATION_KEY, Date.now().toString());
 
@@ -192,7 +190,6 @@ export class NotificationService {
             extra: { quote: content.body },
           }],
         });
-        console.log('📬 Notification Android envoyée:', content.title);
       } catch (e) {
         console.error('Erreur notification Capacitor:', e);
       }
@@ -201,18 +198,13 @@ export class NotificationService {
       const notif = new Notification(content.title, {
         body: content.body,
         icon: '/icon-192.png',
-        badge: '/badge-72.png',
         tag: 'daily-motivation',
-        silent: false,
       });
       setTimeout(() => notif.close(), 5000);
-      console.log('📬 Notification web envoyée:', content.title);
     }
   }
 
-  // ── Planifier TOUTES les notifications du jour (mode Capacitor) ──────────────
-  // ✅ FIX PRINCIPAL : génère les contenus en parallèle avec Promise.all
-  //    + fallback garanti + pas de dépendance réseau bloquante
+  // ── Planifier toutes les notifications du jour ───────────────────────────────
   private async scheduleAllNotificationsForToday(
     settings: NotificationSettings,
     language: 'fr' | 'en'
@@ -222,43 +214,30 @@ export class NotificationService {
     try {
       const { LocalNotifications } = await import('@capacitor/local-notifications');
 
-      // Annuler les anciennes notifications planifiées
       const pending = await LocalNotifications.getPending();
       if (pending.notifications.length > 0) {
         await LocalNotifications.cancel({ notifications: pending.notifications });
-        console.log(`🗑 ${pending.notifications.length} anciennes notifications annulées`);
       }
 
-      const toMin = (t: string) => {
-        const [h, m] = t.split(':').map(Number);
-        return h * 60 + m;
-      };
+      const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
       const startMin = toMin(settings.startTime);
       const endMin   = toMin(settings.endTime);
 
-      // ✅ Éviter division par zéro
-      if (settings.frequency <= 0 || endMin <= startMin) {
-        console.warn('⚠️ Paramètres invalides:', settings);
-        return;
-      }
+      if (settings.frequency <= 0 || endMin <= startMin) return;
 
       const interval = Math.floor((endMin - startMin) / settings.frequency);
       const now = new Date();
 
-      // ✅ Pré-générer tous les contenus en parallèle (plus rapide, moins de risques timeout)
-      const contentPromises = Array.from({ length: settings.frequency }, () =>
-        this.getRandomContent(language)
+      const contents = await Promise.all(
+        Array.from({ length: settings.frequency }, () => this.getRandomContent(language))
       );
-      const contents = await Promise.all(contentPromises);
 
       const notifications = [];
-
       for (let i = 0; i < settings.frequency; i++) {
         const targetMin = startMin + i * interval;
         const targetDate = new Date();
         targetDate.setHours(Math.floor(targetMin / 60), targetMin % 60, 0, 0);
 
-        // Ne planifier que dans le futur
         if (targetDate > now) {
           notifications.push({
             id: 1000 + i,
@@ -268,7 +247,6 @@ export class NotificationService {
             sound: 'default',
             smallIcon: 'ic_stat_notification',
             iconColor: '#F43F5E',
-            // ✅ allowWhileIdle : notification même en mode Doze (économie batterie)
             extra: { quote: contents[i].body },
           });
         }
@@ -276,55 +254,43 @@ export class NotificationService {
 
       if (notifications.length > 0) {
         await LocalNotifications.schedule({ notifications });
-        console.log(`✅ ${notifications.length}/${settings.frequency} notifications planifiées pour aujourd'hui`);
-        // Log des horaires pour debug
-        notifications.forEach(n => {
-          console.log(`  📅 ${n.schedule.at.toLocaleTimeString()} — ${n.body.substring(0, 40)}...`);
-        });
-      } else {
-        console.log('⚠️ Aucune notification à planifier (toutes dans le passé ?)');
+
+        // ✅ Sauvegarder la première notification du jour comme quote du widget
+        this.saveCurrentQuote({ title: notifications[0].title, body: notifications[0].body });
+
+        console.log(`✅ ${notifications.length} notifications planifiées`);
       }
     } catch (e) {
-      console.error('Erreur planification Capacitor:', e);
+      console.error('Erreur planification:', e);
     }
   }
 
-  // ── Démarrer le service ──────────────────────────────────────────────────────
+  // ── Démarrer ─────────────────────────────────────────────────────────────────
   async start(language: 'fr' | 'en' = 'fr') {
     const settings = this.getSettings();
-    if (!settings?.enabled || settings.frequency === 0) {
-      console.log('❌ Notifications désactivées ou fréquence 0');
-      return;
-    }
+    if (!settings?.enabled || settings.frequency === 0) return;
 
     if (isCapacitor()) {
-      // Android : planifier toutes les notifications en une fois
       await this.scheduleAllNotificationsForToday(settings, language);
 
-      // ✅ Replanifier chaque jour à minuit (si app ouverte)
       this.stop();
       const now = new Date();
       const midnight = new Date();
-      midnight.setHours(24, 0, 5, 0); // 00:00:05 pour éviter les edge cases
+      midnight.setHours(24, 0, 5, 0);
       const msUntilMidnight = midnight.getTime() - now.getTime();
 
-      const replanify = () => {
+      setTimeout(() => {
         this.scheduleAllNotificationsForToday(settings, language);
         this.intervalId = window.setInterval(() => {
           this.scheduleAllNotificationsForToday(settings, language);
         }, 24 * 60 * 60 * 1000);
-      };
-
-      setTimeout(replanify, msUntilMidnight);
+      }, msUntilMidnight);
 
     } else {
-      // Web : vérifier toutes les minutes (app doit rester ouverte)
       this.stop();
       const intervalMinutes = this.calculateInterval(
         settings.frequency, settings.startTime, settings.endTime
       );
-      console.log(`📱 Service web: ${settings.frequency}x/jour, toutes les ${intervalMinutes}min`);
-
       this.intervalId = window.setInterval(() => {
         if (this.isInTimeRange(settings.startTime, settings.endTime)) {
           const last = localStorage.getItem(LAST_NOTIFICATION_KEY);
@@ -337,7 +303,7 @@ export class NotificationService {
     }
   }
 
-  // ── Arrêter ──────────────────────────────────────────────────────────────────
+  // ── Arrêter ───────────────────────────────────────────────────────────────────
   stop() {
     if (this.intervalId) {
       clearInterval(this.intervalId);
@@ -345,19 +311,15 @@ export class NotificationService {
     }
   }
 
-  // ── Test immédiat ─────────────────────────────────────────────────────────────
+  // ── Test ──────────────────────────────────────────────────────────────────────
   async testNotification(language: 'fr' | 'en' = 'fr') {
     await this.sendNotification(language);
-    console.log('🧪 Notification de test envoyée');
     return true;
   }
 
-  // ── Debug : affiche les notifications en attente ──────────────────────────────
+  // ── Debug ─────────────────────────────────────────────────────────────────────
   async debugPendingNotifications() {
-    if (!isCapacitor()) {
-      console.log('Debug uniquement disponible sur Android');
-      return;
-    }
+    if (!isCapacitor()) return;
     try {
       const { LocalNotifications } = await import('@capacitor/local-notifications');
       const pending = await LocalNotifications.getPending();

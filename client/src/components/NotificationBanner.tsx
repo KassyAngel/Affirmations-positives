@@ -12,26 +12,16 @@ export function NotificationBanner() {
   const { t } = useLanguage();
 
   useEffect(() => {
-    // Afficher la bannière seulement si :
-    // - Les notifications sont supportées
-    // - La permission n'a pas encore été donnée
-    // - L'utilisateur n'a pas déjà fermé la bannière
     const dismissed = localStorage.getItem(BANNER_DISMISSED_KEY);
-
     if (isSupported && permission === 'default' && !dismissed) {
-      // Afficher après 3 secondes pour ne pas être intrusif
-      const timer = setTimeout(() => {
-        setIsVisible(true);
-      }, 3000);
+      const timer = setTimeout(() => setIsVisible(true), 3000);
       return () => clearTimeout(timer);
     }
   }, [isSupported, permission]);
 
   const handleEnable = async () => {
     const granted = await requestPermission();
-    if (granted) {
-      setIsVisible(false);
-    }
+    if (granted) setIsVisible(false);
   };
 
   const handleDismiss = () => {
@@ -39,9 +29,8 @@ export function NotificationBanner() {
     localStorage.setItem(BANNER_DISMISSED_KEY, 'true');
   };
 
-  if (!isSupported || permission !== 'default') {
-    return null;
-  }
+  // Ne pas afficher si : pas supporté, déjà accordé/refusé, ou fermé
+  if (!isSupported || permission !== 'default') return null;
 
   return (
     <AnimatePresence>
@@ -53,41 +42,63 @@ export function NotificationBanner() {
           transition={{ type: 'spring', damping: 20 }}
           className="fixed bottom-20 left-4 right-4 z-40 max-w-md mx-auto"
         >
-          <div className="bg-card border border-white/10 rounded-2xl p-4 shadow-2xl backdrop-blur-xl">
+          <div
+            className="rounded-2xl p-4 shadow-2xl"
+            style={{
+              background: 'rgba(255,250,248,0.97)',
+              border: '1px solid rgba(255,140,105,0.2)',
+              backdropFilter: 'blur(20px)',
+            }}
+          >
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-                <Bell className="w-5 h-5 text-primary" />
+              {/* Icône */}
+              <div
+                className="p-2 rounded-xl shrink-0"
+                style={{ background: 'rgba(255,140,105,0.12)' }}
+              >
+                <Bell className="w-5 h-5" style={{ color: '#FF8C69' }} />
               </div>
 
+              {/* Contenu */}
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-sm mb-1">
+                <h3 className="font-bold text-sm mb-1" style={{ color: '#2D1A12' }}>
                   {t.notifications.permissionTitle}
                 </h3>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs" style={{ color: '#B07060' }}>
                   {t.notifications.permissionMessage}
                 </p>
 
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={handleEnable}
-                    className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                    className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105"
+                    style={{
+                      background: 'linear-gradient(to right, #FF8C69, #FFA882)',
+                      boxShadow: '0 4px 12px rgba(255,140,105,0.3)',
+                    }}
                   >
                     {t.notifications.enable}
                   </button>
                   <button
                     onClick={handleDismiss}
-                    className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/80 transition-colors"
+                    className="px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+                    style={{
+                      background: 'rgba(255,140,105,0.08)',
+                      color: '#B07060',
+                    }}
                   >
                     {t.notifications.cancel}
                   </button>
                 </div>
               </div>
 
+              {/* Fermer */}
               <button
                 onClick={handleDismiss}
-                className="p-1 hover:bg-white/5 rounded-lg transition-colors shrink-0"
+                className="p-1 rounded-lg transition-colors shrink-0"
+                style={{ color: '#B07060' }}
               >
-                <X className="w-4 h-4 text-muted-foreground" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>

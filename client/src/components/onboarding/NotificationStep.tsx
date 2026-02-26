@@ -145,8 +145,8 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
         <div className="rounded-xl p-3" style={{ background: 'linear-gradient(to right, #FFF5F0, #FFF0EA)', border: '1px solid #FFE4D9' }}>
           <p className="text-xs text-center" style={{ color: '#7A4030' }}>
             {language === 'fr'
-              ? '📚 100+ messages inspirants + citations aléatoires'
-              : '📚 100+ inspiring messages + random quotes'}
+              ? '100+ messages inspirants + citations aléatoires'
+              : '100+ inspiring messages + random quotes'}
           </p>
         </div>
       </motion.div>
