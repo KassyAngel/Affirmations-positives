@@ -1,14 +1,12 @@
 import type { TranslationKeys } from './fr';
 
 export const en: TranslationKeys = {
-  // Navigation
   nav: {
     home: 'Home',
-    categories: 'Themes',
+    categories: 'Categories',
     favorites: 'Favorites',
     stats: 'Stats'
   },
-  // Home page
   home: {
     greeting: 'Hello',
     dateFormat: 'en-US',
@@ -23,7 +21,6 @@ export const en: TranslationKeys = {
     quoteCopied: 'Quote copied!',
     shareTitle: 'Quote of the day'
   },
-  // Mood Overlay
   mood: {
     title: 'Hello',
     subtitle: 'How are you feeling today?',
@@ -33,22 +30,25 @@ export const en: TranslationKeys = {
     tired: 'Tired',
     frustrated: 'Frustrated'
   },
-  // Categories
   categories: {
-    title: 'Themes',
+    title: 'Categories',
     subtitle: 'Explore quotes by category',
-    work: 'Work',
+    work: 'Career',
     love: 'Love',
-    sport: 'Sport',
-    confidence: 'Confidence',
-    support: 'Support',
-    breakup: 'Breakup',
-    philosophy: 'Philosophy',
-    success: 'Success',
+    sport: 'Energy & Sport',
+    confidence: 'Self-confidence',
+    support: 'Stress & Anxiety',
+    breakup: 'Heartbreak',
+    philosophy: 'Wisdom',
+    success: 'Happiness',
+    gratitude: 'Gratitude',
+    family: 'Family',
+    wellness: 'Wellness',
+    femininity: 'Femininity',
+    'letting-go': 'Letting Go',
     quotes: 'quotes',
     quote: 'quote'
   },
-  // Favorites
   favorites: {
     title: 'Favorites',
     subtitle: 'carefully saved quotes',
@@ -56,7 +56,6 @@ export const en: TranslationKeys = {
     emptySubtitle: 'Tap the heart on a quote to find it here.',
     savedCount: '{{count}} carefully saved quotes'
   },
-  // Statistics
   stats: {
     title: 'Statistics',
     subtitle: 'Your progress and your mood',
@@ -68,7 +67,6 @@ export const en: TranslationKeys = {
     days: 'Days',
     day: 'Day'
   },
-  // Notifications
   notifications: {
     title: '🌟 Your daily quote',
     body: 'Your daily motivation awaits!',
@@ -81,7 +79,6 @@ export const en: TranslationKeys = {
     viewNow: 'View now',
     later: 'Later'
   },
-  // Onboarding
   onboarding: {
     welcome: {
       title: 'Welcome',
@@ -125,7 +122,7 @@ export const en: TranslationKeys = {
       subtitle: 'Small doses of motivation can make a big difference',
     },
     theme: {
-      title: 'Which theme would you like to start with?',
+      title: 'Which category would you like to start with?',
     },
     widget: {
       title: 'Add a widget to your home screen',
@@ -139,7 +136,6 @@ export const en: TranslationKeys = {
     },
     skip: 'Skip'
   },
-  // Release Journal
   releaseJournal: {
     title: 'Release Journal',
     subtitle: 'Release your negative thoughts',
@@ -167,7 +163,6 @@ export const en: TranslationKeys = {
       "⭐ Every thought released is a victory over yourself."
     ]
   },
-  // Settings
   settings: {
     title: 'Settings',
     language: 'Language',
@@ -176,7 +171,6 @@ export const en: TranslationKeys = {
     about: 'About',
     version: 'Version'
   },
-  // Common
   common: {
     loading: 'Loading...',
     error: 'An error occurred',

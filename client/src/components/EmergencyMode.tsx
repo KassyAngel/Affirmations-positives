@@ -178,7 +178,7 @@ function AnchorSequence({
 
 export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
   const { language } = useLanguage();
-  const { isPremium } = usePremium();
+  const { isPremium, tier } = usePremium();
   const [showPaywall, setShowPaywall] = useState(false);
   const isFr = language === 'fr';
 

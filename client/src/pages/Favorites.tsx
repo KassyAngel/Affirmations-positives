@@ -9,15 +9,20 @@ const CATEGORY_CONFIG: Record<string, {
   accent: string; bgFrom: string; bgTo: string;
   label: { fr: string; en: string };
 }> = {
-  work:       { accent: '#E07B5A', bgFrom: '#FFF3EE', bgTo: '#FFE8DC', label: { fr: 'Travail',     en: 'Work'       } },
-  love:       { accent: '#D4657A', bgFrom: '#FFF0F2', bgTo: '#FFE0E6', label: { fr: 'Amour',       en: 'Love'       } },
-  sport:      { accent: '#C97B30', bgFrom: '#FFF8EE', bgTo: '#FFECD4', label: { fr: 'Sport',       en: 'Sport'      } },
-  confidence: { accent: '#3A9E6F', bgFrom: '#F0FBF5', bgTo: '#D8F3E6', label: { fr: 'Confiance',  en: 'Confidence' } },
-  support:    { accent: '#5580C8', bgFrom: '#F0F5FF', bgTo: '#DAE5FF', label: { fr: 'Soutien',     en: 'Support'    } },
-  breakup:    { accent: '#9B6BB5', bgFrom: '#F8F0FF', bgTo: '#EBD8FF', label: { fr: 'Rupture',     en: 'Breakup'    } },
-  philosophy: { accent: '#B08040', bgFrom: '#FFFBF0', bgTo: '#FFF0CC', label: { fr: 'Philosophie', en: 'Philosophy' } },
-  success:    { accent: '#3AABB0', bgFrom: '#F0FAFA', bgTo: '#CCF0F2', label: { fr: 'Succès',      en: 'Success'    } },
-  default:    { accent: '#FF8C69', bgFrom: '#FFF5F0', bgTo: '#FFE8DC', label: { fr: 'Autre',       en: 'Other'      } },
+  work:         { accent: '#C96A5A', bgFrom: '#FFF3EE', bgTo: '#FFE8DC', label: { fr: 'Carrière',        en: 'Career'         } },
+  love:         { accent: '#C4607A', bgFrom: '#FFF0F2', bgTo: '#FFE0E6', label: { fr: 'Amour',            en: 'Love'           } },
+  sport:        { accent: '#B87040', bgFrom: '#FFF8EE', bgTo: '#FFECD4', label: { fr: 'Énergie & Sport',  en: 'Energy & Sport' } },
+  confidence:   { accent: '#B8607A', bgFrom: '#FFF0F2', bgTo: '#FFE0E6', label: { fr: 'Confiance en soi', en: 'Self-confidence'} },
+  support:      { accent: '#A06080', bgFrom: '#FDF0F5', bgTo: '#F5D8E8', label: { fr: 'Stress & Anxiété', en: 'Stress & Anxiety'} },
+  breakup:      { accent: '#A05870', bgFrom: '#FDF0F4', bgTo: '#F5D8E4', label: { fr: 'Rupture',          en: 'Heartbreak'     } },
+  philosophy:   { accent: '#A07850', bgFrom: '#FFFBF0', bgTo: '#FFF0CC', label: { fr: 'Sagesse',          en: 'Wisdom'         } },
+  success:      { accent: '#B86870', bgFrom: '#FFF0F2', bgTo: '#FFE0E6', label: { fr: 'Bonheur',          en: 'Happiness'      } },
+  gratitude:    { accent: '#C47A5A', bgFrom: '#FFF5EE', bgTo: '#FFEADC', label: { fr: 'Gratitude',        en: 'Gratitude'      } },
+  family:       { accent: '#8A6E9A', bgFrom: '#F8F0FF', bgTo: '#EBD8FF', label: { fr: 'Famille',          en: 'Family'         } },
+  wellness:     { accent: '#6A9A7A', bgFrom: '#F0FBF5', bgTo: '#D8F3E6', label: { fr: 'Bien-être',        en: 'Wellness'       } },
+  femininity:   { accent: '#C4607A', bgFrom: '#FFF0F2', bgTo: '#FFE0E6', label: { fr: 'Féminité',         en: 'Femininity'     } },
+  'letting-go': { accent: '#7A90B0', bgFrom: '#F0F5FF', bgTo: '#DAE5FF', label: { fr: 'Lâcher prise',     en: 'Letting Go'     } },
+  default:      { accent: '#FF8C69', bgFrom: '#FFF5F0', bgTo: '#FFE8DC', label: { fr: 'Autre',            en: 'Other'          } },
 };
 
 export default function Favorites() {
@@ -51,11 +56,11 @@ export default function Favorites() {
             {favoriteQuotes.map((quote, index) => {
               const cfg = CATEGORY_CONFIG[quote.category] ?? CATEGORY_CONFIG.default;
               const categoryLabel = language === 'fr' ? cfg.label.fr : cfg.label.en;
-              // ✅ Schéma réel : content (fr) + contentEn (en)
-              const quoteText  = language === 'en'
+              const quoteText = language === 'en'
                 ? (quote.contentEn ?? quote.content ?? '')
                 : (quote.content ?? '');
               const authorText = quote.author ?? '';
+
               return (
                 <motion.div key={quote.id}
                   initial={{ opacity: 0, y: 18, scale: 0.97 }}
@@ -72,6 +77,7 @@ export default function Favorites() {
                     style={{ background: `linear-gradient(90deg, transparent, ${cfg.accent}70, transparent)` }} />
                   <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full blur-3xl"
                     style={{ background: `${cfg.accent}18` }} />
+
                   <div className="relative z-10 p-5">
                     <div className="flex items-start justify-between mb-4">
                       <span className="text-3xl font-serif leading-none opacity-25" style={{ color: cfg.accent }}>"</span>
@@ -100,7 +106,11 @@ export default function Favorites() {
                       <motion.button whileTap={{ scale: 0.88 }}
                         className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
                         style={{ background: 'rgba(255,255,255,0.70)', border: '1px solid rgba(0,0,0,0.08)', color: '#7A4030' }}
-                        onClick={() => { if (navigator.share && quoteText) navigator.share({ text: `${quoteText}${authorText ? ` — ${authorText}` : ''}` }); }}>
+                        onClick={() => {
+                          if (navigator.share && quoteText) {
+                            navigator.share({ text: `${quoteText}${authorText ? ` — ${authorText}` : ''}` });
+                          }
+                        }}>
                         <Share2 className="w-4 h-4" />
                         <span>{language === 'fr' ? 'Partager' : 'Share'}</span>
                       </motion.button>

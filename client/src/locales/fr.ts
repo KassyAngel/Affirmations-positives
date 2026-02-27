@@ -1,12 +1,10 @@
 export const fr = {
-  // Navigation
   nav: {
     home: 'Accueil',
-    categories: 'Thèmes',
+    categories: 'Catégories',
     favorites: 'Favoris',
     stats: 'Stats'
   },
-  // Page d'accueil
   home: {
     greeting: 'Bonjour',
     dateFormat: 'fr-FR',
@@ -21,7 +19,6 @@ export const fr = {
     quoteCopied: 'Citation copiée !',
     shareTitle: 'Citation du jour'
   },
-  // Mood Overlay
   mood: {
     title: 'Bonjour',
     subtitle: "Comment te sens-tu aujourd'hui ?",
@@ -31,22 +28,25 @@ export const fr = {
     tired: 'Fatigué',
     frustrated: 'Frustré'
   },
-  // Catégories
   categories: {
-    title: 'Thèmes',
+    title: 'Catégories',
     subtitle: 'Explorez les citations par catégorie',
-    work: 'Travail',
+    work: 'Carrière',
     love: 'Amour',
-    sport: 'Sport',
-    confidence: 'Confiance',
-    support: 'Soutien',
+    sport: 'Énergie & Sport',
+    confidence: 'Confiance en soi',
+    support: 'Stress & Anxiété',
     breakup: 'Rupture',
-    philosophy: 'Philosophie',
-    success: 'Succès',
+    philosophy: 'Sagesse',
+    success: 'Bonheur',
+    gratitude: 'Gratitude',
+    family: 'Famille',
+    wellness: 'Bien-être',
+    femininity: 'Féminité',
+    'letting-go': 'Lâcher prise',
     quotes: 'citations',
     quote: 'citation'
   },
-  // Favoris
   favorites: {
     title: 'Favoris',
     subtitle: 'citations gardées précieusement',
@@ -54,7 +54,6 @@ export const fr = {
     emptySubtitle: 'Touchez le cœur sur une citation pour la retrouver ici.',
     savedCount: '{{count}} citations gardées précieusement'
   },
-  // Statistiques
   stats: {
     title: 'Statistiques',
     subtitle: 'Votre progression et votre humeur',
@@ -66,7 +65,6 @@ export const fr = {
     days: 'Jours',
     day: 'Jour'
   },
-  // Notifications
   notifications: {
     title: '🌟 Ta citation du jour',
     body: "Ta dose de motivation quotidienne t'attend !",
@@ -79,7 +77,6 @@ export const fr = {
     viewNow: 'Voir maintenant',
     later: 'Plus tard'
   },
-  // Onboarding
   onboarding: {
     welcome: {
       title: 'Bienvenue',
@@ -123,7 +120,7 @@ export const fr = {
       subtitle: 'De petites doses de motivation peuvent faire une grande différence',
     },
     theme: {
-      title: 'Avec quel thème souhaitez-vous commencer ?',
+      title: 'Avec quelle catégorie souhaitez-vous commencer ?',
     },
     widget: {
       title: "Ajouter un widget à votre écran d'accueil",
@@ -137,7 +134,6 @@ export const fr = {
     },
     skip: 'Ignorer'
   },
-  // Carnet de libération
   releaseJournal: {
     title: 'Carnet de Libération',
     subtitle: 'Libérez vos pensées négatives',
@@ -165,7 +161,6 @@ export const fr = {
       "⭐ Chaque pensée libérée est une victoire sur vous-même."
     ]
   },
-  // Settings
   settings: {
     title: 'Paramètres',
     language: 'Langue',
@@ -174,7 +169,6 @@ export const fr = {
     about: 'À propos',
     version: 'Version'
   },
-  // Général
   common: {
     loading: 'Chargement...',
     error: 'Une erreur est survenue',

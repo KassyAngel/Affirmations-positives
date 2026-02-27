@@ -22,24 +22,30 @@ import { useAdMob, useQuoteAdCounter } from '@/hooks/use-admob';
 import type { Mood } from '@shared/schema';
 import { SettingsMenu } from '@/components/SettingsMenu';
 
+// ✅ Toutes les humeurs pointent vers des catégories GRATUITES uniquement
 const MOOD_CATEGORY_MAP: Record<Mood, string> = {
-  determined: 'success',
-  happy: 'love',
-  zen: 'philosophy',
-  tired: 'support',
-  frustrated: 'confidence',
+  determined: 'work',        // ✅ gratuit (était 'success' Premium)
+  happy:      'love',        // ✅ gratuit
+  zen:        'wellness',    // ✅ gratuit (était 'philosophy' Premium)
+  tired:      'support',     // ✅ gratuit
+  frustrated: 'confidence',  // ✅ gratuit
 };
 
 const CATEGORY_STYLES: Record<string, string> = {
-  work: 'gradient-work',
-  love: 'gradient-love',
-  sport: 'gradient-sport',
-  confidence: 'gradient-confidence',
-  support: 'gradient-support',
-  breakup: 'gradient-breakup',
-  philosophy: 'gradient-philosophy',
-  success: 'gradient-success',
-  default: 'gradient-default',
+  work:         'gradient-work',
+  love:         'gradient-love',
+  sport:        'gradient-sport',
+  confidence:   'gradient-confidence',
+  support:      'gradient-support',
+  breakup:      'gradient-breakup',
+  philosophy:   'gradient-philosophy',
+  success:      'gradient-success',
+  gratitude:    'gradient-default',
+  wellness:     'gradient-default',
+  family:       'gradient-default',
+  femininity:   'gradient-default',
+  'letting-go': 'gradient-default',
+  default:      'gradient-default',
 };
 
 export default function Home() {
@@ -48,7 +54,11 @@ export default function Home() {
   const device = useDeviceType();
   const [location] = useLocation();
   const { state, logMood, updateStreak, hasLoggedMoodToday, toggleFavorite, getTodaysMood } = useUserState();
-  const { isPremium, canViewQuote, incrementQuotesViewed, getRemainingQuotes } = usePremium();
+
+  // ✅ tier extrait pour forcer le re-render Zustand
+  const { isPremium, tier, canViewQuote, incrementQuotesViewed, getRemainingQuotes } = usePremium();
+  const userIsPremium = isPremium();
+
   const [showPaywall, setShowPaywall] = useState(false);
   const [showMoodOverlay, setShowMoodOverlay] = useState(() => !hasLoggedMoodToday());
   const [showReleaseJournal, setShowReleaseJournal] = useState(false);
@@ -70,6 +80,7 @@ export default function Home() {
 
   useEffect(() => { updateStreak(); }, []);
 
+  // ✅ useQuotes filtre automatiquement les catégories Premium si pas Premium
   const { data: quotes, isLoading, isError, refetch } = useQuotes({ category: activeCategory });
 
   const handleMoodSelect = (mood: Mood) => {
@@ -117,7 +128,6 @@ export default function Home() {
   const formattedDate = new Date().toLocaleDateString(t.home.dateFormat, { weekday: 'long', day: 'numeric', month: 'long' });
   const isTabletOrDesktop = device === 'tablet' || device === 'desktop';
 
-  // ✅ Bouton "Nouvelle citation" — style glass FIXE, indépendant du thème
   const NewQuoteButton = ({ onClick }: { onClick: () => void }) => (
     <motion.button
       onClick={onClick}
@@ -152,38 +162,65 @@ export default function Home() {
         <DevResetButton />
         <NotificationBanner />
 
-        {/* Header */}
         <header className="px-6 py-6 flex justify-between items-center">
           <div>
-            <p className={`text-sm font-medium uppercase tracking-widest drop-shadow-lg ${theme.textClass}`}>{formattedDate}</p>
-            <h1 className={`text-2xl font-display font-bold drop-shadow-lg ${theme.textClass}`}>{t.home.quoteOfTheDay}</h1>
+            <p className={`text-sm font-medium uppercase tracking-widest drop-shadow-lg ${theme.textClass}`}>
+              {formattedDate}
+            </p>
+            <h1 className={`text-2xl font-display font-bold drop-shadow-lg ${theme.textClass}`}>
+              {t.home.quoteOfTheDay}
+            </h1>
           </div>
           <div className="flex items-center gap-2">
             <SettingsMenu />
             <ThemeSelector />
-            {isPremium() ? (
-              <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-md"
-                style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', boxShadow: '0 2px 8px rgba(251,191,36,0.35)' }}>
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-            ) : (
-              <motion.button onClick={() => setShowPaywall(true)} whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full backdrop-blur-md"
-                style={{ background: 'rgba(251,191,36,0.15)', border: '1.5px solid rgba(251,191,36,0.5)' }}>
-                <Sparkles className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#fbbf24' }} />
-                <span className="text-xs font-bold tabular-nums leading-none" style={{ color: '#fbbf24' }}>{remaining}/6</span>
-              </motion.button>
-            )}
-            <div className={`border rounded-full px-2.5 py-1 flex items-center gap-1 backdrop-blur-md ${theme.cardClass}`}>
-              <span className="text-amber-500 text-sm">🔥</span>
-              <span className={`font-bold text-sm ${theme.textClass}`}>{state.streak}</span>
-            </div>
           </div>
         </header>
 
-        {/* 📱 MOBILE */}
+        <div className="px-6 mb-3 flex items-center justify-between">
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md ${theme.cardClass}`}>
+            <span className="text-amber-500 text-sm">🔥</span>
+            <span className={`font-bold text-sm ${theme.textClass}`}>{state.streak}</span>
+            <span className={`text-xs ${theme.textClass} opacity-70`}>
+              {language === 'fr' ? 'jour' : 'day'}{state.streak > 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {userIsPremium ? (
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+              style={{
+                background: 'linear-gradient(135deg, rgba(251,191,36,0.2), rgba(251,191,36,0.1))',
+                border: '1px solid rgba(251,191,36,0.4)',
+              }}
+            >
+              <Sparkles className="w-3.5 h-3.5" style={{ color: '#fbbf24' }} />
+              <span className="text-xs font-bold" style={{ color: '#fbbf24' }}>Premium</span>
+            </div>
+          ) : (
+            <motion.button
+              onClick={() => setShowPaywall(true)}
+              whileHover={{ scale: 1.06 }}
+              whileTap={{ scale: 0.94 }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md"
+              style={{
+                background: 'rgba(251,191,36,0.15)',
+                border: '1.5px solid rgba(251,191,36,0.5)',
+              }}
+            >
+              <Sparkles className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#fbbf24' }} />
+              <span className="text-xs font-bold tabular-nums leading-none" style={{ color: '#fbbf24' }}>
+                {remaining}/6
+              </span>
+              <span className="text-xs" style={{ color: 'rgba(251,191,36,0.8)' }}>
+                {language === 'fr' ? 'restantes' : 'left'}
+              </span>
+            </motion.button>
+          )}
+        </div>
+
         {!isTabletOrDesktop && (
-          <main className="px-4 mt-4 flex flex-col items-center gap-8">
+          <main className="px-4 flex flex-col items-center gap-8">
             <QuoteCard
               key={currentQuote.id}
               quote={currentQuote}
@@ -192,72 +229,28 @@ export default function Home() {
               categoryColors={bgStyle}
             />
             <NewQuoteButton onClick={handleNext} />
-            <EmergencyButton language={language} theme={theme} onPress={() => setShowEmergency(true)} />
           </main>
         )}
 
-        {/* 📟 TABLETTE/DESKTOP */}
         {isTabletOrDesktop && (
-          <main className="px-8 mt-6 flex items-center justify-center gap-10 min-h-[calc(100vh-180px)]">
-            <div className="flex items-center justify-center">
-              <QuoteCard
-                key={currentQuote.id}
-                quote={currentQuote}
-                isFavorite={isFavorite}
-                onToggleFavorite={() => toggleFavorite(currentQuote.id)}
-                categoryColors={bgStyle}
-              />
-            </div>
+          <main className="px-8 mt-2 flex items-center justify-center gap-10 min-h-[calc(100vh-200px)]">
+            <QuoteCard
+              key={currentQuote.id}
+              quote={currentQuote}
+              isFavorite={isFavorite}
+              onToggleFavorite={() => toggleFavorite(currentQuote.id)}
+              categoryColors={bgStyle}
+            />
             <div className="flex flex-col items-start gap-4 shrink-0">
               <NewQuoteButton onClick={handleNext} />
-              <EmergencyButton language={language} theme={theme} onPress={() => setShowEmergency(true)} />
             </div>
           </main>
         )}
 
-        <Navigation />
+        <Navigation onSosPress={() => setShowEmergency(true)} />
       </div>
 
       <PremiumPaywall isOpen={showPaywall} onClose={() => setShowPaywall(false)} trigger="quote_limit" />
     </div>
-  );
-}
-
-function EmergencyButton({ language, theme, onPress }: { language: string; theme: any; onPress: () => void }) {
-  return (
-    <motion.button
-      onClick={onPress}
-      whileHover={{ scale: 1.05, y: -3 }}
-      whileTap={{ scale: 0.95 }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4, duration: 0.6, type: 'spring' }}
-      className="relative flex items-center justify-center gap-3 px-7 py-4 rounded-2xl backdrop-blur-lg transition-all shadow-2xl overflow-hidden"
-      style={{
-        background: 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)',
-        border: '2px solid rgba(255,255,255,0.25)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.2)',
-      }}
-    >
-      <motion.div className="absolute inset-0 rounded-2xl opacity-0"
-        animate={{ opacity: [0, 0.15, 0] }}
-        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ background: 'radial-gradient(circle at center, rgba(239,68,68,0.4), transparent 70%)' }}
-      />
-      <span className="relative flex h-3.5 w-3.5 flex-shrink-0 z-10">
-        <motion.span animate={{ scale: [1, 2.2, 1], opacity: [1, 0, 1] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute inline-flex h-full w-full rounded-full"
-          style={{ backgroundColor: 'rgba(239,68,68,0.6)' }} />
-        <span className="relative inline-flex rounded-full h-3.5 w-3.5"
-          style={{ backgroundColor: '#ef4444', boxShadow: '0 0 8px rgba(239,68,68,0.5)' }} />
-      </span>
-      <span className={`text-base font-bold tracking-wide z-10 ${theme.textClass}`}>
-        {language === 'fr' ? "J'ai besoin d'aide" : 'I need help'}
-      </span>
-      <motion.span animate={{ rotate: [0, 12, -12, 0] }}
-        transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-        className="text-2xl leading-none z-10">🆘</motion.span>
-    </motion.button>
   );
 }

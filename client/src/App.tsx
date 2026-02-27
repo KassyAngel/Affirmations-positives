@@ -39,13 +39,18 @@ function AppContent() {
   const { hasCompletedOnboarding, completeOnboarding } = useOnboarding();
   const { setTheme } = useTheme();
   const { language } = useLanguage();
-  const { syncWithRevenueCat } = usePremium();
+  const { syncWithRevenueCat, checkAndExpirePremium } = usePremium();
+
+  // ✅ NOUVEAU — vérification expiration au démarrage (évite le set() dans isPremium())
+  useEffect(() => {
+    checkAndExpirePremium();
+  }, []);
 
   // ✅ Sync RevenueCat au démarrage (vérifie si l'utilisateur est déjà premium)
   useEffect(() => {
     const timer = setTimeout(() => {
       syncWithRevenueCat();
-    }, 1500); // légèrement différé pour ne pas bloquer le rendu
+    }, 1500);
     return () => clearTimeout(timer);
   }, []);
 

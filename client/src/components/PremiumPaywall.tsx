@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Check, Sparkles, Zap, Star, Heart } from 'lucide-react';
+import { X, Check, Sparkles, Zap, Star, Heart, Shield, RotateCcw } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePremium, type PremiumPlan } from '@/hooks/use-premium';
 import { useState } from 'react';
@@ -12,7 +12,6 @@ interface PremiumPaywallProps {
 
 export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: PremiumPaywallProps) {
   const { language } = useLanguage();
-  // ✅ FIX: on ne destructure que ce qui existe dans PremiumState
   const { purchase, restore } = usePremium();
   const [selectedPlan, setSelectedPlan] = useState<PremiumPlan>('yearly');
   const [purchasing, setPurchasing] = useState(false);
@@ -55,7 +54,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
     {
       icon: Star,
       title: isFr ? 'Toutes les catégories' : 'All categories',
-      description: isFr ? '8 catégories exclusives' : '8 exclusive categories',
+      description: isFr ? '13 catégories exclusives' : '13 exclusive categories',
     },
     {
       icon: Heart,
@@ -66,6 +65,11 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
       icon: Sparkles,
       title: isFr ? '15+ thèmes premium' : '15+ premium themes',
       description: isFr ? "Fonds d'écran exclusifs" : 'Exclusive wallpapers',
+    },
+    {
+      icon: Shield,
+      title: isFr ? 'Sans publicités' : 'No ads',
+      description: isFr ? 'Expérience 100% sans interruption' : '100% interruption-free experience',
     },
   ];
 
@@ -92,7 +96,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
         onClose();
         alert(isFr ? '✅ Abonnement restauré !' : '✅ Subscription restored!');
       } else {
-        alert(isFr ? 'Aucun achat trouvé.' : 'No purchase found.');
+        alert(isFr ? 'Aucun achat trouvé sur ce compte Google.' : 'No purchase found on this Google account.');
       }
     } finally {
       setRestoring(false);
@@ -106,7 +110,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
     },
     category_locked: {
       title: isFr ? '🔒 Catégorie Premium' : '🔒 Premium Category',
-      subtitle: isFr ? 'Débloquez toutes les catégories avec Premium' : 'Unlock all categories with Premium',
+      subtitle: isFr ? 'Débloquez les 13 catégories avec Premium' : 'Unlock all 13 categories with Premium',
     },
     theme_locked: {
       title: isFr ? '🎨 Thème Premium' : '🎨 Premium Theme',
@@ -269,18 +273,39 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
               </p>
             </div>
 
-            {/* Restore */}
+            {/* ✅ Restore — bouton visible et explicatif */}
             <div className="px-6 pb-8">
-              <button
-                onClick={handleRestore}
-                disabled={restoring}
-                className="w-full py-2 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              <div
+                className="rounded-2xl p-4"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
               >
-                {restoring
-                  ? (isFr ? 'Restauration...' : 'Restoring...')
-                  : (isFr ? 'Restaurer mes achats' : 'Restore purchases')
-                }
-              </button>
+                <p className="text-center text-xs text-slate-400 mb-3">
+                  {isFr
+                    ? '📱 Changé de téléphone ? Vous avez déjà un abonnement ?'
+                    : '📱 Changed phone? Already subscribed?'}
+                </p>
+                <motion.button
+                  onClick={handleRestore}
+                  disabled={restoring}
+                  whileHover={{ scale: restoring ? 1 : 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full py-3 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm transition-all"
+                  style={{
+                    background: restoring
+                      ? 'rgba(255,255,255,0.05)'
+                      : 'rgba(255,255,255,0.08)',
+                    border: '1.5px solid rgba(255,255,255,0.15)',
+                    color: restoring ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.85)',
+                  }}
+                >
+                  <RotateCcw className={`w-4 h-4 ${restoring ? 'animate-spin' : ''}`} />
+                  <span>
+                    {restoring
+                      ? (isFr ? 'Restauration en cours...' : 'Restoring...')
+                      : (isFr ? 'Restaurer mon abonnement' : 'Restore my subscription')}
+                  </span>
+                </motion.button>
+              </div>
             </div>
           </div>
         </motion.div>
