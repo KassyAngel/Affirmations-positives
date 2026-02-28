@@ -17,6 +17,7 @@
     "@capacitor/cli": "^7.4.5",
     "@capacitor/core": "^8.1.0",
     "@capacitor/local-notifications": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
     "@emailjs/browser": "^4.4.1",
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",

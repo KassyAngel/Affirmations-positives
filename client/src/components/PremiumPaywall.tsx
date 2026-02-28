@@ -16,6 +16,8 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
   const [selectedPlan, setSelectedPlan] = useState<PremiumPlan>('yearly');
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  // ✅ FIX : état d'erreur pour afficher les problèmes à l'utilisateur
+  const [errorMsg, setErrorMsg] = useState('');
   const isFr = language === 'fr';
 
   const plans = [
@@ -73,14 +75,33 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
     },
   ];
 
+  // ✅ FIX : handlePurchase affiche maintenant les erreurs à l'utilisateur
   const handlePurchase = async () => {
     if (purchasing) return;
     setPurchasing(true);
+    setErrorMsg('');
     try {
       const success = await purchase(selectedPlan);
       if (success) {
         onClose();
         alert(isFr ? '🎉 Bienvenue en Premium !' : '🎉 Welcome to Premium!');
+      }
+      // Si !success et pas d'erreur → annulation volontaire, on ne fait rien
+    } catch (err: any) {
+      // ✅ On affiche l'erreur dans l'UI au lieu de la laisser silencieuse
+      const msg = err?.message ?? String(err);
+      if (msg.includes('No products are attached') || msg.includes('Aucun package')) {
+        setErrorMsg(isFr
+          ? '⚙️ Configuration en cours. Réessayez dans quelques minutes.'
+          : '⚙️ Setup in progress. Please try again in a few minutes.');
+      } else if (msg.includes('introuvable') || msg.includes('not found')) {
+        setErrorMsg(isFr
+          ? '⚙️ Offre temporairement indisponible. Réessayez plus tard.'
+          : '⚙️ Offer temporarily unavailable. Please try again later.');
+      } else {
+        setErrorMsg(isFr
+          ? `❌ Erreur: ${msg}`
+          : `❌ Error: ${msg}`);
       }
     } finally {
       setPurchasing(false);
@@ -90,17 +111,26 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
   const handleRestore = async () => {
     if (restoring) return;
     setRestoring(true);
+    setErrorMsg('');
     try {
       const success = await restore();
       if (success) {
         onClose();
         alert(isFr ? '✅ Abonnement restauré !' : '✅ Subscription restored!');
       } else {
-        alert(isFr ? 'Aucun achat trouvé sur ce compte Google.' : 'No purchase found on this Google account.');
+        alert(isFr
+          ? 'Aucun achat trouvé sur ce compte Google.'
+          : 'No purchase found on this Google account.');
       }
+    } catch (err: any) {
+      setErrorMsg(isFr ? '❌ Erreur lors de la restauration.' : '❌ Restore failed.');
     } finally {
       setRestoring(false);
     }
+  };
+
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && !purchasing && !restoring) onClose();
   };
 
   const triggerMessages = {
@@ -133,7 +163,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={handleOverlayClick}
       >
         <motion.div
           initial={{ opacity: 0, y: 100, scale: 0.9 }}
@@ -147,9 +177,9 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
             maxHeight: '90vh',
           }}
         >
-          {/* Close button */}
+          {/* Fermer */}
           <button
-            onClick={onClose}
+            onClick={() => !purchasing && !restoring && onClose()}
             className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center"
             style={{ background: 'rgba(0,0,0,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}
           >
@@ -208,7 +238,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
               {plans.map((plan) => (
                 <motion.button
                   key={plan.id}
-                  onClick={() => setSelectedPlan(plan.id)}
+                  onClick={() => { setSelectedPlan(plan.id); setErrorMsg(''); }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="relative w-full p-4 rounded-xl transition-all"
@@ -249,23 +279,35 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
               ))}
             </div>
 
+            {/* ✅ Message d'erreur visible */}
+            {errorMsg && (
+              <div className="px-6 pb-4">
+                <div
+                  className="rounded-xl p-3 text-center text-sm"
+                  style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}
+                >
+                  {errorMsg}
+                </div>
+              </div>
+            )}
+
             {/* CTA */}
             <div className="px-6 pb-4">
               <motion.button
                 onClick={handlePurchase}
-                disabled={purchasing}
+                disabled={purchasing || restoring}
                 whileHover={{ scale: purchasing ? 1 : 1.02, y: purchasing ? 0 : -2 }}
                 whileTap={{ scale: 0.98 }}
                 className="w-full py-4 rounded-xl text-white font-bold text-base shadow-xl"
                 style={{
                   background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
                   boxShadow: '0 8px 32px rgba(251, 191, 36, 0.4)',
-                  opacity: purchasing ? 0.7 : 1,
+                  opacity: purchasing || restoring ? 0.7 : 1,
                 }}
               >
                 {purchasing
-                  ? <span className="animate-pulse">{isFr ? 'Traitement...' : 'Processing...'}</span>
-                  : <span>{isFr ? '✨ Débloquer Premium' : '✨ Unlock Premium'}</span>
+                  ? <span className="animate-pulse">{isFr ? '⏳ Traitement...' : '⏳ Processing...'}</span>
+                  : <span>{isFr ? '🔓 Débloquer Premium' : '🔓 Unlock Premium'}</span>
                 }
               </motion.button>
               <p className="text-center text-xs mt-3 text-slate-400">
@@ -273,7 +315,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
               </p>
             </div>
 
-            {/* ✅ Restore — bouton visible et explicatif */}
+            {/* Restauration */}
             <div className="px-6 pb-8">
               <div
                 className="rounded-2xl p-4"
@@ -286,14 +328,12 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
                 </p>
                 <motion.button
                   onClick={handleRestore}
-                  disabled={restoring}
+                  disabled={restoring || purchasing}
                   whileHover={{ scale: restoring ? 1 : 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="w-full py-3 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm transition-all"
                   style={{
-                    background: restoring
-                      ? 'rgba(255,255,255,0.05)'
-                      : 'rgba(255,255,255,0.08)',
+                    background: restoring ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.08)',
                     border: '1.5px solid rgba(255,255,255,0.15)',
                     color: restoring ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.85)',
                   }}

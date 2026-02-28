@@ -36,7 +36,7 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
     <div className="max-w-md w-full space-y-6 px-2">
       <button
         onClick={onBack}
-        className="absolute top-6 left-6 text-peach-400 hover:text-peach-600 transition-colors"
+        className="absolute top-6 left-6 transition-colors"
         style={{ color: '#FF8C69' }}
       >
         <ChevronLeft className="w-6 h-6" />
@@ -115,13 +115,7 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
               value={startTime}
               onChange={(e) => setStartTime(e.target.value)}
               className="rounded-xl px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2"
-              style={{
-                background: 'white',
-                border: '1px solid #FFCBB8',
-                color: '#2D1A12',
-                // @ts-ignore
-                '--tw-ring-color': '#FFA882',
-              }}
+              style={{ background: 'white', border: '1px solid #FFCBB8', color: '#2D1A12' }}
             />
           </div>
           <div className="p-4 flex justify-between items-center">
@@ -133,11 +127,7 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
               value={endTime}
               onChange={(e) => setEndTime(e.target.value)}
               className="rounded-xl px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2"
-              style={{
-                background: 'white',
-                border: '1px solid #FFCBB8',
-                color: '#2D1A12',
-              }}
+              style={{ background: 'white', border: '1px solid #FFCBB8', color: '#2D1A12' }}
             />
           </div>
         </div>
@@ -151,11 +141,12 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
         </div>
       </motion.div>
 
+      {/* ✅ pb-10 pour que le bouton ne soit pas coupé par la barre Android */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
-        className="space-y-3 pt-2"
+        className="space-y-3 pt-2 pb-10"
       >
         <button
           onClick={handleRequestPermission}
@@ -163,9 +154,7 @@ export function NotificationStep({ onContinue, onBack }: NotificationStepProps) 
           className="w-full py-4 rounded-full text-white font-semibold text-lg shadow-lg hover:scale-105 transition-all disabled:opacity-60 disabled:scale-100"
           style={{ background: 'linear-gradient(to right, #FF8C69, #FFA882)' }}
         >
-          {loading
-            ? '...'
-            : language === 'fr' ? 'Autoriser' : 'Allow'}
+          {loading ? '...' : language === 'fr' ? 'Autoriser' : 'Allow'}
         </button>
       </motion.div>
     </div>

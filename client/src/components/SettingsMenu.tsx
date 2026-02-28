@@ -26,8 +26,8 @@ type Panel = 'menu' | 'notifications' | 'widget' | 'submit' | 'language';
 export function SettingsMenu() {
   const { language, setLanguage } = useLanguage();
   const { themeId } = useTheme();
-  const [isOpen, setIsOpen]   = useState(false);
-  const [panel, setPanel]     = useState<Panel>('menu');
+  const [isOpen, setIsOpen] = useState(false);
+  const [panel, setPanel]   = useState<Panel>('menu');
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,31 +50,30 @@ export function SettingsMenu() {
   const textSub  = '#B07060';
   const rowHover = 'rgba(255,140,105,0.07)';
 
-  // ── Lignes du menu ─────────────────────────────────────────────────────────
   const menuRows = [
     {
       icon: Bell, label: isFr ? 'Notifications' : 'Notifications',
-      sub:  isFr ? 'Modifier la fréquence et les horaires' : 'Edit frequency and schedule',
+      sub: isFr ? 'Modifier la fréquence et les horaires' : 'Edit frequency and schedule',
       action: () => setPanel('notifications'), badge: false,
     },
     {
       icon: Globe, label: isFr ? 'Langue' : 'Language',
-      sub:  language === 'fr' ? 'Français' : 'English',
+      sub: language === 'fr' ? 'Français' : 'English',
       action: () => setPanel('language'), badge: false,
     },
     {
       icon: LayoutGrid, label: 'Widget',
-      sub:  isFr ? "Ajouter à l'écran d'accueil" : 'Add to home screen',
+      sub: isFr ? "Ajouter à l'écran d'accueil" : 'Add to home screen',
       action: () => setPanel('widget'), badge: false,
     },
     {
       icon: PenLine, label: isFr ? 'Ajouter les vôtres' : 'Submit your own',
-      sub:  isFr ? 'Proposer une citation ou affirmation' : 'Suggest a quote or affirmation',
+      sub: isFr ? 'Proposer une citation ou affirmation' : 'Suggest a quote or affirmation',
       action: () => setPanel('submit'), badge: false,
     },
     {
       icon: Star, label: isFr ? 'Laisser un avis' : 'Leave a review',
-      sub:  isFr ? 'Votre avis compte beaucoup !' : 'Your feedback matters!',
+      sub: isFr ? 'Votre avis compte beaucoup !' : 'Your feedback matters!',
       action: () => { window.open(PLAY_STORE_URL, '_blank'); close(); },
       badge: true,
     },
@@ -82,18 +81,22 @@ export function SettingsMenu() {
 
   const legalRows = isFr
     ? [
-        { label: 'Mentions légales',  href: '/mentions-legales-fr.html',          icon: FileText },
-        { label: 'Confidentialité',   href: '/politique-confidentialite-fr.html',  icon: Shield  },
+        { label: 'Mentions légales', href: '/mentions-legales-fr.html',         icon: FileText },
+        { label: 'Confidentialité',  href: '/politique-confidentialite-fr.html', icon: Shield  },
       ]
     : [
-        { label: 'Legal Notice',      href: '/mentions-legales-en.html',           icon: FileText },
-        { label: 'Privacy Policy',    href: '/politique-confidentialite-en.html',  icon: Shield  },
+        { label: 'Legal Notice',    href: '/mentions-legales-en.html',           icon: FileText },
+        { label: 'Privacy Policy',  href: '/politique-confidentialite-en.html',  icon: Shield  },
       ];
+
+  // ✅ FIX : hauteur max du panneau = viewport - safe area bottom (boutons Android)
+  // On utilise 88vh au lieu de 92vh pour laisser de l'espace aux boutons système
+  const panelMaxHeight = 'calc(82vh - env(safe-area-inset-bottom, 16px))';
+  const scrollMaxHeight = 'calc(82vh - env(safe-area-inset-bottom, 16px) - 40px)';
 
   return (
     <div ref={menuRef} className="relative">
 
-      {/* Bouton déclencheur */}
       <motion.button
         onClick={() => { setPanel('menu'); setIsOpen(true); }}
         whileHover={{ scale: 1.05 }}
@@ -107,11 +110,9 @@ export function SettingsMenu() {
         </motion.div>
       </motion.button>
 
-      {/* Modal plein écran */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Overlay */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
@@ -120,30 +121,31 @@ export function SettingsMenu() {
               onClick={close}
             />
 
-            {/* Panneau glissant */}
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 260 }}
               className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl overflow-hidden"
               style={{
                 background: 'rgba(255,250,248,0.98)',
-                maxHeight: '92vh',
+                // ✅ FIX : maxHeight réduit + padding bottom pour ne pas cacher sous les boutons Android
+                maxHeight: panelMaxHeight,
                 boxShadow: '0 -8px 40px rgba(255,140,105,0.15)',
+                // ✅ FIX : padding bottom = safe area pour que le contenu ne soit pas coupé
+                paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 24px)',
               }}
             >
-              {/* Poignée */}
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full" style={{ background: 'rgba(255,140,105,0.3)' }} />
               </div>
 
               <AnimatePresence mode="wait">
 
-                {/* ════ MENU PRINCIPAL ════ */}
                 {panel === 'menu' && (
                   <motion.div key="menu"
                     initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.18 }}
-                    className="overflow-y-auto" style={{ maxHeight: 'calc(92vh - 40px)' }}
+                    className="overflow-y-auto"
+                    style={{ maxHeight: scrollMaxHeight }}
                   >
                     <div className="flex items-center justify-between px-6 py-4">
                       <div>
@@ -159,7 +161,7 @@ export function SettingsMenu() {
                       </button>
                     </div>
 
-                    <div className="px-4 pb-6 space-y-1">
+                    <div className="px-4 pb-8 space-y-1">
                       {menuRows.map(row => {
                         const Icon = row.icon;
                         return (
@@ -186,7 +188,6 @@ export function SettingsMenu() {
                         );
                       })}
 
-                      {/* Légal */}
                       <div className="pt-3 pb-1 px-2">
                         <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: accent }}>
                           {isFr ? 'Légal' : 'Legal'}
@@ -212,12 +213,12 @@ export function SettingsMenu() {
                   </motion.div>
                 )}
 
-                {/* ════ LANGUE ════ */}
                 {panel === 'language' && (
                   <motion.div key="language"
                     initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.18 }}
-                    className="overflow-y-auto" style={{ maxHeight: 'calc(92vh - 40px)' }}
+                    className="overflow-y-auto"
+                    style={{ maxHeight: scrollMaxHeight }}
                   >
                     <PanelHeader title={isFr ? 'Langue' : 'Language'} onBack={() => setPanel('menu')} onClose={close} accent={accent} textMain={textMain} />
                     <div className="px-4 pb-8 space-y-2">
@@ -243,12 +244,12 @@ export function SettingsMenu() {
                   </motion.div>
                 )}
 
-                {/* ════ NOTIFICATIONS ════ */}
                 {panel === 'notifications' && (
                   <motion.div key="notifications"
                     initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.18 }}
-                    className="overflow-y-auto px-2 pb-8" style={{ maxHeight: 'calc(92vh - 40px)' }}
+                    className="overflow-y-auto px-2 pb-8"
+                    style={{ maxHeight: scrollMaxHeight }}
                   >
                     <PanelHeader title={isFr ? 'Notifications' : 'Notifications'} onBack={() => setPanel('menu')} onClose={close} accent={accent} textMain={textMain} />
                     <div className="relative pt-2">
@@ -264,12 +265,12 @@ export function SettingsMenu() {
                   </motion.div>
                 )}
 
-                {/* ════ WIDGET ════ */}
                 {panel === 'widget' && (
                   <motion.div key="widget"
                     initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.18 }}
-                    className="overflow-y-auto px-2 pb-8 flex flex-col items-center" style={{ maxHeight: 'calc(92vh - 40px)' }}
+                    className="overflow-y-auto px-2 pb-8 flex flex-col items-center"
+                    style={{ maxHeight: scrollMaxHeight }}
                   >
                     <PanelHeader title="Widget" onBack={() => setPanel('menu')} onClose={close} accent={accent} textMain={textMain} />
                     <div className="relative w-full pt-2">
@@ -278,12 +279,12 @@ export function SettingsMenu() {
                   </motion.div>
                 )}
 
-                {/* ════ AJOUTER LES VÔTRES ════ */}
                 {panel === 'submit' && (
                   <motion.div key="submit"
                     initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.18 }}
-                    className="overflow-y-auto" style={{ maxHeight: 'calc(92vh - 40px)' }}
+                    className="overflow-y-auto"
+                    style={{ maxHeight: scrollMaxHeight }}
                   >
                     <PanelHeader title={isFr ? 'Ajouter les vôtres' : 'Submit your own'} onBack={() => setPanel('menu')} onClose={close} accent={accent} textMain={textMain} />
                     <SubmitQuotePanel language={language} onClose={() => setPanel('menu')} />
@@ -299,7 +300,6 @@ export function SettingsMenu() {
   );
 }
 
-// ── Header réutilisable ────────────────────────────────────────────────────────
 function PanelHeader({ title, onBack, onClose, accent, textMain }: {
   title: string; onBack: () => void; onClose: () => void;
   accent: string; textMain: string;

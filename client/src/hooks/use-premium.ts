@@ -5,13 +5,15 @@ import { Capacitor } from '@capacitor/core';
 export type PremiumTier = 'free' | 'premium';
 export type PremiumPlan = 'monthly' | 'yearly' | 'lifetime';
 
-// ─── Détection plateforme ─────────────────────────────────────────────────────
 const isNative = Capacitor.isNativePlatform();
 const isWeb    = !isNative;
 
-// ─── Clés RevenueCat ──────────────────────────────────────────────────────────
 const RC_GOOGLE_KEY = 'goog_ptfKFejVcGBkPUpbPKAlXhqrPnu';
 
+// ✅ FIX CRITIQUE : chaque plan a sa propre offering dans RevenueCat
+// monthly  → offering 'default'   (package $rc_monthly)
+// yearly   → offering 'annuel'    (package $rc_annual)
+// lifetime → offering 'lifetime'  (package $rc_lifetime)
 const OFFERING_IDS: Record<PremiumPlan, string> = {
   monthly:  'default',
   yearly:   'annuel',
@@ -19,15 +21,7 @@ const OFFERING_IDS: Record<PremiumPlan, string> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🔑 ID unique par installation
-// ─────────────────────────────────────────────────────────────────────────────
-// Cet ID est persisté dans localStorage. Il identifie l'installation auprès
-// de RevenueCat, ce qui permet de retrouver les achats au redémarrage ou
-// après réinstallation (via syncWithRevenueCat au démarrage).
-//
-// ⚠️  LIMITE : si l'utilisateur change de téléphone, cet ID change.
-//     Dans ce cas, "Restaurer mes achats" est la solution — RevenueCat
-//     retrouve l'achat via le compte Google Play.
+// ID unique par installation — permet à RevenueCat de retrouver les achats
 // ─────────────────────────────────────────────────────────────────────────────
 function getOrCreateInstallationId(): string {
   const KEY = 'app_installation_id';
@@ -48,14 +42,11 @@ async function initRC() {
   try {
     const { Purchases, LOG_LEVEL } = await import('@revenuecat/purchases-capacitor');
     await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
-
-    // ✅ Passe l'ID d'installation → RevenueCat peut retrouver les achats
     const installationId = getOrCreateInstallationId();
     await Purchases.configure({
       apiKey: RC_GOOGLE_KEY,
       appUserID: installationId,
     });
-
     rcInitialized = true;
     console.log('[RC] Configuré avec ID:', installationId);
   } catch (e) {
@@ -63,7 +54,6 @@ async function initRC() {
   }
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface PremiumState {
   tier: PremiumTier;
   plan: PremiumPlan | null;
@@ -96,7 +86,6 @@ export const usePremium = create<PremiumState>()(
       dailyQuotesViewed: 0,
       lastQuoteResetDate: new Date().toDateString(),
 
-      // ── Actions locales ─────────────────────────────────────────────────────
       setPremium: (plan: PremiumPlan) => {
         const now = new Date();
         let expiryDate: Date | null = null;
@@ -105,7 +94,6 @@ export const usePremium = create<PremiumState>()(
         } else if (plan === 'yearly') {
           expiryDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
         }
-        // lifetime → expiryDate null = pas d'expiration
         set({
           tier: 'premium',
           plan,
@@ -118,16 +106,12 @@ export const usePremium = create<PremiumState>()(
         set({ tier: 'free', plan: null, purchaseDate: null, expiryDate: null });
       },
 
-      // ✅ Vérification expiration — appelée au démarrage dans App.tsx
-      // Séparée de isPremium() pour éviter set() dans un getter
       checkAndExpirePremium: () => {
         const state = get();
         if (state.tier !== 'premium') return;
-        if (!state.expiryDate) return; // lifetime
-        const now    = new Date();
-        const expiry = new Date(state.expiryDate);
-        if (now > expiry) {
-          console.log('[Premium] Abonnement expiré localement — passage en free');
+        if (!state.expiryDate) return;
+        if (new Date() > new Date(state.expiryDate)) {
+          console.log('[Premium] Abonnement expiré — passage en free');
           set({ tier: 'free', plan: null, purchaseDate: null, expiryDate: null });
         }
       },
@@ -162,17 +146,16 @@ export const usePremium = create<PremiumState>()(
         return Math.max(0, DAILY_QUOTE_LIMIT_FREE - state.dailyQuotesViewed);
       },
 
-      // ✅ Pure lecture — aucun set() ici
       isPremium: () => {
         const state = get();
         if (state.tier !== 'premium') return false;
-        if (!state.expiryDate) return true; // lifetime → jamais d'expiration
-        const now    = new Date();
-        const expiry = new Date(state.expiryDate);
-        return now <= expiry;
+        if (!state.expiryDate) return true; // lifetime
+        return new Date() <= new Date(state.expiryDate);
       },
 
-      // ── Achat ───────────────────────────────────────────────────────────────
+      // ✅ FIX CRITIQUE : purchase récupère l'offering correcte selon le plan
+      // puis prend le PREMIER package disponible dans cette offering
+      // (chaque offering n'a qu'un seul package dans cette config)
       purchase: async (plan: PremiumPlan): Promise<boolean> => {
         if (isWeb) {
           console.log('[Premium] Web mode — achat simulé:', plan);
@@ -183,34 +166,70 @@ export const usePremium = create<PremiumState>()(
         try {
           await initRC();
           const { Purchases } = await import('@revenuecat/purchases-capacitor');
-          const offeringId = OFFERING_IDS[plan];
-          const offeringsResult = await Purchases.getOfferings();
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const allOfferings = (offeringsResult as any).offerings?.all ?? (offeringsResult as any).all ?? {};
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const currentOffering = (offeringsResult as any).offerings?.current ?? (offeringsResult as any).current;
-          const offering = allOfferings[offeringId] ?? currentOffering;
-          if (!offering) throw new Error(`Offering "${offeringId}" not found`);
 
-          const pkg = offering.availablePackages?.[0];
-          if (!pkg) throw new Error('No package in offering');
+          console.log(`[RC] Achat plan "${plan}" — offering "${OFFERING_IDS[plan]}"`);
+
+          // ✅ Récupère TOUTES les offerings
+          const offeringsResult = await Purchases.getOfferings();
+          console.log('[RC] Offerings reçues:', JSON.stringify(offeringsResult));
+
+          // ✅ Accès robuste aux offerings (compatibilité SDK v12)
+          const allOfferings =
+            (offeringsResult as any).offerings?.all ??
+            (offeringsResult as any).all ??
+            {};
+
+          const currentOffering =
+            (offeringsResult as any).offerings?.current ??
+            (offeringsResult as any).current ??
+            null;
+
+          // ✅ Cherche l'offering du plan, fallback sur current
+          const targetOfferingId = OFFERING_IDS[plan];
+          const offering =
+            allOfferings[targetOfferingId] ??
+            (targetOfferingId === 'default' ? currentOffering : null);
+
+          if (!offering) {
+            console.error(`[RC] Offering "${targetOfferingId}" introuvable. Offerings disponibles:`, Object.keys(allOfferings));
+            throw new Error(`Offering "${targetOfferingId}" non trouvée — vérifie RevenueCat dashboard`);
+          }
+
+          const packages = offering.availablePackages ?? [];
+          console.log(`[RC] Packages dans "${targetOfferingId}":`, packages.map((p: any) => p.identifier));
+
+          if (packages.length === 0) {
+            throw new Error(`Aucun package dans l'offering "${targetOfferingId}" — attache un produit Google Play dans RevenueCat`);
+          }
+
+          // ✅ Prend le premier (et unique) package de l'offering
+          const pkg = packages[0];
+          console.log(`[RC] Achat du package:`, pkg.identifier, pkg.product?.title);
 
           const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
           const hasPremium = !!customerInfo.entitlements.active['premium'];
-          if (hasPremium) get().setPremium(plan);
+
+          if (hasPremium) {
+            get().setPremium(plan);
+            console.log(`[RC] ✅ Achat réussi — plan: ${plan}`);
+          } else {
+            console.warn('[RC] Achat effectué mais entitlement "premium" non actif');
+          }
+
           return hasPremium;
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
-          if (msg.includes('userCancelled') || msg.includes('cancelled')) return false;
-          console.error('[RC] Purchase error:', err);
-          return false;
+          // Annulation volontaire — pas d'erreur à afficher
+          if (msg.includes('userCancelled') || msg.includes('cancelled') || msg.includes('1')) {
+            console.log('[RC] Achat annulé par l\'utilisateur');
+            return false;
+          }
+          console.error('[RC] Erreur achat:', err);
+          throw err; // ✅ On remonte l'erreur pour l'afficher dans PremiumPaywall
         }
       },
 
-      // ── Restaurer les achats ─────────────────────────────────────────────────
-      // Utilisé quand l'user change de téléphone ou réinstalle.
-      // RevenueCat interroge Google Play via le compte Google connecté
-      // → retrouve tous les achats liés à ce compte.
+      // ── Restaurer les achats ──────────────────────────────────────────────────
       restore: async (): Promise<boolean> => {
         if (isWeb) {
           console.log('[Premium] Web mode — restore depuis état local');
@@ -222,29 +241,27 @@ export const usePremium = create<PremiumState>()(
           const { Purchases } = await import('@revenuecat/purchases-capacitor');
           const { customerInfo } = await Purchases.restorePurchases();
           const hasPremium = !!customerInfo.entitlements.active['premium'];
+
           if (hasPremium) {
             const productId = customerInfo.entitlements.active['premium']?.productIdentifier ?? '';
+            // ✅ Détection du plan depuis le productIdentifier Google Play
             let plan: PremiumPlan = 'monthly';
             if (productId.includes('lifetime')) plan = 'lifetime';
-            else if (productId.includes('annuel') || productId.includes('yearly')) plan = 'yearly';
+            else if (productId.includes('yearly') || productId.includes('annuel') || productId.includes('annual')) plan = 'yearly';
             get().setPremium(plan);
-            console.log('[RC] Achat restauré — plan:', plan);
+            console.log('[RC] ✅ Achat restauré — plan:', plan, '| produit:', productId);
           } else {
             get().removePremium();
+            console.log('[RC] Aucun achat actif trouvé');
           }
           return hasPremium;
         } catch (err) {
-          console.error('[RC] Restore error:', err);
+          console.error('[RC] Erreur restore:', err);
           return false;
         }
       },
 
-      // ── Sync au démarrage ────────────────────────────────────────────────────
-      // ✅ Vérifie côté RevenueCat si l'utilisateur est premium à chaque démarrage.
-      // Cas couverts :
-      //   - Utilisateur réinstalle l'app → premium restauré automatiquement
-      //   - Abonnement annuel/mensuel expiré côté Google Play → repassé en free
-      //   - Utilisateur vient d'acheter depuis un autre appareil (même compte) → sync
+      // ── Sync au démarrage ─────────────────────────────────────────────────────
       syncWithRevenueCat: async (): Promise<void> => {
         if (isWeb) return;
 
@@ -258,7 +275,7 @@ export const usePremium = create<PremiumState>()(
             const productId = customerInfo.entitlements.active['premium']?.productIdentifier ?? '';
             let plan: PremiumPlan = 'monthly';
             if (productId.includes('lifetime')) plan = 'lifetime';
-            else if (productId.includes('annuel') || productId.includes('yearly')) plan = 'yearly';
+            else if (productId.includes('yearly') || productId.includes('annuel') || productId.includes('annual')) plan = 'yearly';
             get().setPremium(plan);
             console.log('[RC] Premium restauré automatiquement — plan:', plan);
           } else if (!hasPremium && get().tier === 'premium') {
@@ -266,7 +283,7 @@ export const usePremium = create<PremiumState>()(
             console.log('[RC] Abonnement expiré côté Google Play — free');
           }
         } catch {
-          // Silencieux — pas de réseau, on garde l'état local en cache
+          // Silencieux — pas de réseau, on garde l'état local
         }
       },
     }),

@@ -32,9 +32,8 @@ export default function Categories() {
   const { t } = useLanguage();
   const { data: counts, isLoading } = useQuoteCounts();
 
-  // ✅ On extrait "tier" pour que Zustand re-render quand le statut change
   const { isPremium, tier } = usePremium();
-  const userIsPremium = isPremium(); // on évalue une fois ici
+  const userIsPremium = isPremium();
 
   const [showPaywall, setShowPaywall] = useState(false);
 
@@ -48,7 +47,8 @@ export default function Categories() {
 
   return (
     <div
-      className="min-h-screen pb-28"
+      // ✅ pb-36 au lieu de pb-28 pour que la dernière carte ne soit pas coupée
+      className="min-h-screen pb-36"
       style={{ background: 'linear-gradient(160deg, #FFF5F0 0%, #FFF0E8 50%, #FFF8F5 100%)' }}
     >
       {/* Header */}
@@ -90,15 +90,12 @@ export default function Categories() {
               className="relative overflow-hidden rounded-2xl text-left flex flex-col"
               style={{ height: '188px' }}
             >
-              {/* Image de fond */}
               <img
                 src={category.image}
                 alt={label}
                 className="absolute inset-0 w-full h-full object-cover"
                 loading="lazy"
               />
-
-              {/* Overlay dégradé */}
               <div
                 className="absolute inset-0"
                 style={{
@@ -146,11 +143,30 @@ export default function Categories() {
 
       <Navigation />
 
-      <PremiumPaywall
-        isOpen={showPaywall}
-        onClose={() => setShowPaywall(false)}
-        trigger="category_locked"
-      />
+      {/* ✅ PremiumPaywall avec overlay cliquable pour fermer */}
+      {showPaywall && (
+        <>
+          {/* Croix de fermeture flottante */}
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={() => setShowPaywall(false)}
+            className="fixed top-5 right-5 z-[60] flex items-center justify-center w-9 h-9 rounded-full shadow-lg"
+            style={{
+              background: 'rgba(255,255,255,0.95)',
+              border: '1px solid rgba(0,0,0,0.1)',
+            }}
+          >
+            <span className="text-lg font-bold leading-none" style={{ color: '#7A4030' }}>✕</span>
+          </motion.button>
+
+          <PremiumPaywall
+            isOpen={showPaywall}
+            onClose={() => setShowPaywall(false)}
+            trigger="category_locked"
+          />
+        </>
+      )}
     </div>
   );
 }

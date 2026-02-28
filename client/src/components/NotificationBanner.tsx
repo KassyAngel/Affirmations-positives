@@ -29,7 +29,6 @@ export function NotificationBanner() {
     localStorage.setItem(BANNER_DISMISSED_KEY, 'true');
   };
 
-  // Ne pas afficher si : pas supporté, déjà accordé/refusé, ou fermé
   if (!isSupported || permission !== 'default') return null;
 
   return (
@@ -40,7 +39,13 @@ export function NotificationBanner() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: 'spring', damping: 20 }}
-          className="fixed bottom-20 left-4 right-4 z-40 max-w-md mx-auto"
+          className="fixed left-4 right-4 z-40 max-w-md mx-auto"
+          style={{
+            // ✅ 100px fixe = barre nav (80px) + marge (20px)
+            // max() prend le plus grand entre safe-area et 100px
+            // → fonctionne sur Samsung gesture nav ET boutons classiques
+            bottom: 'max(calc(env(safe-area-inset-bottom, 0px) + 80px), 100px)',
+          }}
         >
           <div
             className="rounded-2xl p-4 shadow-2xl"
@@ -51,15 +56,9 @@ export function NotificationBanner() {
             }}
           >
             <div className="flex items-start gap-3">
-              {/* Icône */}
-              <div
-                className="p-2 rounded-xl shrink-0"
-                style={{ background: 'rgba(255,140,105,0.12)' }}
-              >
+              <div className="p-2 rounded-xl shrink-0" style={{ background: 'rgba(255,140,105,0.12)' }}>
                 <Bell className="w-5 h-5" style={{ color: '#FF8C69' }} />
               </div>
-
-              {/* Contenu */}
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-sm mb-1" style={{ color: '#2D1A12' }}>
                   {t.notifications.permissionTitle}
@@ -67,7 +66,6 @@ export function NotificationBanner() {
                 <p className="text-xs" style={{ color: '#B07060' }}>
                   {t.notifications.permissionMessage}
                 </p>
-
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={handleEnable}
@@ -82,17 +80,12 @@ export function NotificationBanner() {
                   <button
                     onClick={handleDismiss}
                     className="px-4 py-2 rounded-xl text-sm font-medium transition-colors"
-                    style={{
-                      background: 'rgba(255,140,105,0.08)',
-                      color: '#B07060',
-                    }}
+                    style={{ background: 'rgba(255,140,105,0.08)', color: '#B07060' }}
                   >
                     {t.notifications.cancel}
                   </button>
                 </div>
               </div>
-
-              {/* Fermer */}
               <button
                 onClick={handleDismiss}
                 className="p-1 rounded-lg transition-colors shrink-0"

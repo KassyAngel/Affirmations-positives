@@ -1,26 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Fichier : android/app/src/main/res/xml/widget_info.xml -->
-<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    <?xml version="1.0" encoding="utf-8"?>
+    <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
 
-    <!-- TAILLE MINIMALE réduite → l'utilisateur choisit librement -->
-    android:minWidth="110dp"
-    android:minHeight="70dp"
+        android:minWidth="110dp"
+        android:minHeight="70dp"
 
-    <!-- Taille par défaut à l'ajout : 3 colonnes × 1 ligne (compact & élégant) -->
-    android:targetCellWidth="3"
-    android:targetCellHeight="1"
+        android:targetCellWidth="3"
+        android:targetCellHeight="1"
 
-    <!-- Taille maximale conseillée -->
-    android:maxResizeWidth="400dp"
-    android:maxResizeHeight="200dp"
+        android:maxResizeWidth="400dp"
+        android:maxResizeHeight="200dp"
 
-    <!-- Mise à jour toutes les 30 min (minimum Android = 1800000ms) -->
-    android:updatePeriodMillis="1800000"
+        android:updatePeriodMillis="1800000"
+        android:initialLayout="@layout/widget_quote"
 
-    android:initialLayout="@layout/widget_quote"
-
-    <!-- L'utilisateur peut redimensionner dans tous les sens -->
-    android:resizeMode="horizontal|vertical"
-
-    android:widgetCategory="home_screen"
-    android:description="@string/app_name" />
+        android:resizeMode="horizontal|vertical"
+        android:widgetCategory="home_screen"
+        android:description="@string/app_name" />

@@ -3,6 +3,7 @@ import { Heart, Share2, Quote as QuoteIcon } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useDeviceType } from '@/hooks/use-device-type';
+import { Capacitor } from '@capacitor/core';
 import type { Quote } from '@shared/schema';
 
 interface QuoteCardProps {
@@ -19,14 +20,53 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
 
   const displayContent = language === 'en' && quote.contentEn ? quote.contentEn : quote.content;
 
+  // ✅ FIX PARTAGE : utilise le plugin Capacitor Share sur mobile natif
+  // (navigator.share en WebView ne propose pas WhatsApp/Facebook/etc.)
+  // Sur web, fallback sur navigator.share ou copie dans le presse-papier
   const handleShare = async () => {
     const shareText = `"${displayContent}" - ${quote.author}`;
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        // Import dynamique pour éviter les erreurs si le plugin n'est pas installé
+        const { Share } = await import('@capacitor/share');
+        await Share.share({
+          title: t.home?.shareTitle ?? 'Citation inspirante',
+          text: shareText,
+          dialogTitle: t.home?.shareTitle ?? 'Partager cette citation',
+        });
+        return;
+      } catch (err: any) {
+        // L'utilisateur a annulé le partage — pas une vraie erreur
+        if (err?.message?.includes('cancelled') || err?.message?.includes('dismissed')) return;
+        console.error('Erreur partage natif:', err);
+        // Fallback sur copie si le plugin échoue
+        try {
+          await navigator.clipboard.writeText(shareText);
+          alert(t.home?.quoteCopied ?? 'Citation copiée !');
+        } catch {}
+        return;
+      }
+    }
+
+    // ── Web : navigator.share si disponible, sinon copie ──────────────────────
     if (navigator.share) {
-      try { await navigator.share({ title: t.home.shareTitle, text: shareText, url: window.location.href }); }
-      catch (err) { console.error('Error sharing', err); }
+      try {
+        await navigator.share({
+          title: t.home?.shareTitle ?? 'Citation inspirante',
+          text: shareText,
+          url: window.location.href,
+        });
+      } catch (err) {
+        // Annulation silencieuse
+      }
     } else {
-      try { await navigator.clipboard.writeText(shareText); alert(t.home.quoteCopied); }
-      catch (err) { console.error('Error copying', err); }
+      try {
+        await navigator.clipboard.writeText(shareText);
+        alert(t.home?.quoteCopied ?? 'Citation copiée !');
+      } catch (err) {
+        console.error('Erreur copie:', err);
+      }
     }
   };
 
@@ -55,7 +95,7 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
     </div>
   );
 
-  // ─── 📱 MOBILE — identique à l'original qui fonctionnait bien ───────────────
+  // ─── 📱 MOBILE ───────────────────────────────────────────────────────────────
   if (device === 'mobile') {
     return (
       <motion.div
@@ -92,7 +132,7 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
     );
   }
 
-  // ─── 📟 TABLETTE & DESKTOP — carte large format paysage ─────────────────────
+  // ─── 📟 TABLETTE & DESKTOP ───────────────────────────────────────────────────
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}

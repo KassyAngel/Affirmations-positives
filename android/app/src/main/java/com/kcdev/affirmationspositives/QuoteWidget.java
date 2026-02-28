@@ -20,7 +20,7 @@ public class QuoteWidget extends AppWidgetProvider {
 
     private static final String ACTION_UPDATE_WIDGET = "com.kcdev.affirmationspositives.UPDATE_WIDGET";
 
-    // ─── Messages embarqués (fallback) ────────────────────────────────────────
+    // ─── Messages embarqués (fallback si aucune citation trouvée) ────────────
     private static final String[] MESSAGES_FR = {
         "Vous êtes plus fort(e) que vous ne le pensez.",
         "Chaque jour est une nouvelle opportunité de grandir.",
@@ -58,35 +58,39 @@ public class QuoteWidget extends AppWidgetProvider {
     };
 
     // ─── Clés SharedPreferences ────────────────────────────────────────────────
-    // Capacitor stocke le localStorage dans "CapacitorStorage"
-    // Les clés sont stockées telles quelles (sans préfixe supplémentaire)
-    private static final String CAPACITOR_PREFS   = "CapacitorStorage";
-    private static final String KEY_CURRENT_QUOTE = "current_widget_quote";
+    // ✅ Capacitor Preferences v6+ stocke avec le préfixe "_cap_"
+    // On teste les deux formats pour compatibilité maximale
+    private static final String CAPACITOR_PREFS = "CapacitorStorage";
 
-    // Capacitor peut aussi stocker la langue sous ces deux formes — on teste les deux
-    private static final String KEY_LANGUAGE_1    = "app_language";
-    private static final String KEY_LANGUAGE_2    = "i18nextLng";
+    // Clés possibles pour la citation (avec et sans préfixe)
+    private static final String[] QUOTE_KEYS = {
+        "_cap_current_widget_quote",  // ✅ Capacitor v6+ (@capacitor/preferences)
+        "current_widget_quote",       // ancienne version (@capacitor/storage)
+    };
 
-    // Prefs internes du widget
-    private static final String WIDGET_PREFS  = "QuoteWidgetPrefs";
-    private static final String KEY_INDEX     = "fallback_index";
-    private static final String KEY_LAST_DAY  = "last_day";
+    // Clés possibles pour la langue
+    private static final String[] LANG_KEYS = {
+        "_cap_app_language",   // ✅ Capacitor v6+
+        "_cap_i18nextLng",     // ✅ Capacitor v6+
+        "app_language",        // ancienne version
+        "i18nextLng",          // ancienne version
+    };
+
+    // Prefs internes du widget (inchangées)
+    private static final String WIDGET_PREFS = "QuoteWidgetPrefs";
+    private static final String KEY_INDEX    = "fallback_index";
+    private static final String KEY_LAST_DAY = "last_day";
 
     // ─── onReceive ────────────────────────────────────────────────────────────
-    // ✅ FIX PRINCIPAL : setExact() ne se répète pas tout seul.
-    //    On intercepte notre action custom ici pour re-planifier le lendemain.
     @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
-
         if (ACTION_UPDATE_WIDGET.equals(intent.getAction())) {
-            // Mettre à jour tous les widgets
             AppWidgetManager mgr = AppWidgetManager.getInstance(context);
             int[] ids = mgr.getAppWidgetIds(new ComponentName(context, QuoteWidget.class));
             for (int id : ids) {
                 updateAppWidget(context, mgr, id);
             }
-            // ✅ Re-planifier pour le lendemain à 8h
             scheduleNextUpdate(context);
         }
     }
@@ -132,23 +136,23 @@ public class QuoteWidget extends AppWidgetProvider {
     }
 
     // ─── Message à afficher ────────────────────────────────────────────────────
-    // Priorité :
-    //   1) Quote sauvegardée par notification-service.ts dans CapacitorStorage
-    //   2) Message embarqué du jour (fallback sans app ouverte)
     private static String getMessageToDisplay(Context context, String lang) {
         try {
             SharedPreferences prefs = context.getSharedPreferences(
                 CAPACITOR_PREFS, Context.MODE_PRIVATE
             );
-            String raw = prefs.getString(KEY_CURRENT_QUOTE, null);
+
+            // ✅ Essaie toutes les clés possibles dans l'ordre
+            String raw = null;
+            for (String key : QUOTE_KEYS) {
+                raw = prefs.getString(key, null);
+                if (raw != null && !raw.isEmpty()) break;
+            }
+
             if (raw != null && !raw.isEmpty()) {
-                // Capacitor encapsule les valeurs localStorage avec des guillemets JSON.
-                // notification-service.ts stocke maintenant le texte BRUT (plus d'objet JSON),
-                // donc on reçoit soit : "texte brut" → avec guillemets Capacitor
-                // soit (ancienne version) : "{\"body\":\"...\"}" → on gère les deux
                 raw = raw.trim();
 
-                // Cas 1 : string Capacitor entre guillemets → "Vous êtes..."
+                // Cas 1 : string entre guillemets JSON → "Vous êtes..."
                 if (raw.startsWith("\"") && raw.endsWith("\"") && !raw.contains("{")) {
                     String text = raw.substring(1, raw.length() - 1)
                                     .replace("\\\"", "\"")
@@ -157,21 +161,22 @@ public class QuoteWidget extends AppWidgetProvider {
                     if (!text.isEmpty()) return text;
                 }
 
-                // Cas 2 : ancienne version objet JSON {body: "..."}
+                // Cas 2 : objet JSON {body: "..."}
                 if (raw.contains("{")) {
-                    // Retirer éventuels guillemets Capacitor externes
-                    if (raw.startsWith("\"")) raw = raw.substring(1, raw.length() - 1)
-                                                       .replace("\\\"", "\"");
+                    if (raw.startsWith("\"")) {
+                        raw = raw.substring(1, raw.length() - 1).replace("\\\"", "\"");
+                    }
                     JSONObject json = new JSONObject(raw);
                     String body = json.optString("body", "").trim();
                     if (!body.isEmpty()) return body;
                 }
 
-                // Cas 3 : texte vraiment brut (sans guillemets)
+                // Cas 3 : texte brut
                 if (!raw.isEmpty()) return raw;
             }
         } catch (Exception ignored) {}
 
+        // Fallback : message embarqué du jour
         return getDailyFallbackMessage(context, lang);
     }
 
@@ -202,8 +207,7 @@ public class QuoteWidget extends AppWidgetProvider {
             SharedPreferences prefs = context.getSharedPreferences(
                 CAPACITOR_PREFS, Context.MODE_PRIVATE
             );
-            // Tester les deux clés possibles
-            for (String key : new String[]{KEY_LANGUAGE_1, KEY_LANGUAGE_2}) {
+            for (String key : LANG_KEYS) {
                 String lang = prefs.getString(key, null);
                 if (lang != null && !lang.isEmpty()) {
                     lang = lang.replace("\"", "").trim();
@@ -212,25 +216,22 @@ public class QuoteWidget extends AppWidgetProvider {
                 }
             }
         } catch (Exception ignored) {}
-        return "fr"; // défaut
+        return "fr";
     }
 
     // ─── Planification quotidienne à 8h ──────────────────────────────────────
-    // ✅ Utilise notre ACTION custom (pas ACTION_APPWIDGET_UPDATE)
-    //    pour que onReceive() puisse intercepter et re-planifier
     private static void scheduleNextUpdate(Context context) {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarmManager == null) return;
 
         Intent intent = new Intent(context, QuoteWidget.class);
-        intent.setAction(ACTION_UPDATE_WIDGET); // ✅ action custom
+        intent.setAction(ACTION_UPDATE_WIDGET);
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
             context, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
-        // Prochaine 8h00
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, 8);
         cal.set(Calendar.MINUTE, 0);
@@ -241,7 +242,6 @@ public class QuoteWidget extends AppWidgetProvider {
         }
 
         try {
-            // setExactAndAllowWhileIdle : se déclenche même en Doze mode (Android 6+)
             alarmManager.setExactAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 cal.getTimeInMillis(),
