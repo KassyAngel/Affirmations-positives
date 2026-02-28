@@ -5,7 +5,10 @@ import { PremiumPaywall } from '@/components/PremiumPaywall';
 import { usePremium } from '@/hooks/use-premium';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useQuoteCounts } from '@/hooks/use-quote-counts';
+import { useAdMob } from '@/hooks/use-admob';
+import { useNavAdCounter } from '@/hooks/use-admob';
 import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 
 const BASE = '/themes/webp/mobile';
 
@@ -16,7 +19,7 @@ const CATEGORIES = [
   { id: 'confidence',  image: `${BASE}/confidence.webp`,  premium: false },
   { id: 'support',     image: `${BASE}/support.webp`,     premium: false },
   { id: 'gratitude',   image: `${BASE}/gratitude.webp`,   premium: false },
-  { id: 'wellness',    image: `${BASE}/bienetre.webp`,     premium: false },
+  { id: 'wellness',    image: `${BASE}/bienetre.webp`,    premium: false },
   // ── PREMIUM ──
   { id: 'sport',       image: `${BASE}/sport.webp`,       premium: true  },
   { id: 'breakup',     image: `${BASE}/breakup.webp`,     premium: true  },
@@ -31,42 +34,70 @@ export default function Categories() {
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
   const { data: counts, isLoading } = useQuoteCounts();
+  const { showInterstitial } = useAdMob();
 
   const { isPremium, tier } = usePremium();
   const userIsPremium = isPremium();
 
   const [showPaywall, setShowPaywall] = useState(false);
 
-  const handleCategoryClick = (categoryId: string, isPremiumCategory: boolean) => {
+  const handleCategoryClick = async (categoryId: string, isPremiumCategory: boolean) => {
     if (isPremiumCategory && !userIsPremium) {
       setShowPaywall(true);
       return;
     }
+    // ✅ Pub interstitielle à chaque clic sur une catégorie (utilisateurs free)
+    if (!userIsPremium) {
+      await showInterstitial();
+    }
     setLocation(`/?category=${categoryId}`);
+  };
+
+  const handleClose = async () => {
+    // ✅ Pub au retour vers Home aussi
+    if (!userIsPremium) {
+      await showInterstitial();
+    }
+    setLocation('/');
   };
 
   return (
     <div
-      // ✅ pb-36 au lieu de pb-28 pour que la dernière carte ne soit pas coupée
       className="min-h-screen pb-36"
       style={{ background: 'linear-gradient(160deg, #FFF5F0 0%, #FFF0E8 50%, #FFF8F5 100%)' }}
     >
-      {/* Header */}
+      {/* Header avec croix fermeture */}
       <header className="px-6 pt-10 pb-6">
         <motion.div
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
+          className="flex items-start justify-between"
         >
-          <h1
-            className="text-3xl font-display font-bold leading-tight"
-            style={{ color: '#2D1A12' }}
+          <div>
+            <h1
+              className="text-3xl font-display font-bold leading-tight"
+              style={{ color: '#2D1A12' }}
+            >
+              {t.categories.title}
+            </h1>
+            <p className="mt-1 text-sm" style={{ color: '#B07060' }}>
+              {t.categories.subtitle}
+            </p>
+          </div>
+
+          {/* ✅ Croix fermeture en haut à droite */}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={handleClose}
+            className="mt-1 w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+            style={{
+              background: 'rgba(255,140,105,0.12)',
+              border: '1px solid rgba(255,140,105,0.25)',
+            }}
           >
-            {t.categories.title}
-          </h1>
-          <p className="mt-1 text-sm" style={{ color: '#B07060' }}>
-            {t.categories.subtitle}
-          </p>
+            <X className="w-4 h-4" style={{ color: '#FF8C69' }} />
+          </motion.button>
         </motion.div>
       </header>
 
@@ -143,10 +174,9 @@ export default function Categories() {
 
       <Navigation />
 
-      {/* ✅ PremiumPaywall avec overlay cliquable pour fermer */}
+      {/* PremiumPaywall */}
       {showPaywall && (
         <>
-          {/* Croix de fermeture flottante */}
           <motion.button
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}

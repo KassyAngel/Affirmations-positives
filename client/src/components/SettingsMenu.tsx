@@ -81,18 +81,17 @@ export function SettingsMenu() {
 
   const legalRows = isFr
     ? [
-        { label: 'Mentions légales', href: '/mentions-legales-fr.html',         icon: FileText },
-        { label: 'Confidentialité',  href: '/politique-confidentialite-fr.html', icon: Shield  },
+        { label: 'Mentions légales', href: '/mentions-legales-fr.html',          icon: FileText },
+        { label: 'Confidentialité',  href: '/politique-confidentialite-fr.html',  icon: Shield  },
       ]
     : [
-        { label: 'Legal Notice',    href: '/mentions-legales-en.html',           icon: FileText },
-        { label: 'Privacy Policy',  href: '/politique-confidentialite-en.html',  icon: Shield  },
+        { label: 'Legal Notice',    href: '/mentions-legales-en.html',            icon: FileText },
+        { label: 'Privacy Policy',  href: '/politique-confidentialite-en.html',   icon: Shield  },
       ];
 
-  // ✅ FIX : hauteur max du panneau = viewport - safe area bottom (boutons Android)
-  // On utilise 88vh au lieu de 92vh pour laisser de l'espace aux boutons système
-  const panelMaxHeight = 'calc(82vh - env(safe-area-inset-bottom, 16px))';
-  const scrollMaxHeight = 'calc(82vh - env(safe-area-inset-bottom, 16px) - 40px)';
+  // ✅ 78vh + paddingBottom min 40px → fonctionne sur Samsung gesture nav
+  const panelMaxHeight = 'calc(78vh - env(safe-area-inset-bottom, 0px))';
+  const scrollMaxHeight = 'calc(78vh - env(safe-area-inset-bottom, 0px) - 40px)';
 
   return (
     <div ref={menuRef} className="relative">
@@ -127,11 +126,10 @@ export function SettingsMenu() {
               className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl overflow-hidden"
               style={{
                 background: 'rgba(255,250,248,0.98)',
-                // ✅ FIX : maxHeight réduit + padding bottom pour ne pas cacher sous les boutons Android
                 maxHeight: panelMaxHeight,
                 boxShadow: '0 -8px 40px rgba(255,140,105,0.15)',
-                // ✅ FIX : padding bottom = safe area pour que le contenu ne soit pas coupé
-                paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 24px)',
+                // ✅ min 40px garanti pour Samsung sans safe-area
+                paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 40px)',
               }}
             >
               <div className="flex justify-center pt-3 pb-1">
@@ -161,7 +159,8 @@ export function SettingsMenu() {
                       </button>
                     </div>
 
-                    <div className="px-4 pb-8 space-y-1">
+                    {/* ✅ pb-16 pour que Confidentialité ne soit pas coupé */}
+                    <div className="px-4 pb-16 space-y-1">
                       {menuRows.map(row => {
                         const Icon = row.icon;
                         return (
@@ -221,7 +220,7 @@ export function SettingsMenu() {
                     style={{ maxHeight: scrollMaxHeight }}
                   >
                     <PanelHeader title={isFr ? 'Langue' : 'Language'} onBack={() => setPanel('menu')} onClose={close} accent={accent} textMain={textMain} />
-                    <div className="px-4 pb-8 space-y-2">
+                    <div className="px-4 pb-16 space-y-2">
                       {languages.map(lang => {
                         const isActive = lang.code === language;
                         return (
@@ -248,7 +247,7 @@ export function SettingsMenu() {
                   <motion.div key="notifications"
                     initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.18 }}
-                    className="overflow-y-auto px-2 pb-8"
+                    className="overflow-y-auto px-2 pb-4"
                     style={{ maxHeight: scrollMaxHeight }}
                   >
                     <PanelHeader title={isFr ? 'Notifications' : 'Notifications'} onBack={() => setPanel('menu')} onClose={close} accent={accent} textMain={textMain} />
@@ -269,7 +268,7 @@ export function SettingsMenu() {
                   <motion.div key="widget"
                     initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 30 }} transition={{ duration: 0.18 }}
-                    className="overflow-y-auto px-2 pb-8 flex flex-col items-center"
+                    className="overflow-y-auto px-2 pb-4 flex flex-col items-center"
                     style={{ maxHeight: scrollMaxHeight }}
                   >
                     <PanelHeader title="Widget" onBack={() => setPanel('menu')} onClose={close} accent={accent} textMain={textMain} />

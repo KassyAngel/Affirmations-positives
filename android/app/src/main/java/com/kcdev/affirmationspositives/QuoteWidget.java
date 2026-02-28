@@ -10,6 +10,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.widget.RemoteViews;
 
 import org.json.JSONObject;
@@ -59,24 +60,20 @@ public class QuoteWidget extends AppWidgetProvider {
 
     // ─── Clés SharedPreferences ────────────────────────────────────────────────
     // ✅ Capacitor Preferences v6+ stocke avec le préfixe "_cap_"
-    // On teste les deux formats pour compatibilité maximale
     private static final String CAPACITOR_PREFS = "CapacitorStorage";
 
-    // Clés possibles pour la citation (avec et sans préfixe)
     private static final String[] QUOTE_KEYS = {
-        "_cap_current_widget_quote",  // ✅ Capacitor v6+ (@capacitor/preferences)
-        "current_widget_quote",       // ancienne version (@capacitor/storage)
+        "_cap_current_widget_quote",  // ✅ Capacitor v6+
+        "current_widget_quote",       // ancienne version
     };
 
-    // Clés possibles pour la langue
     private static final String[] LANG_KEYS = {
-        "_cap_app_language",   // ✅ Capacitor v6+
-        "_cap_i18nextLng",     // ✅ Capacitor v6+
-        "app_language",        // ancienne version
-        "i18nextLng",          // ancienne version
+        "_cap_app_language",
+        "_cap_i18nextLng",
+        "app_language",
+        "i18nextLng",
     };
 
-    // Prefs internes du widget (inchangées)
     private static final String WIDGET_PREFS = "QuoteWidgetPrefs";
     private static final String KEY_INDEX    = "fallback_index";
     private static final String KEY_LAST_DAY = "last_day";
@@ -124,8 +121,13 @@ public class QuoteWidget extends AppWidgetProvider {
         views.setTextViewText(R.id.widget_title, title);
         views.setTextViewText(R.id.widget_quote, message);
 
-        // Clic → ouvre l'app
+        // ✅ Clic → ouvre l'app avec paramètre ?from=widget
+        // Capacitor lit window.location.search, donc on passe via l'URI Data
         Intent intent = new Intent(context, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        // ✅ L'URI data est transmise à Capacitor via window.location
+        intent.setData(Uri.parse("https://affirmations/?from=widget"));
+
         PendingIntent pendingIntent = PendingIntent.getActivity(
             context, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
@@ -142,7 +144,6 @@ public class QuoteWidget extends AppWidgetProvider {
                 CAPACITOR_PREFS, Context.MODE_PRIVATE
             );
 
-            // ✅ Essaie toutes les clés possibles dans l'ordre
             String raw = null;
             for (String key : QUOTE_KEYS) {
                 raw = prefs.getString(key, null);
@@ -176,7 +177,6 @@ public class QuoteWidget extends AppWidgetProvider {
             }
         } catch (Exception ignored) {}
 
-        // Fallback : message embarqué du jour
         return getDailyFallbackMessage(context, lang);
     }
 

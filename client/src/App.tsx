@@ -9,10 +9,9 @@ import { Onboarding, type OnboardingData } from "@/components/Onboarding";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { usePremium } from "@/hooks/use-premium";
 import { notificationService } from "@/services/notification-service";
-import { initAdMob } from "@/hooks/use-admob";
+import { initAdMob, useAdMob } from "@/hooks/use-admob";
 import "@/styles/gradients.css";
 
-// ✅ Lazy loading — seul Home est chargé au démarrage
 const Home       = lazy(() => import("@/pages/Home"));
 const Categories = lazy(() => import("@/pages/Categories"));
 const Favorites  = lazy(() => import("@/pages/Favorites"));
@@ -35,18 +34,46 @@ function Router() {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ✅ Composant dédié pub widget — séparé pour pouvoir utiliser useAdMob
+// ─────────────────────────────────────────────────────────────────────────────
+function WidgetAdHandler() {
+  const { showInterstitial } = useAdMob();
+  const { isPremium } = usePremium();
+
+  useEffect(() => {
+    // Détecte si l'app a été ouverte depuis le widget
+    // Le widget lance l'Intent avec ?from=widget dans l'URL
+    const params = new URLSearchParams(window.location.search);
+    const fromWidget = params.get('from') === 'widget';
+
+    if (fromWidget && !isPremium()) {
+      // Délai de 2.5s pour laisser l'app s'initialiser et AdMob se charger
+      const timer = setTimeout(async () => {
+        console.log('[AdMob] Lancement depuis widget → pub');
+        await showInterstitial();
+        // Nettoyer le paramètre URL sans recharger la page
+        const url = new URL(window.location.href);
+        url.searchParams.delete('from');
+        window.history.replaceState({}, '', url.toString());
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  return null;
+}
+
 function AppContent() {
   const { hasCompletedOnboarding, completeOnboarding } = useOnboarding();
   const { setTheme } = useTheme();
   const { language } = useLanguage();
   const { syncWithRevenueCat, checkAndExpirePremium } = usePremium();
 
-  // ✅ NOUVEAU — vérification expiration au démarrage (évite le set() dans isPremium())
   useEffect(() => {
     checkAndExpirePremium();
   }, []);
 
-  // ✅ Sync RevenueCat au démarrage (vérifie si l'utilisateur est déjà premium)
   useEffect(() => {
     const timer = setTimeout(() => {
       syncWithRevenueCat();
@@ -54,7 +81,6 @@ function AppContent() {
     return () => clearTimeout(timer);
   }, []);
 
-  // ✅ AdMob différé de 2s
   useEffect(() => {
     const timer = setTimeout(() => {
       initAdMob();
@@ -62,7 +88,6 @@ function AppContent() {
     return () => clearTimeout(timer);
   }, []);
 
-  // ✅ Notifications différées
   useEffect(() => {
     if (!hasCompletedOnboarding) return;
     const timer = setTimeout(() => {
@@ -91,6 +116,8 @@ function AppContent() {
   return (
     <>
       <Toaster />
+      {/* ✅ Handler pub widget — actif seulement après onboarding */}
+      <WidgetAdHandler />
       <Router />
     </>
   );

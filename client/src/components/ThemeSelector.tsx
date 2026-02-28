@@ -6,7 +6,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { usePremium } from '@/hooks/use-premium';
 import { PremiumPaywall } from '@/components/PremiumPaywall';
 
-// ✅ Thèmes GRATUITS uniquement — les nouveaux sont tous premium
 const FREE_THEMES: ThemeId[] = [
   'afrique',
   'ethereal',
@@ -21,7 +20,6 @@ const FREE_THEMES: ThemeId[] = [
   'zen',
 ];
 
-// Thèmes à fond CLAIR — le bouton trigger doit contraster différemment
 const LIGHT_THEMES: ThemeId[] = [
   'minimaliste-1',
   'minimaliste-2',
@@ -69,7 +67,6 @@ export function ThemeSelector() {
 
   return (
     <>
-      {/* Bouton trigger */}
       <motion.button
         onClick={() => setIsOpen(true)}
         whileHover={{ scale: 1.05 }}
@@ -81,11 +78,9 @@ export function ThemeSelector() {
         <Palette style={{ width: 20, height: 20, color: iconColor }} />
       </motion.button>
 
-      {/* Modal sélecteur */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -94,19 +89,19 @@ export function ThemeSelector() {
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
             />
 
-            {/* Panneau bas — ✅ palette pêche, plus de rose */}
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-6 pb-10 max-h-[80vh] overflow-y-auto"
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-6 max-h-[80vh] overflow-y-auto"
               style={{
                 background: 'linear-gradient(160deg, #FFF5F0 0%, #FFF0E8 100%)',
                 boxShadow: '0 -8px 32px rgba(255,140,105,0.15)',
+                // ✅ min 40px garanti pour Samsung sans safe-area
+                paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 40px)',
               }}
             >
-              {/* Header du panneau */}
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-xl font-display font-bold" style={{ color: '#2D1A12' }}>
                   {t.onboarding.theme.title}
@@ -120,8 +115,8 @@ export function ThemeSelector() {
                 </button>
               </div>
 
-              {/* Grille de thèmes */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* ✅ pb-8 supplémentaire dans la grille pour la dernière ligne */}
+              <div className="grid grid-cols-2 gap-4 pb-8">
                 {(Object.keys(THEMES) as ThemeId[]).map((id) => {
                   const themeConfig = THEMES[id];
                   const isSelected = id === themeId;
@@ -153,19 +148,11 @@ export function ThemeSelector() {
                             className="absolute inset-0 w-full h-full object-cover"
                             loading="lazy"
                           />
-                          {/* Légère overlay du bgClass */}
                           <div className={`absolute inset-0 ${themeConfig.bgClass} opacity-10`} />
-
-                          {/* Overlay locked */}
-                          {isLocked && (
-                            <div className="absolute inset-0 bg-black/20" />
-                          )}
+                          {isLocked && <div className="absolute inset-0 bg-black/20" />}
                         </div>
                       </div>
 
-
-
-                      {/* Cadenas premium */}
                       {isLocked && (
                         <div
                           className="absolute top-2 right-2 w-7 h-7 rounded-lg flex items-center justify-center"
@@ -179,7 +166,6 @@ export function ThemeSelector() {
                         </div>
                       )}
 
-                      {/* Badge Premium */}
                       {isLocked && (
                         <div
                           className="absolute bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest whitespace-nowrap"
@@ -192,7 +178,6 @@ export function ThemeSelector() {
                         </div>
                       )}
 
-                      {/* Checkmark sélectionné */}
                       {isSelected && (
                         <motion.div
                           initial={{ scale: 0 }}
