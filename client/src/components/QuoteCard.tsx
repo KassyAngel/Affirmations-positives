@@ -13,10 +13,8 @@ interface QuoteCardProps {
   categoryColors: string;
 }
 
-// ─── Lien Play Store ──────────────────────────────────────────────────────────
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.kcdev.affirmationspositives';
 
-// ─── Couleurs par catégorie pour la carte ─────────────────────────────────────
 const CATEGORY_GRADIENTS: Record<string, [string, string]> = {
   work:         ['#FF8C69', '#FF6B4A'],
   love:         ['#E8607A', '#C4456A'],
@@ -34,50 +32,34 @@ const CATEGORY_GRADIENTS: Record<string, [string, string]> = {
   default:      ['#FF8C69', '#FF6B4A'],
 };
 
-// ─── Génération image via Canvas ─────────────────────────────────────────────
+// ─── Génération image canvas ──────────────────────────────────────────────────
 async function generateShareImage(
   quoteText: string,
   author: string,
   category: string,
   themeImagePath: string,
 ): Promise<string> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const W = 1080;
     const H = 1080;
-
     const canvas  = document.createElement('canvas');
     canvas.width  = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d')!;
 
-    // ── Charge l'image du thème comme fond ──────────────────────────────────
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-
-    img.onload = () => {
-      // 1. Image thème en fond (cover)
-      const ratio  = Math.max(W / img.width, H / img.height);
-      const iw     = img.width  * ratio;
-      const ih     = img.height * ratio;
-      const ix     = (W - iw) / 2;
-      const iy     = (H - ih) / 2;
-      ctx.drawImage(img, ix, iy, iw, ih);
-
-      // 2. Overlay sombre pour lisibilité
+    const draw = () => {
+      // 1. Overlay sombre
       const overlay = ctx.createLinearGradient(0, 0, 0, H);
       overlay.addColorStop(0,   'rgba(0,0,0,0.35)');
-      overlay.addColorStop(0.5, 'rgba(0,0,0,0.50)');
-      overlay.addColorStop(1,   'rgba(0,0,0,0.65)');
+      overlay.addColorStop(0.5, 'rgba(0,0,0,0.52)');
+      overlay.addColorStop(1,   'rgba(0,0,0,0.68)');
       ctx.fillStyle = overlay;
       ctx.fillRect(0, 0, W, H);
 
-      // 3. Carte centrale blanche translucide
-      const cardX = 80;
-      const cardY = 200;
-      const cardW = W - 160;
-      const cardH = H - 420;
-      const r     = 48;
-
+      // 2. Carte centrale
+      const cardX = 80; const cardY = 180;
+      const cardW = W - 160; const cardH = H - 400;
+      const r = 48;
       ctx.beginPath();
       ctx.moveTo(cardX + r, cardY);
       ctx.lineTo(cardX + cardW - r, cardY);
@@ -95,107 +77,102 @@ async function generateShareImage(
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // 4. Guillemet décoratif
+      // 3. Guillemet
       ctx.font = 'bold 140px Georgia, serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.fillStyle = 'rgba(255,255,255,0.22)';
       ctx.textAlign = 'left';
+      ctx.shadowBlur = 0;
       ctx.fillText('"', cardX + 40, cardY + 110);
 
-      // 5. Texte de la citation (avec retour à la ligne auto)
-      ctx.fillStyle = 'white';
+      // 4. Citation (word wrap)
       ctx.textAlign = 'center';
-      ctx.shadowColor = 'rgba(0,0,0,0.5)';
-      ctx.shadowBlur = 12;
-
-      const maxWidth    = cardW - 100;
-      const centerX     = W / 2;
-      const words       = quoteText.split(' ');
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 14;
+      const maxW    = cardW - 120;
+      const centerX = W / 2;
+      const words   = quoteText.split(' ');
       const lines: string[] = [];
-      let currentLine   = '';
-
-      // Adapte la taille de police selon longueur du texte
-      const fontSize = quoteText.length > 120 ? 36 : quoteText.length > 80 ? 42 : 48;
+      let cur = '';
+      const fontSize = quoteText.length > 130 ? 34 : quoteText.length > 90 ? 40 : 46;
       ctx.font = `bold ${fontSize}px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+      ctx.fillStyle = 'white';
 
-      for (const word of words) {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-        if (ctx.measureText(testLine).width > maxWidth && currentLine) {
-          lines.push(currentLine);
-          currentLine = word;
-        } else {
-          currentLine = testLine;
-        }
+      for (const w of words) {
+        const test = cur ? `${cur} ${w}` : w;
+        if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; }
+        else cur = test;
       }
-      if (currentLine) lines.push(currentLine);
+      if (cur) lines.push(cur);
 
-      const lineH     = fontSize * 1.45;
-      const totalTextH = lines.length * lineH;
-      const textStartY = cardY + (cardH / 2) - (totalTextH / 2) + 20;
+      const lineH      = fontSize * 1.48;
+      const totalH     = lines.length * lineH;
+      const textStartY = cardY + (cardH / 2) - (totalH / 2) + 20;
+      lines.forEach((line, i) => ctx.fillText(line, centerX, textStartY + i * lineH));
 
-      lines.forEach((line, i) => {
-        ctx.fillText(line, centerX, textStartY + i * lineH);
-      });
-
-      // 6. Séparateur
+      // 5. Séparateur
       ctx.shadowBlur = 0;
-      const sepY = textStartY + lines.length * lineH + 30;
-      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      const sepY = textStartY + lines.length * lineH + 28;
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(centerX - 40, sepY);
-      ctx.lineTo(centerX + 40, sepY);
+      ctx.moveTo(centerX - 44, sepY);
+      ctx.lineTo(centerX + 44, sepY);
       ctx.stroke();
 
-      // 7. Auteur
-      ctx.font = `600 32px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
-      ctx.fillStyle = 'rgba(255,255,255,0.90)';
+      // 6. Auteur
+      ctx.font = `600 30px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.88)';
       ctx.shadowColor = 'rgba(0,0,0,0.4)';
       ctx.shadowBlur = 8;
-      ctx.fillText(`— ${author}`, centerX, sepY + 55);
+      ctx.fillText(`— ${author}`, centerX, sepY + 52);
 
-      // 8. Bandeau bas — nom app + Play Store
+      // 7. Bandeau bas
       ctx.shadowBlur = 0;
-
-      // Fond bandeau
-      const bannerGrad = ctx.createLinearGradient(0, H - 180, 0, H);
+      const bannerGrad = ctx.createLinearGradient(0, H - 200, 0, H);
       bannerGrad.addColorStop(0, 'rgba(0,0,0,0)');
-      bannerGrad.addColorStop(1, 'rgba(0,0,0,0.75)');
+      bannerGrad.addColorStop(1, 'rgba(0,0,0,0.80)');
       ctx.fillStyle = bannerGrad;
-      ctx.fillRect(0, H - 180, W, 180);
+      ctx.fillRect(0, H - 200, W, 200);
 
-      // Nom de l'app
-      ctx.font = `bold 38px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+      ctx.font = `bold 36px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
       ctx.fillStyle = 'white';
-      ctx.textAlign  = 'center';
-      ctx.fillText('✨ Affirmations Positives', centerX, H - 90);
+      ctx.textAlign = 'center';
+      ctx.fillText('✨ Affirmations Positives', centerX, H - 95);
 
-      // Lien Play Store
-      ctx.font = `400 26px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
-      ctx.fillStyle = 'rgba(255,255,255,0.70)';
-      ctx.fillText('Disponible sur Google Play', centerX, H - 48);
+      ctx.font = `400 24px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.65)';
+      ctx.fillText('Disponible sur Google Play', centerX, H - 52);
 
       resolve(canvas.toDataURL('image/jpeg', 0.92));
     };
 
+    // Charge l'image du thème comme fond
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const ratio = Math.max(W / img.width, H / img.height);
+      const iw = img.width * ratio;
+      const ih = img.height * ratio;
+      ctx.drawImage(img, (W - iw) / 2, (H - ih) / 2, iw, ih);
+      draw();
+    };
     img.onerror = () => {
-      // Fallback si l'image du thème ne charge pas — fond dégradé catégorie
+      // Fallback dégradé catégorie
       const [c1, c2] = CATEGORY_GRADIENTS[category] ?? CATEGORY_GRADIENTS.default;
       const grad = ctx.createLinearGradient(0, 0, W, H);
       grad.addColorStop(0, c1);
       grad.addColorStop(1, c2);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, W, H);
-      img.onload!({} as Event);
+      draw();
     };
-
-    // Charge l'image du thème (chemin relatif → absolu)
     img.src = themeImagePath.startsWith('http')
       ? themeImagePath
       : `${window.location.origin}${themeImagePath}`;
   });
 }
 
-// ─── Composant principal ──────────────────────────────────────────────────────
+// ─── Composant ────────────────────────────────────────────────────────────────
 export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors }: QuoteCardProps) {
   const { t, language } = useLanguage();
   const { theme }       = useTheme();
@@ -203,15 +180,15 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
 
   const displayContent = language === 'en' && quote.contentEn ? quote.contentEn : quote.content;
 
-  // ── Partage ──────────────────────────────────────────────────────────────────
   const handleShare = async () => {
+    // ✅ Texte bien formaté — PAS de champ url (évite que Android affiche seulement le lien)
     const shareText = `✨ "${displayContent}"\n\n— ${quote.author}\n\n📲 Affirmations Positives\n${PLAY_STORE_URL}`;
 
     if (Capacitor.isNativePlatform()) {
       try {
         const { Share } = await import('@capacitor/share');
 
-        // ── Tentative partage AVEC image ──────────────────────────────────────
+        // ── Tentative avec image générée ─────────────────────────────────────
         try {
           const base64 = await generateShareImage(
             displayContent,
@@ -220,10 +197,8 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
             theme.imagePath,
           );
 
-          // Convertit base64 → Blob → fichier temporaire via Filesystem
           const { Filesystem, Directory } = await import('@capacitor/filesystem');
-
-          const base64Data = base64.split(',')[1]; // retire le préfixe data:image/jpeg;base64,
+          const base64Data = base64.split(',')[1];
           const fileName   = `affirmation_${Date.now()}.jpg`;
 
           await Filesystem.writeFile({
@@ -232,28 +207,32 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
             directory: Directory.Cache,
           });
 
-          const fileResult = await Filesystem.getUri({
+          const { uri } = await Filesystem.getUri({
             path:      fileName,
             directory: Directory.Cache,
           });
 
+          // ✅ url = fichier image local (pas le lien store)
+          // ✅ text = citation complète avec lien store inclus dedans
+          // ✅ PAS de champ "url" séparé → évite l'affichage du lien seul
           await Share.share({
             title:       '✨ Affirmations Positives',
             text:        shareText,
-            url:         fileResult.uri,
+            url:         uri,          // URI fichier image local
             dialogTitle: language === 'fr' ? 'Partager cette citation' : 'Share this quote',
           });
 
-          // Nettoyage fichier temp
           try { await Filesystem.deleteFile({ path: fileName, directory: Directory.Cache }); } catch {}
           return;
 
         } catch (imgErr) {
-          console.warn('[Share] Image échouée, fallback texte:', imgErr);
-          // Fallback texte seul si l'image échoue
+          console.warn('[Share] Image échouée, fallback texte pur:', imgErr);
+
+          // ✅ Fallback texte seul — toujours PAS de champ url
           await Share.share({
             title:       '✨ Affirmations Positives',
             text:        shareText,
+            // ← pas de url ici intentionnellement
             dialogTitle: language === 'fr' ? 'Partager cette citation' : 'Share this quote',
           });
           return;
@@ -261,8 +240,7 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
 
       } catch (err: any) {
         if (err?.message?.includes('cancelled') || err?.message?.includes('dismissed')) return;
-        console.error('Erreur partage natif:', err);
-        // Fallback copie presse-papier
+        console.error('[Share] Erreur:', err);
         try {
           await navigator.clipboard.writeText(shareText);
           alert(language === 'fr' ? 'Citation copiée !' : 'Quote copied!');
@@ -271,14 +249,10 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
       }
     }
 
-    // ── Web : navigator.share ou copie ───────────────────────────────────────
+    // ── Web fallback ─────────────────────────────────────────────────────────
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: '✨ Affirmations Positives',
-          text:  shareText,
-          url:   PLAY_STORE_URL,
-        });
+        await navigator.share({ title: '✨ Affirmations Positives', text: shareText });
       } catch {}
     } else {
       try {
@@ -288,7 +262,6 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
     }
   };
 
-  // ── Styles ───────────────────────────────────────────────────────────────────
   const cardStyle = {
     background:     theme.cardClass.includes('bg-white') ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.2)',
     backdropFilter: 'blur(20px)',
@@ -314,7 +287,6 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
     </div>
   );
 
-  // ── Mobile ───────────────────────────────────────────────────────────────────
   if (device === 'mobile') {
     return (
       <motion.div
@@ -353,7 +325,6 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
     );
   }
 
-  // ── Tablette & Desktop ───────────────────────────────────────────────────────
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -361,11 +332,7 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.4 }}
       className="relative mx-auto rounded-3xl overflow-hidden shadow-2xl"
-      style={{
-        ...cardStyle,
-        width:  device === 'desktop' ? '680px' : '580px',
-        height: device === 'desktop' ? '420px' : '380px',
-      }}
+      style={{ ...cardStyle, width: device === 'desktop' ? '680px' : '580px', height: device === 'desktop' ? '420px' : '380px' }}
     >
       {quote.backgroundImage && (
         <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{ backgroundImage: `url(${quote.backgroundImage})` }} />
