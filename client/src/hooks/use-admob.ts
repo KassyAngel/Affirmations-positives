@@ -21,14 +21,16 @@ export const AD_IDS = IS_PRODUCTION ? PROD_IDS : TEST_IDS;
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚙️ PARAMÈTRES DE MONÉTISATION
 // ─────────────────────────────────────────────────────────────────────────────
-const QUOTE_AD_INTERVAL = 4;  // pub toutes les 4 citations
-const NAV_AD_START      = 2;  // première pub au 2ème clic sur CE bouton
-const NAV_AD_INTERVAL   = 2;  // puis toutes les 2 clics sur CE bouton
+const QUOTE_AD_INTERVAL = 4;   // pub toutes les 4 citations (inchangé)
 
-// ✅ Compteurs PAR BOUTON — chaque path a son propre compteur indépendant
-// Ex: /categories → 0, /stats → 0, /favorites → 0
-// Clique sur catégories 2 fois → pub sur catégories
-// Clique sur stats 1 fois → pas de pub (compteur stats = 1, pas encore à 2)
+// ✅ Nav bar — beaucoup moins invasif qu'avant (était start=2, interval=2)
+const NAV_AD_START    = 4;     // première pub au 4ème clic sur CE bouton nav
+const NAV_AD_INTERVAL = 5;     // puis toutes les 5 clics sur ce bouton
+
+// ✅ Swipe — pub toutes les 5 navigations swipe/dot
+export const SWIPE_AD_INTERVAL = 5;
+
+// ─── Compteurs module-level (survivent aux re-renders) ────────────────────────
 const navCountPerPath: Record<string, number> = {};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -126,13 +128,11 @@ export function useAdMob() {
       console.log('[AdMob] Utilisateur Premium — pub ignorée');
       return;
     }
-
     const plugin = getAdMobPlugin();
     if (!plugin) {
       console.log('[AdMob] Non natif — ignoré');
       return;
     }
-
     if (!isReadyRef.current) {
       try {
         await plugin.prepareInterstitial({
@@ -143,7 +143,6 @@ export function useAdMob() {
         return;
       }
     }
-
     try {
       isReadyRef.current = false;
       await plugin.showInterstitial();
@@ -177,33 +176,23 @@ export function useQuoteAdCounter(showInterstitial: () => Promise<void>) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hook compteur navigation — pub par bouton indépendant
+// Hook compteur navigation barre du bas
 //
-// ✅ Comportement :
-//   - Chaque bouton nav a son propre compteur (categories, stats, favorites...)
-//   - 1er clic sur catégories → pas de pub (count = 1)
-//   - 2ème clic sur catégories → PUB (count = 2)
-//   - 3ème clic sur catégories → pas de pub (count = 3)
-//   - 4ème clic sur catégories → PUB (count = 4)
-//   - Pendant ce temps, cliquer sur stats a son propre compteur séparé
+// ✅ Nouveau comportement (start=4, interval=5) :
+//   Clic 1,2,3 sur /categories → pas de pub
+//   Clic 4       → PUB
+//   Clic 5,6,7,8 → pas de pub
+//   Clic 9       → PUB
+//   (et ainsi de suite, compteur indépendant par bouton)
 // ─────────────────────────────────────────────────────────────────────────────
 export function useNavAdCounter(showInterstitial: () => Promise<void>) {
-  // path = la destination du clic (ex: '/categories', '/stats')
   const onNavClick = useCallback(async (path: string) => {
-    // Initialise le compteur pour ce path si pas encore fait
-    if (navCountPerPath[path] === undefined) {
-      navCountPerPath[path] = 0;
-    }
-
+    if (navCountPerPath[path] === undefined) navCountPerPath[path] = 0;
     navCountPerPath[path] += 1;
     const count = navCountPerPath[path];
 
     console.log(`[AdMob] Nav "${path}" clic #${count}`);
-
-    // Pas de pub avant NAV_AD_START clics sur CE bouton
     if (count < NAV_AD_START) return;
-
-    // Pub au NAV_AD_START-ème clic, puis toutes les NAV_AD_INTERVAL clics
     if ((count - NAV_AD_START) % NAV_AD_INTERVAL === 0) {
       console.log(`[AdMob] Seuil nav atteint pour "${path}" → pub`);
       await showInterstitial();

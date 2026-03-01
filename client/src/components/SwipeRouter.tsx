@@ -5,7 +5,7 @@ import { useLocation } from 'wouter';
 import { useTheme, THEMES, type ThemeId } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePremium } from '@/hooks/use-premium';
-import { useAdMob } from '@/hooks/use-admob';
+import { useAdMob, SWIPE_AD_INTERVAL } from '@/hooks/use-admob';
 import { PremiumPaywall } from '@/components/PremiumPaywall';
 import { Check } from 'lucide-react';
 
@@ -19,12 +19,6 @@ const PAGE_COUNT      = 5;
 const SWIPE_THRESHOLD = 55;
 const SWIPE_VELOCITY  = 350;
 
-// ✅ Pub toutes les 3 navigations (swipe ou dot), peu importe la page
-const NAV_AD_INTERVAL = 3;
-
-// Compteur global — survit aux re-renders, se reset uniquement au redémarrage de l'app
-let swipeNavCount = 0;
-
 const PATH_TO_INDEX: Record<string, number> = {
   '/':           0,
   '/categories': 1,
@@ -33,6 +27,9 @@ const PATH_TO_INDEX: Record<string, number> = {
   '/themes':     4,
 };
 const INDEX_TO_PATH = ['/', '/categories', '/favorites', '/stats', '/themes'];
+
+// ✅ Compteur global swipe — module-level, survit aux re-renders
+let swipeNavCount = 0;
 
 // ─── Thèmes gratuits ──────────────────────────────────────────────────────────
 const FREE_THEMES: ThemeId[] = [
@@ -94,51 +91,31 @@ function ThemesPage() {
                 style={{
                   border:     isSelected ? '2.5px solid #FF8C69' : '2px solid rgba(255,203,184,0.5)',
                   transform:  isSelected ? 'scale(1.04)' : 'scale(1)',
-                  boxShadow:  isSelected
-                    ? '0 4px 20px rgba(255,140,105,0.35)'
-                    : '0 2px 8px rgba(0,0,0,0.08)',
+                  boxShadow:  isSelected ? '0 4px 20px rgba(255,140,105,0.35)' : '0 2px 8px rgba(0,0,0,0.08)',
                   transition: 'all 0.2s',
                 }}
               >
-                <img
-                  src={cfg.imagePath}
-                  alt={cfg.label.fr}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  loading="lazy"
-                />
+                <img src={cfg.imagePath} alt={cfg.label.fr} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
                 <div className={`absolute inset-0 ${cfg.bgClass} opacity-10`} />
                 {isLocked && <div className="absolute inset-0 bg-black/20" />}
               </div>
-
-              <p
-                className="text-[11px] font-medium text-center mt-1.5 truncate px-1"
-                style={{ color: '#7A4030' }}
-              >
+              <p className="text-[11px] font-medium text-center mt-1.5 truncate px-1" style={{ color: '#7A4030' }}>
                 {cfg.label.fr}
               </p>
-
               {isLocked && (
-                <div
-                  className="absolute top-2 right-2 w-6 h-6 rounded-md flex items-center justify-center"
-                  style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
-                >
+                <div className="absolute top-2 right-2 w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}>
                   <span className="text-xs">🔒</span>
                 </div>
               )}
               {isLocked && (
-                <div
-                  className="absolute bottom-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest whitespace-nowrap"
-                  style={{ background: 'linear-gradient(135deg, #FF8C69, #FFA882)', color: 'white' }}
-                >
+                <div className="absolute bottom-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest whitespace-nowrap"
+                  style={{ background: 'linear-gradient(135deg, #FF8C69, #FFA882)', color: 'white' }}>
                   Premium
                 </div>
               )}
               {isSelected && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute top-2 left-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg z-10"
-                >
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+                  className="absolute top-2 left-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg z-10">
                   <Check className="w-3.5 h-3.5 text-emerald-600" strokeWidth={3} />
                 </motion.div>
               )}
@@ -147,11 +124,7 @@ function ThemesPage() {
         })}
       </div>
 
-      <PremiumPaywall
-        isOpen={showPaywall}
-        onClose={() => setShowPaywall(false)}
-        trigger="theme_locked"
-      />
+      <PremiumPaywall isOpen={showPaywall} onClose={() => setShowPaywall(false)} trigger="theme_locked" />
     </div>
   );
 }
@@ -159,18 +132,11 @@ function ThemesPage() {
 // ─── Dots ─────────────────────────────────────────────────────────────────────
 const DOT_EMOJIS = ['🏠', '📂', '❤️', '📊', '🎨'];
 
-function PageDots({ current, onDotClick }: {
-  current: number;
-  onDotClick: (i: number) => void;
-}) {
+function PageDots({ current, onDotClick }: { current: number; onDotClick: (i: number) => void }) {
   return (
     <div
       className="fixed z-30 flex items-center gap-2"
-      style={{
-        bottom:    'calc(env(safe-area-inset-bottom, 0px) + 72px)',
-        left:      '50%',
-        transform: 'translateX(-50%)',
-      }}
+      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)', left: '50%', transform: 'translateX(-50%)' }}
     >
       {Array.from({ length: PAGE_COUNT }).map((_, i) => (
         <motion.button
@@ -181,9 +147,7 @@ function PageDots({ current, onDotClick }: {
             width:           i === current ? 26 : 7,
             height:          7,
             borderRadius:    99,
-            backgroundColor: i === current
-              ? '#FF8C69'
-              : 'rgba(255,140,105,0.30)',
+            backgroundColor: i === current ? '#FF8C69' : 'rgba(255,140,105,0.30)',
           }}
           transition={{ duration: 0.22, ease: 'easeOut' }}
         />
@@ -200,28 +164,29 @@ export function SwipeRouter() {
 
   const { showInterstitial } = useAdMob();
   const { isPremium } = usePremium();
-  // Ref fraîche pour éviter stale closure dans les callbacks
   const isPremiumRef = useRef(isPremium());
   useEffect(() => { isPremiumRef.current = isPremium(); }, [isPremium()]);
 
-  // Sync URL → index (ex: clic catégorie → setLocation('/') → Home)
+  // Sync URL → index (ex: croix ✕ dans Stats/Favorites/Categories → home)
+  const prevLocationRef = useRef(location);
   useEffect(() => {
+    if (location === prevLocationRef.current) return;
+    prevLocationRef.current = location;
     const idx = PATH_TO_INDEX[location];
     if (idx !== undefined && idx !== pageIndex) {
       setDirection(idx > pageIndex ? 1 : -1);
       setPageIndex(idx);
-      // ✅ Ce changement vient de l'extérieur (ex: bouton croix dans Categories)
-      // On compte aussi cette navigation
-      triggerNavAd();
+      // ✅ La croix compte aussi dans le compteur swipe
+      triggerSwipeAd();
     }
   }, [location]);
 
-  // ✅ Logique pub — toutes les 3 navigations (compteur module-level)
-  const triggerNavAd = useCallback(async () => {
+  // ✅ Pub toutes les SWIPE_AD_INTERVAL (5) navigations
+  const triggerSwipeAd = useCallback(async () => {
     if (isPremiumRef.current) return;
     swipeNavCount += 1;
     console.log(`[AdMob] Swipe nav #${swipeNavCount}`);
-    if (swipeNavCount % NAV_AD_INTERVAL === 0) {
+    if (swipeNavCount % SWIPE_AD_INTERVAL === 0) {
       console.log('[AdMob] Seuil swipe atteint → pub');
       await showInterstitial();
     }
@@ -234,30 +199,23 @@ export function SwipeRouter() {
     setDirection(newIdx > pageIndex ? 1 : -1);
     setPageIndex(newIdx);
     setLocation(INDEX_TO_PATH[newIdx]);
-    await triggerNavAd();
-  }, [pageIndex, setLocation, triggerNavAd]);
+    await triggerSwipeAd();
+  }, [pageIndex, setLocation, triggerSwipeAd]);
 
-  const handleDragStart = useCallback(() => {
-    dragCancelledRef.current = false;
-  }, []);
+  const handleDragStart = useCallback(() => { dragCancelledRef.current = false; }, []);
 
   const handleDrag = useCallback((_: any, info: PanInfo) => {
     const dx = Math.abs(info.offset.x);
     const dy = Math.abs(info.offset.y);
-    if (dy > dx * 1.3 && dy > 8) {
-      dragCancelledRef.current = true;
-    }
+    if (dy > dx * 1.3 && dy > 8) dragCancelledRef.current = true;
   }, []);
 
   const handleDragEnd = useCallback((_: any, info: PanInfo) => {
     if (dragCancelledRef.current) return;
-
     const { offset, velocity } = info;
     if (Math.abs(offset.y) > Math.abs(offset.x) * 1.4) return;
-
     const swipeLeft  = offset.x < -SWIPE_THRESHOLD || velocity.x < -SWIPE_VELOCITY;
     const swipeRight = offset.x >  SWIPE_THRESHOLD || velocity.x >  SWIPE_VELOCITY;
-
     if (swipeLeft  && pageIndex < PAGE_COUNT - 1) goTo(pageIndex + 1);
     if (swipeRight && pageIndex > 0)              goTo(pageIndex - 1);
   }, [pageIndex, goTo]);
@@ -281,7 +239,6 @@ export function SwipeRouter() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
-
       <motion.div
         className="w-full h-full"
         drag="x"
@@ -312,9 +269,7 @@ export function SwipeRouter() {
           </motion.div>
         </AnimatePresence>
       </motion.div>
-
       <PageDots current={pageIndex} onDotClick={goTo} />
-
     </div>
   );
 }
