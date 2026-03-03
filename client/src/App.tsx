@@ -80,7 +80,7 @@ function AppContent() {
 
   useEffect(() => {
     // AdMob délai 3s — après que tout le reste soit prêt
-    const t = setTimeout(() => { initAdMob(); }, 8000);
+    const t = setTimeout(() => { initAdMob(); }, 4000);
     return () => clearTimeout(t);
   }, []);
 
