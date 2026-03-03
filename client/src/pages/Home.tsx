@@ -19,16 +19,16 @@ import { DevResetButton } from '@/components/DevResetButton';
 import { Loader2, RefreshCcw, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAdMob, useQuoteAdCounter } from '@/hooks/use-admob';
-import type { Mood } from '@shared/schema';
+import { Preferences } from '@capacitor/preferences';
+import type { Mood, Quote } from '@shared/schema';
 import { SettingsMenu } from '@/components/SettingsMenu';
 
-// ✅ Toutes les humeurs pointent vers des catégories GRATUITES uniquement
 const MOOD_CATEGORY_MAP: Record<Mood, string> = {
-  determined: 'work',        // ✅ gratuit (était 'success' Premium)
-  happy:      'love',        // ✅ gratuit
-  zen:        'wellness',    // ✅ gratuit (était 'philosophy' Premium)
-  tired:      'support',     // ✅ gratuit
-  frustrated: 'confidence',  // ✅ gratuit
+  determined: 'work',
+  happy:      'love',
+  zen:        'wellness',
+  tired:      'support',
+  frustrated: 'confidence',
 };
 
 const CATEGORY_STYLES: Record<string, string> = {
@@ -48,6 +48,22 @@ const CATEGORY_STYLES: Record<string, string> = {
   default:      'gradient-default',
 };
 
+// ✅ Sauvegarde la citation ET la langue pour le widget Android
+// Lit content (fr) ou contentEn (en) selon la langue active
+async function saveQuoteForWidget(quote: Quote, lang: string): Promise<void> {
+  try {
+    const text = lang === 'en' && quote.contentEn
+      ? quote.contentEn
+      : quote.content;
+    await Promise.all([
+      Preferences.set({ key: 'current_widget_quote', value: text }),
+      Preferences.set({ key: 'app_language', value: lang }),
+    ]);
+  } catch (e) {
+    console.warn('[Widget] Erreur sauvegarde:', e);
+  }
+}
+
 export default function Home() {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
@@ -55,8 +71,8 @@ export default function Home() {
   const [location] = useLocation();
   const { state, logMood, updateStreak, hasLoggedMoodToday, toggleFavorite, getTodaysMood } = useUserState();
 
-  // ✅ tier extrait pour forcer le re-render Zustand
-  const { isPremium, tier, canViewQuote, incrementQuotesViewed, getRemainingQuotes } = usePremium();
+  // ✅ tier retiré — non utilisé ici (évite warning TypeScript)
+  const { isPremium, canViewQuote, incrementQuotesViewed, getRemainingQuotes } = usePremium();
   const userIsPremium = isPremium();
 
   const [showPaywall, setShowPaywall] = useState(false);
@@ -80,8 +96,13 @@ export default function Home() {
 
   useEffect(() => { updateStreak(); }, []);
 
-  // ✅ useQuotes filtre automatiquement les catégories Premium si pas Premium
   const { data: quotes, isLoading, isError, refetch } = useQuotes({ category: activeCategory });
+
+  // ✅ Sauvegarde la citation visible pour le widget dès qu'elle change
+  useEffect(() => {
+    if (!quotes || quotes.length === 0) return;
+    saveQuoteForWidget(quotes[currentIndex], language);
+  }, [quotes, currentIndex, language]);
 
   const handleMoodSelect = (mood: Mood) => {
     logMood(mood);
@@ -93,8 +114,14 @@ export default function Home() {
   const handleNext = async () => {
     if (!canViewQuote()) { setShowPaywall(true); return; }
     if (!quotes) return;
-    setCurrentIndex((prev) => (prev + 1) % quotes.length);
+
+    const nextIndex = (currentIndex + 1) % quotes.length;
+    setCurrentIndex(nextIndex);
     incrementQuotesViewed();
+
+    // ✅ Sauvegarde immédiate pour le widget
+    await saveQuoteForWidget(quotes[nextIndex], language);
+
     await onNewQuote();
   };
 
