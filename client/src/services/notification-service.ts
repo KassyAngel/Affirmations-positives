@@ -1,15 +1,13 @@
 import { getRandomMessage } from './positive-messages';
 import type { Quote } from '@shared/schema';
 
-// ─── Détection plateforme ─────────────────────────────────────────────────────
 const isCapacitor = () => typeof (window as any).Capacitor !== 'undefined';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 export interface NotificationSettings {
   enabled: boolean;
-  frequency: number;   // 0–20 par jour
-  startTime: string;   // "09:00"
-  endTime: string;     // "22:00"
+  frequency: number;
+  startTime: string;
+  endTime: string;
 }
 
 interface NotificationContent {
@@ -17,16 +15,10 @@ interface NotificationContent {
   body: string;
 }
 
-// ─── Clés localStorage ────────────────────────────────────────────────────────
 const SETTINGS_KEY          = 'notification_settings';
 const LAST_NOTIFICATION_KEY = 'last_notification_time';
+const CURRENT_QUOTE_KEY     = 'current_widget_quote';
 
-// ✅ Le widget Java lit cette clé dans CapacitorStorage.
-// On stocke UNIQUEMENT le texte brut (pas un objet JSON)
-// pour éviter le double-encodage Capacitor.
-const CURRENT_QUOTE_KEY = 'current_widget_quote';
-
-// ─── Citations de secours ─────────────────────────────────────────────────────
 const FALLBACK_FR = [
   'Vous êtes plus fort(e) que vous ne le pensez.',
   'Chaque jour est une nouvelle opportunité de grandir.',
@@ -66,7 +58,6 @@ function getFallbackContent(language: 'fr' | 'en'): NotificationContent {
   };
 }
 
-// ─── Service ──────────────────────────────────────────────────────────────────
 export class NotificationService {
   private static instance: NotificationService;
   private intervalId: number | null = null;
@@ -80,7 +71,6 @@ export class NotificationService {
     return NotificationService.instance;
   }
 
-  // ── Préférences ──────────────────────────────────────────────────────────────
   saveSettings(settings: NotificationSettings) {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   }
@@ -90,66 +80,61 @@ export class NotificationService {
     return raw ? JSON.parse(raw) : null;
   }
 
-  // ── Citation courante pour le widget ─────────────────────────────────────────
-  // Retourne l'objet complet pour l'usage interne React
   getCurrentQuote(): NotificationContent | null {
     const body = localStorage.getItem(CURRENT_QUOTE_KEY);
     if (!body) return null;
-    // On stocke le body brut, on reconstruit l'objet ici
     return { title: '', body };
   }
 
-  // ✅ FIX WIDGET : stocker UNIQUEMENT le texte brut.
-  // Capacitor encapsule localStorage dans CapacitorStorage en ajoutant
-  // des guillemets JSON autour de la valeur — si on stocke déjà du JSON,
-  // le widget reçoit une chaîne double-encodée que JSONObject ne parse pas.
-  // En stockant le texte directement, le widget lit juste une string simple.
   private saveCurrentQuote(content: NotificationContent) {
     localStorage.setItem(CURRENT_QUOTE_KEY, content.body);
   }
 
-  // ── Calculs horaires ─────────────────────────────────────────────────────────
-  private calculateInterval(frequency: number, startTime: string, endTime: string): number {
-    const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-    const total = toMin(endTime) - toMin(startTime);
-    return Math.max(1, Math.floor(total / frequency));
+  private toMin(t: string): number {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
   }
 
   private isInTimeRange(startTime: string, endTime: string): boolean {
     const now = new Date();
     const cur = now.getHours() * 60 + now.getMinutes();
-    const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-    return cur >= toMin(startTime) && cur <= toMin(endTime);
+    return cur >= this.toMin(startTime) && cur <= this.toMin(endTime);
   }
 
-  // ── Contenu aléatoire ────────────────────────────────────────────────────────
+  // ✅ Génère le contenu en utilisant d'abord les fallbacks locaux
+  // L'API n'est appelée qu'une seule fois si besoin (pas en parallèle)
   private async getRandomContent(language: 'fr' | 'en'): Promise<NotificationContent> {
-    if (Math.random() > 0.5) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        const res = await fetch('/api/quotes', { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          const quotes: Quote[] = await res.json();
-          if (quotes.length > 0) {
-            const q = quotes[Math.floor(Math.random() * quotes.length)];
-            return {
-              title: language === 'fr' ? '💭 Citation du jour' : '💭 Quote of the day',
-              body: language === 'en' && q.contentEn
-                ? `"${q.contentEn}" — ${q.author}`
-                : `"${q.content}" — ${q.author}`,
-            };
-          }
-        }
-      } catch { /* fallback silencieux */ }
+    // ✅ 70% du temps on utilise les messages locaux — zéro réseau, zéro lag
+    if (Math.random() > 0.3) {
+      try { return getRandomMessage(language); }
+      catch { return getFallbackContent(language); }
     }
+
+    // 30% du temps on tente l'API avec timeout court
+    try {
+      const controller = new AbortController();
+      const timeoutId  = setTimeout(() => controller.abort(), 2000);
+      const res = await fetch('/api/quotes', { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const quotes: Quote[] = await res.json();
+        if (quotes.length > 0) {
+          const q = quotes[Math.floor(Math.random() * quotes.length)];
+          return {
+            title: language === 'fr' ? '💭 Citation du jour' : '💭 Quote of the day',
+            body: language === 'en' && q.contentEn
+              ? `"${q.contentEn}" — ${q.author}`
+              : `"${q.content}" — ${q.author}`,
+          };
+        }
+      }
+    } catch { /* fallback silencieux */ }
 
     try { return getRandomMessage(language); }
     catch { return getFallbackContent(language); }
   }
 
-  // ── Permission ───────────────────────────────────────────────────────────────
   async requestPermission(): Promise<boolean> {
     if (isCapacitor()) {
       try {
@@ -167,11 +152,8 @@ export class NotificationService {
     }
   }
 
-  // ── Envoi d'une notification ─────────────────────────────────────────────────
   private async sendNotification(language: 'fr' | 'en' = 'fr') {
     const content = await this.getRandomContent(language);
-
-    // ✅ Sauvegarde le texte brut pour le widget
     this.saveCurrentQuote(content);
     localStorage.setItem(LAST_NOTIFICATION_KEY, Date.now().toString());
 
@@ -180,14 +162,14 @@ export class NotificationService {
         const { LocalNotifications } = await import('@capacitor/local-notifications');
         await LocalNotifications.schedule({
           notifications: [{
-            id: Math.floor(Math.random() * 100000),
-            title: content.title,
-            body: content.body,
-            schedule: { at: new Date(Date.now() + 1000) },
-            sound: 'default',
+            id:        Math.floor(Math.random() * 100000),
+            title:     content.title,
+            body:      content.body,
+            schedule:  { at: new Date(Date.now() + 1000) },
+            sound:     'default',
             smallIcon: 'ic_stat_notification',
             iconColor: '#F43F5E',
-            extra: { quote: content.body },
+            extra:     { quote: content.body },
           }],
         });
       } catch (e) {
@@ -198,13 +180,14 @@ export class NotificationService {
       const notif = new Notification(content.title, {
         body: content.body,
         icon: '/icon-192.png',
-        tag: 'daily-motivation',
+        tag:  'daily-motivation',
       });
       setTimeout(() => notif.close(), 5000);
     }
   }
 
-  // ── Planifier toutes les notifications du jour ───────────────────────────────
+  // ✅ OPTIMISÉ — génère les contenus séquentiellement (pas en parallèle)
+  // pour éviter de saturer le réseau sur vieux téléphones
   private async scheduleAllNotificationsForToday(
     settings: NotificationSettings,
     language: 'fr' | 'en'
@@ -214,86 +197,98 @@ export class NotificationService {
     try {
       const { LocalNotifications } = await import('@capacitor/local-notifications');
 
+      // Annule les notifications existantes
       const pending = await LocalNotifications.getPending();
       if (pending.notifications.length > 0) {
         await LocalNotifications.cancel({ notifications: pending.notifications });
       }
 
-      const toMin = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-      const startMin = toMin(settings.startTime);
-      const endMin   = toMin(settings.endTime);
-
+      const startMin = this.toMin(settings.startTime);
+      const endMin   = this.toMin(settings.endTime);
       if (settings.frequency <= 0 || endMin <= startMin) return;
 
       const interval = Math.floor((endMin - startMin) / settings.frequency);
-      const now = new Date();
-
-      const contents = await Promise.all(
-        Array.from({ length: settings.frequency }, () => this.getRandomContent(language))
-      );
-
+      const now      = new Date();
       const notifications = [];
+
+      // ✅ Génère les contenus UN PAR UN pour ne pas surcharger
       for (let i = 0; i < settings.frequency; i++) {
-        const targetMin = startMin + i * interval;
+        const targetMin  = startMin + i * interval;
         const targetDate = new Date();
+        // ✅ Fuseau horaire local automatique via setHours
         targetDate.setHours(Math.floor(targetMin / 60), targetMin % 60, 0, 0);
 
-        if (targetDate > now) {
-          notifications.push({
-            id: 1000 + i,
-            title: contents[i].title,
-            body: contents[i].body,
-            schedule: { at: targetDate },
-            sound: 'default',
-            smallIcon: 'ic_stat_notification',
-            iconColor: '#F43F5E',
-            extra: { quote: contents[i].body },
-          });
+        if (targetDate <= now) continue; // heure passée aujourd'hui → skip
+
+        // ✅ Génération séquentielle — on attend chaque contenu avant le suivant
+        const content = await this.getRandomContent(language);
+
+        notifications.push({
+          id:        1000 + i,
+          title:     content.title,
+          body:      content.body,
+          schedule:  { at: targetDate },
+          sound:     'default',
+          smallIcon: 'ic_stat_notification',
+          iconColor: '#F43F5E',
+          extra:     { quote: content.body },
+        });
+
+        // Sauvegarde la première comme citation du widget
+        if (i === 0) {
+          this.saveCurrentQuote({ title: content.title, body: content.body });
         }
       }
 
       if (notifications.length > 0) {
         await LocalNotifications.schedule({ notifications });
-
-        // ✅ Sauvegarder la première notification du jour comme quote du widget
-        this.saveCurrentQuote({ title: notifications[0].title, body: notifications[0].body });
-
-        console.log(`✅ ${notifications.length} notifications planifiées`);
+        console.log(`✅ ${notifications.length} notifications planifiées (fuseau local)`);
+      } else {
+        console.log('ℹ️ Toutes les heures du jour sont passées — planification pour demain au prochain démarrage');
       }
+
     } catch (e) {
       console.error('Erreur planification:', e);
     }
   }
 
-  // ── Démarrer ─────────────────────────────────────────────────────────────────
   async start(language: 'fr' | 'en' = 'fr') {
     const settings = this.getSettings();
     if (!settings?.enabled || settings.frequency === 0) return;
 
     if (isCapacitor()) {
+      // ✅ Planifie au démarrage
       await this.scheduleAllNotificationsForToday(settings, language);
 
+      // ✅ Replanifie chaque jour à minuit SI l'app est ouverte
+      // (si l'app est fermée, la replanification se fait au prochain démarrage)
       this.stop();
-      const now = new Date();
-      const midnight = new Date();
-      midnight.setHours(24, 0, 5, 0);
+      const now             = new Date();
+      const midnight        = new Date();
+      midnight.setHours(24, 0, 10, 0); // minuit + 10s de marge
       const msUntilMidnight = midnight.getTime() - now.getTime();
 
-      setTimeout(() => {
+      const midnightTimer = window.setTimeout(() => {
         this.scheduleAllNotificationsForToday(settings, language);
+        // Replanifie toutes les 24h si l'app reste ouverte
         this.intervalId = window.setInterval(() => {
           this.scheduleAllNotificationsForToday(settings, language);
         }, 24 * 60 * 60 * 1000);
       }, msUntilMidnight);
 
+      // Stocke le timer minuit pour pouvoir l'annuler
+      (this as any)._midnightTimer = midnightTimer;
+
     } else {
+      // Mode web/dev — polling toutes les minutes
       this.stop();
-      const intervalMinutes = this.calculateInterval(
-        settings.frequency, settings.startTime, settings.endTime
+      const intervalMinutes = Math.max(
+        1,
+        Math.floor((this.toMin(settings.endTime) - this.toMin(settings.startTime)) / settings.frequency)
       );
       this.intervalId = window.setInterval(() => {
         if (this.isInTimeRange(settings.startTime, settings.endTime)) {
-          const last = localStorage.getItem(LAST_NOTIFICATION_KEY);
+          const last    = localStorage.getItem(LAST_NOTIFICATION_KEY);
           const elapsed = last ? Date.now() - parseInt(last) : Infinity;
           if (elapsed >= intervalMinutes * 60 * 1000) {
             this.sendNotification(language);
@@ -303,21 +298,22 @@ export class NotificationService {
     }
   }
 
-  // ── Arrêter ───────────────────────────────────────────────────────────────────
   stop() {
     if (this.intervalId) {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
+    if ((this as any)._midnightTimer) {
+      clearTimeout((this as any)._midnightTimer);
+      (this as any)._midnightTimer = null;
+    }
   }
 
-  // ── Test ──────────────────────────────────────────────────────────────────────
   async testNotification(language: 'fr' | 'en' = 'fr') {
     await this.sendNotification(language);
     return true;
   }
 
-  // ── Debug ─────────────────────────────────────────────────────────────────────
   async debugPendingNotifications() {
     if (!isCapacitor()) return;
     try {

@@ -4,4 +4,6 @@
     <string name="title_activity_main">Affirmations Positives</string>
     <string name="package_name">com.kcdev.affirmationspositives</string>
     <string name="custom_url_scheme">com.kcdev.affirmationspositives</string>
+    <!-- ✅ Manquait — référencé par widget_info.xml → causait "Impossible d'ajouter le widget" -->
+    <string name="widget_description">Affiche une citation inspirante du jour sur votre écran d\'accueil</string>
 </resources>

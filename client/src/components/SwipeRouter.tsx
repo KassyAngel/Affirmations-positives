@@ -1,18 +1,19 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PanInfo } from 'framer-motion';
 import { useLocation } from 'wouter';
+import { X, Check } from 'lucide-react';
 import { useTheme, THEMES, type ThemeId } from '@/contexts/ThemeContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePremium } from '@/hooks/use-premium';
 import { useAdMob, SWIPE_AD_INTERVAL } from '@/hooks/use-admob';
 import { PremiumPaywall } from '@/components/PremiumPaywall';
-import { Check } from 'lucide-react';
 
-import Home       from '@/pages/Home';
-import Categories from '@/pages/Categories';
-import Favorites  from '@/pages/Favorites';
-import Stats      from '@/pages/Stats';
+// ✅ LAZY LOADING — chaque page n'est chargée que quand elle est affichée
+const Home       = lazy(() => import('@/pages/Home'));
+const Categories = lazy(() => import('@/pages/Categories'));
+const Favorites  = lazy(() => import('@/pages/Favorites'));
+const Stats      = lazy(() => import('@/pages/Stats'));
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const PAGE_COUNT      = 5;
@@ -28,7 +29,7 @@ const PATH_TO_INDEX: Record<string, number> = {
 };
 const INDEX_TO_PATH = ['/', '/categories', '/favorites', '/stats', '/themes'];
 
-// ✅ Compteur global swipe — module-level, survit aux re-renders
+// ✅ Compteur global swipe
 let swipeNavCount = 0;
 
 // ─── Thèmes gratuits ──────────────────────────────────────────────────────────
@@ -39,8 +40,17 @@ const FREE_THEMES: ThemeId[] = [
   'zen-cascademinimaliste', 'zen',
 ];
 
+// ─── Skeleton minimaliste pour le chargement des pages ───────────────────────
+function PageSkeleton() {
+  return (
+    <div className="w-full h-full flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white/80 animate-spin" />
+    </div>
+  );
+}
+
 // ─── Page Thèmes ──────────────────────────────────────────────────────────────
-function ThemesPage() {
+function ThemesPage({ onClose }: { onClose: () => void }) {
   const { language } = useLanguage();
   const { themeId, setTheme } = useTheme();
   const { isPremium } = usePremium();
@@ -60,13 +70,29 @@ function ThemesPage() {
       style={{ background: 'linear-gradient(160deg, #FFF5F0 0%, #FFF0E8 50%, #FFF8F5 100%)' }}
     >
       <header className="px-6 pt-10 pb-4">
-        <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="text-3xl font-display font-bold" style={{ color: '#2D1A12' }}>
-            {language === 'fr' ? 'Thèmes' : 'Themes'}
-          </h1>
-          <p className="text-sm mt-1" style={{ color: '#B07060' }}>
-            {language === 'fr' ? 'Personnalise ton espace' : 'Customize your space'}
-          </p>
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between"
+        >
+          <div>
+            <h1 className="text-3xl font-display font-bold" style={{ color: '#2D1A12' }}>
+              {language === 'fr' ? 'Thèmes' : 'Themes'}
+            </h1>
+            <p className="text-sm mt-1" style={{ color: '#B07060' }}>
+              {language === 'fr' ? 'Personnalise ton espace' : 'Customize your space'}
+            </p>
+          </div>
+          <motion.button
+            onClick={onClose}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            className="flex items-center justify-center w-10 h-10 rounded-full"
+            style={{ background: 'rgba(255,140,105,0.12)', border: '1.5px solid rgba(255,140,105,0.25)' }}
+            aria-label="Fermer"
+          >
+            <X className="w-5 h-5" style={{ color: '#FF8C69' }} />
+          </motion.button>
         </motion.div>
       </header>
 
@@ -81,7 +107,7 @@ function ThemesPage() {
               key={id}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
+              transition={{ delay: i * 0.025 }} // ✅ réduit de 0.03 → 0.025
               onClick={() => handleSelect(id)}
               className="relative"
               style={{ opacity: isLocked ? 0.75 : 1 }}
@@ -95,27 +121,44 @@ function ThemesPage() {
                   transition: 'all 0.2s',
                 }}
               >
-                <img src={cfg.imagePath} alt={cfg.label.fr} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                {/* ✅ loading="lazy" + decoding="async" pour ne pas bloquer le rendu */}
+                <img
+                  src={cfg.imagePath}
+                  alt={cfg.label.fr}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
                 <div className={`absolute inset-0 ${cfg.bgClass} opacity-10`} />
                 {isLocked && <div className="absolute inset-0 bg-black/20" />}
               </div>
+
               <p className="text-[11px] font-medium text-center mt-1.5 truncate px-1" style={{ color: '#7A4030' }}>
                 {cfg.label.fr}
               </p>
+
               {isLocked && (
-                <div className="absolute top-2 right-2 w-6 h-6 rounded-md flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}>
+                <div
+                  className="absolute top-2 right-2 w-6 h-6 rounded-md flex items-center justify-center"
+                  style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
+                >
                   <span className="text-xs">🔒</span>
                 </div>
               )}
               {isLocked && (
-                <div className="absolute bottom-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest whitespace-nowrap"
-                  style={{ background: 'linear-gradient(135deg, #FF8C69, #FFA882)', color: 'white' }}>
+                <div
+                  className="absolute bottom-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest whitespace-nowrap"
+                  style={{ background: 'linear-gradient(135deg, #FF8C69, #FFA882)', color: 'white' }}
+                >
                   Premium
                 </div>
               )}
               {isSelected && (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-                  className="absolute top-2 left-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg z-10">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute top-2 left-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg z-10"
+                >
                   <Check className="w-3.5 h-3.5 text-emerald-600" strokeWidth={3} />
                 </motion.div>
               )}
@@ -167,7 +210,6 @@ export function SwipeRouter() {
   const isPremiumRef = useRef(isPremium());
   useEffect(() => { isPremiumRef.current = isPremium(); }, [isPremium()]);
 
-  // Sync URL → index (ex: croix ✕ dans Stats/Favorites/Categories → home)
   const prevLocationRef = useRef(location);
   useEffect(() => {
     if (location === prevLocationRef.current) return;
@@ -176,18 +218,14 @@ export function SwipeRouter() {
     if (idx !== undefined && idx !== pageIndex) {
       setDirection(idx > pageIndex ? 1 : -1);
       setPageIndex(idx);
-      // ✅ La croix compte aussi dans le compteur swipe
       triggerSwipeAd();
     }
   }, [location]);
 
-  // ✅ Pub toutes les SWIPE_AD_INTERVAL (5) navigations
   const triggerSwipeAd = useCallback(async () => {
     if (isPremiumRef.current) return;
     swipeNavCount += 1;
-    console.log(`[AdMob] Swipe nav #${swipeNavCount}`);
     if (swipeNavCount % SWIPE_AD_INTERVAL === 0) {
-      console.log('[AdMob] Seuil swipe atteint → pub');
       await showInterstitial();
     }
   }, [showInterstitial]);
@@ -202,7 +240,8 @@ export function SwipeRouter() {
     await triggerSwipeAd();
   }, [pageIndex, setLocation, triggerSwipeAd]);
 
-  const handleDragStart = useCallback(() => { dragCancelledRef.current = false; }, []);
+  const handleCloseThemes = useCallback(() => { goTo(0); }, [goTo]);
+  const handleDragStart   = useCallback(() => { dragCancelledRef.current = false; }, []);
 
   const handleDrag = useCallback((_: any, info: PanInfo) => {
     const dx = Math.abs(info.offset.x);
@@ -220,6 +259,7 @@ export function SwipeRouter() {
     if (swipeRight && pageIndex > 0)              goTo(pageIndex - 1);
   }, [pageIndex, goTo]);
 
+  // ✅ Spring moins lourd pour les vieux téléphones
   const variants = {
     enter:  (dir: number) => ({ x: dir >= 0 ? '100%' : '-100%', opacity: 0 }),
     center:                  ({ x: 0,                             opacity: 1 }),
@@ -232,7 +272,7 @@ export function SwipeRouter() {
       case 1: return <Categories />;
       case 2: return <Favorites />;
       case 3: return <Stats />;
-      case 4: return <ThemesPage />;
+      case 4: return <ThemesPage onClose={handleCloseThemes} />;
       default: return <Home />;
     }
   };
@@ -259,13 +299,17 @@ export function SwipeRouter() {
             animate="center"
             exit="exit"
             transition={{
-              x:       { type: 'spring', stiffness: 300, damping: 32, mass: 0.85 },
-              opacity: { duration: 0.1 },
+              // ✅ Spring allégé — stiffness réduit pour moins de calcul CPU
+              x:       { type: 'spring', stiffness: 260, damping: 28, mass: 0.8 },
+              opacity: { duration: 0.08 },
             }}
             className="absolute inset-0 overflow-y-auto overflow-x-hidden"
             style={{ touchAction: 'pan-y' }}
           >
-            {renderPage()}
+            {/* ✅ Suspense avec skeleton — évite le freeze pendant le chargement */}
+            <Suspense fallback={<PageSkeleton />}>
+              {renderPage()}
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </motion.div>

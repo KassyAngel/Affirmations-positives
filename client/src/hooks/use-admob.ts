@@ -21,14 +21,12 @@ export const AD_IDS = IS_PRODUCTION ? PROD_IDS : TEST_IDS;
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚙️ PARAMÈTRES DE MONÉTISATION
 // ─────────────────────────────────────────────────────────────────────────────
-const QUOTE_AD_INTERVAL = 4;   // pub toutes les 4 citations (inchangé)
+const QUOTE_AD_INTERVAL = 4;   // pub toutes les 4 citations
 
-// ✅ Nav bar — beaucoup moins invasif qu'avant (était start=2, interval=2)
 const NAV_AD_START    = 4;     // première pub au 4ème clic sur CE bouton nav
 const NAV_AD_INTERVAL = 5;     // puis toutes les 5 clics sur ce bouton
 
-// ✅ Swipe — pub toutes les 5 navigations swipe/dot
-export const SWIPE_AD_INTERVAL = 5;
+export const SWIPE_AD_INTERVAL = 5; // pub toutes les 5 navigations swipe/dot
 
 // ─── Compteurs module-level (survivent aux re-renders) ────────────────────────
 const navCountPerPath: Record<string, number> = {};
@@ -40,6 +38,12 @@ interface AdMobPlugin {
   initialize(options: { appId: string; initializeForTesting?: boolean }): Promise<void>;
   prepareInterstitial(options: { adId: string; isTesting?: boolean }): Promise<void>;
   showInterstitial(): Promise<void>;
+  // ✅ Méthodes UMP (User Messaging Platform) — RGPD
+  requestConsentInfo(options?: {
+    debugGeography?: number;
+    testDeviceIdentifiers?: string[];
+  }): Promise<{ status: number; isConsentFormAvailable: boolean }>;
+  showConsentForm(): Promise<{ status: number }>;
 }
 
 declare global {
@@ -47,6 +51,14 @@ declare global {
     Capacitor?: { Plugins?: { AdMob?: AdMobPlugin } };
   }
 }
+
+// ─── Statuts UMP ──────────────────────────────────────────────────────────────
+// 1 = REQUIRED (popup à afficher), 2 = NOT_REQUIRED, 3 = OBTAINED
+const CONSENT_REQUIRED = 1;
+
+// ─── Debug geography ──────────────────────────────────────────────────────────
+// 0 = DISABLED, 1 = EEA (force la popup en test), 2 = NOT_EEA
+const DEBUG_GEOGRAPHY_EEA = 1;
 
 function getAdMobPlugin(): AdMobPlugin | null {
   try {
@@ -58,7 +70,36 @@ function getAdMobPlugin(): AdMobPlugin | null {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Init AdMob (appelé une fois dans App.tsx)
+// ✅ Consentement UMP RGPD
+// Appelée AVANT initialize() — obligatoire pour afficher la popup Europe
+// ─────────────────────────────────────────────────────────────────────────────
+async function requestUMPConsent(plugin: AdMobPlugin): Promise<void> {
+  try {
+    // En mode test : debugGeography=1 force la simulation EEA → popup visible
+    // En production : on ne passe aucune option → comportement réel par région
+    const options = IS_PRODUCTION ? {} : { debugGeography: DEBUG_GEOGRAPHY_EEA };
+
+    const consentInfo = await plugin.requestConsentInfo(options);
+
+    console.log(
+      `[UMP] Status: ${consentInfo.status} | Formulaire dispo: ${consentInfo.isConsentFormAvailable}`
+    );
+
+    if (consentInfo.isConsentFormAvailable && consentInfo.status === CONSENT_REQUIRED) {
+      console.log('[UMP] Affichage popup RGPD...');
+      const result = await plugin.showConsentForm();
+      console.log(`[UMP] Consentement enregistré — status final: ${result.status}`);
+    } else {
+      console.log('[UMP] Consentement non requis ou déjà obtenu');
+    }
+  } catch (e) {
+    // Ne jamais bloquer l'init AdMob si l'UMP échoue
+    console.warn('[UMP] Erreur (non bloquant):', e);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Init AdMob + UMP (appelé une fois dans App.tsx)
 // ─────────────────────────────────────────────────────────────────────────────
 export async function initAdMob(): Promise<void> {
   const plugin = getAdMobPlugin();
@@ -67,10 +108,15 @@ export async function initAdMob(): Promise<void> {
     return;
   }
   try {
+    // ✅ ÉTAPE 1 : Consentement UMP en premier (obligatoire avant initialize)
+    await requestUMPConsent(plugin);
+
+    // ✅ ÉTAPE 2 : Initialisation AdMob après le consentement
     await plugin.initialize({
       appId: AD_IDS.APP_ID,
       initializeForTesting: !IS_PRODUCTION,
     });
+
     console.log(`[AdMob] Initialisé — mode ${IS_PRODUCTION ? 'PRODUCTION' : 'TEST'}`);
   } catch (e) {
     console.error('[AdMob] Erreur initialize:', e);
@@ -178,12 +224,12 @@ export function useQuoteAdCounter(showInterstitial: () => Promise<void>) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Hook compteur navigation barre du bas
 //
-// ✅ Nouveau comportement (start=4, interval=5) :
+// ✅ Comportement (start=4, interval=5) :
 //   Clic 1,2,3 sur /categories → pas de pub
 //   Clic 4       → PUB
 //   Clic 5,6,7,8 → pas de pub
 //   Clic 9       → PUB
-//   (et ainsi de suite, compteur indépendant par bouton)
+//   (compteur indépendant par bouton)
 // ─────────────────────────────────────────────────────────────────────────────
 export function useNavAdCounter(showInterstitial: () => Promise<void>) {
   const onNavClick = useCallback(async (path: string) => {

@@ -12,7 +12,6 @@ interface MoodOverlayProps {
 const moodsConfig: {
   id: Mood;
   iconComponent: React.ElementType;
-  emoji: string;
   iconColor: string;
   cardBg: string;
   circleBg: string;
@@ -22,7 +21,6 @@ const moodsConfig: {
   {
     id: 'determined',
     iconComponent: Zap,
-    emoji: '⚡',
     iconColor: '#D97706',
     cardBg: 'rgba(255,251,235,0.85)',
     circleBg: 'rgba(253,230,138,0.50)',
@@ -32,7 +30,6 @@ const moodsConfig: {
   {
     id: 'happy',
     iconComponent: Smile,
-    emoji: '😊',
     iconColor: '#059669',
     cardBg: 'rgba(236,253,245,0.85)',
     circleBg: 'rgba(167,243,208,0.50)',
@@ -42,7 +39,6 @@ const moodsConfig: {
   {
     id: 'zen',
     iconComponent: Coffee,
-    emoji: '🍃',
     iconColor: '#2563EB',
     cardBg: 'rgba(239,246,255,0.85)',
     circleBg: 'rgba(191,219,254,0.50)',
@@ -52,7 +48,6 @@ const moodsConfig: {
   {
     id: 'tired',
     iconComponent: CloudRain,
-    emoji: '☁️',
     iconColor: '#64748B',
     cardBg: 'rgba(248,250,252,0.85)',
     circleBg: 'rgba(226,232,240,0.50)',
@@ -62,7 +57,6 @@ const moodsConfig: {
   {
     id: 'frustrated',
     iconComponent: Frown,
-    emoji: '😤',
     iconColor: '#FF8C69',
     cardBg: 'rgba(255,245,240,0.85)',
     circleBg: 'rgba(255,203,184,0.50)',
@@ -116,7 +110,6 @@ export function MoodOverlay({ isOpen, onSelectMood }: MoodOverlayProps) {
           animate={{ scale: [1, 1.08, 1], opacity: [0.2, 0.35, 0.2] }}
           transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
         />
-        {/* Particules subtiles */}
         {[...Array(6)].map((_, i) => (
           <motion.div
             key={i}
@@ -140,16 +133,10 @@ export function MoodOverlay({ isOpen, onSelectMood }: MoodOverlayProps) {
           transition={{ delay: 0.05 }}
           className="text-center mb-8"
         >
-          <h2
-            className="text-4xl font-display font-bold mb-2"
-            style={{ color: '#2D1A12' }}
-          >
+          <h2 className="text-4xl font-display font-bold mb-2" style={{ color: '#2D1A12' }}>
             {t.mood.title}
           </h2>
-          <p
-            className="text-base font-light"
-            style={{ color: '#B07060' }}
-          >
+          <p className="text-base font-light" style={{ color: '#B07060' }}>
             {t.mood.subtitle}
           </p>
         </motion.div>
@@ -190,28 +177,14 @@ export function MoodOverlay({ isOpen, onSelectMood }: MoodOverlayProps) {
                   animate={isSelected ? { rotate: [0, -10, 10, 0] } : {}}
                   transition={{ duration: 0.3 }}
                 >
-                  <IconComponent
-                    className="w-7 h-7"
-                    style={{ color: mood.iconColor }}
-                  />
+                  <IconComponent className="w-7 h-7" style={{ color: mood.iconColor }} />
                 </motion.div>
 
-                <span
-                  className="font-semibold text-sm"
-                  style={{ color: '#3D2318' }}
-                >
+                <span className="font-semibold text-sm" style={{ color: '#3D2318' }}>
                   {label}
                 </span>
 
-                {/* Emoji au hover */}
-                <motion.span
-                  className="absolute -top-2 -right-2 text-base"
-                  initial={{ opacity: 0, scale: 0 }}
-                  whileHover={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  {mood.emoji}
-                </motion.span>
+                {/* ✅ Emoji hover supprimé — sur mobile le hover reste actif après tap */}
               </motion.button>
             );
           })}
