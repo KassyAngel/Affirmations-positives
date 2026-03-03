@@ -21,17 +21,17 @@ export const AD_IDS = IS_PRODUCTION ? PROD_IDS : TEST_IDS;
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚙️ PARAMÈTRES DE MONÉTISATION
 // ─────────────────────────────────────────────────────────────────────────────
-const QUOTE_AD_INTERVAL = 4;   // pub toutes les 4 citations
-const NAV_AD_START      = 4;   // première pub au 4ème clic sur CE bouton nav
-const NAV_AD_INTERVAL   = 5;   // puis toutes les 5 clics sur ce bouton
-export const SWIPE_AD_INTERVAL = 5; // pub toutes les 5 navigations swipe/dot
+const QUOTE_AD_INTERVAL    = 4;  // pub toutes les 4 citations
+const NAV_AD_START         = 4;  // première pub au 4ème clic nav
+const NAV_AD_INTERVAL      = 5;  // puis toutes les 5 clics nav
+export const SWIPE_AD_INTERVAL = 5; // pub toutes les 5 swipes
 
-// ─── Compteurs module-level (survivent aux re-renders) ────────────────────────
+// ─── Compteurs module-level ───────────────────────────────────────────────────
 const navCountPerPath: Record<string, number> = {};
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 🔑 SINGLETON GLOBAL — une seule instance partagée entre tous les composants
-//    Résout le crash OOM causé par 3-4 prepareInterstitial simultanés
+// 🔑 SINGLETON GLOBAL
+// Résout le crash OOM causé par 3-4 prepareInterstitial simultanés
 // ─────────────────────────────────────────────────────────────────────────────
 const globalAdState = {
   isLoading: false,
@@ -39,7 +39,7 @@ const globalAdState = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Types plugin AdMob
+// Types plugin AdMob v7
 // ─────────────────────────────────────────────────────────────────────────────
 interface AdMobPlugin {
   initialize(options: { appId: string; initializeForTesting?: boolean }): Promise<void>;
@@ -48,8 +48,12 @@ interface AdMobPlugin {
   requestConsentInfo(options?: {
     debugGeography?: number;
     testDeviceIdentifiers?: string[];
-  }): Promise<{ status: number; isConsentFormAvailable: boolean; canRequestAds: boolean; privacyOptionsRequirementStatus?: string }>;
-  showConsentForm(): Promise<{ status: number }>;
+  }): Promise<{
+    status: number | string;   // ✅ v7 retourne string "REQUIRED" pas number 1
+    isConsentFormAvailable: boolean;
+    canRequestAds: boolean;
+  }>;
+  showConsentForm(): Promise<{ status: number | string }>;
 }
 
 declare global {
@@ -58,8 +62,8 @@ declare global {
   }
 }
 
-// ─── Statuts UMP ──────────────────────────────────────────────────────────────
-const CONSENT_REQUIRED = 1;
+// ─── Debug geography ──────────────────────────────────────────────────────────
+// 0 = DISABLED, 1 = EEA (force popup en test), 2 = NOT_EEA
 const DEBUG_GEOGRAPHY_EEA = 1;
 
 function getAdMobPlugin(): AdMobPlugin | null {
@@ -72,10 +76,12 @@ function getAdMobPlugin(): AdMobPlugin | null {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ✅ Consentement UMP RGPD
-//    IMPORTANT : showConsentForm() ouvre une WebView native séparée —
-//    elle ne crashe PAS le renderer principal. Le crash venait uniquement
-//    des prepareInterstitial multiples, pas de l'UMP.
+// ✅ Consentement UMP RGPD — compatible admob v7
+//
+// BUG CORRIGÉ : @capacitor-community/admob v7 retourne le statut sous forme
+// de STRING ("REQUIRED", "NOT_REQUIRED", "OBTAINED") et non un number (1,2,3)
+// comme dans les versions précédentes.
+// La condition `status === 1` ne matchait donc jamais → popup jamais affichée.
 // ─────────────────────────────────────────────────────────────────────────────
 async function requestUMPConsent(plugin: AdMobPlugin): Promise<void> {
   try {
@@ -83,24 +89,29 @@ async function requestUMPConsent(plugin: AdMobPlugin): Promise<void> {
     const consentInfo = await plugin.requestConsentInfo(options);
 
     console.log(
-      `[UMP] Status: ${consentInfo.status} | Formulaire dispo: ${consentInfo.isConsentFormAvailable}`
+      `[UMP] Status: ${consentInfo.status} | Formulaire dispo: ${consentInfo.isConsentFormAvailable} | canRequestAds: ${consentInfo.canRequestAds}`
     );
 
-    // ✅ Affiche la popup si REQUIRED et formulaire disponible
-    if (consentInfo.isConsentFormAvailable && consentInfo.status === CONSENT_REQUIRED) {
+    // ✅ FIX v7 : accepte "REQUIRED" (string) ET 1 (number) pour compatibilité
+    const isRequired =
+      consentInfo.status === 'REQUIRED' ||  // v7 string
+      consentInfo.status === 1;             // anciennes versions number
+
+    if (consentInfo.isConsentFormAvailable && isRequired) {
       console.log('[UMP] Affichage popup RGPD...');
       const result = await plugin.showConsentForm();
-      console.log(`[UMP] Consentement enregistré — status final: ${result.status}`);
+      console.log(`[UMP] Consentement enregistré — status: ${result.status}`);
     } else {
       console.log('[UMP] Consentement non requis ou déjà obtenu');
     }
   } catch (e) {
+    // Ne jamais bloquer l'init AdMob si l'UMP échoue
     console.warn('[UMP] Erreur (non bloquant):', e);
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Init AdMob + UMP — appelé UNE SEULE FOIS dans App.tsx avec délai 3s
+// Init AdMob + UMP — appelé UNE SEULE FOIS dans App.tsx avec délai 8s
 // ─────────────────────────────────────────────────────────────────────────────
 export async function initAdMob(): Promise<void> {
   const plugin = getAdMobPlugin();
@@ -109,10 +120,10 @@ export async function initAdMob(): Promise<void> {
     return;
   }
   try {
-    // ÉTAPE 1 : Consentement UMP en premier
+    // ÉTAPE 1 : Consentement UMP (obligatoire avant initialize)
     await requestUMPConsent(plugin);
 
-    // ÉTAPE 2 : Initialisation AdMob après le consentement
+    // ÉTAPE 2 : Initialisation AdMob
     await plugin.initialize({
       appId: AD_IDS.APP_ID,
       initializeForTesting: !IS_PRODUCTION,
@@ -125,12 +136,10 @@ export async function initAdMob(): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// preloadInterstitial — fonction globale singleton
-// Garantit qu'un seul prepareInterstitial tourne à la fois,
-// peu importe combien de composants appellent preload()
+// preloadInterstitial — singleton global
+// Garantit qu'un seul prepareInterstitial tourne à la fois
 // ─────────────────────────────────────────────────────────────────────────────
 async function preloadInterstitial(): Promise<void> {
-  // ✅ Verrou global — si déjà en cours ou déjà prêt, on ne relance pas
   if (globalAdState.isLoading || globalAdState.isReady) return;
 
   const plugin = getAdMobPlugin();
@@ -155,8 +164,8 @@ async function preloadInterstitial(): Promise<void> {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Hook principal useAdMob
-// Peut être appelé dans autant de composants que nécessaire —
-// le singleton global empêche les appels redondants
+// Peut être utilisé dans autant de composants que nécessaire —
+// le singleton global empêche tous les appels redondants
 // ─────────────────────────────────────────────────────────────────────────────
 export function useAdMob() {
   const { isPremium, tier } = usePremium();
@@ -167,19 +176,17 @@ export function useAdMob() {
     isPremiumRef.current = userIsPremium;
   }, [userIsPremium, tier]);
 
-  // ✅ preload utilise maintenant la fonction singleton globale
   const preload = useCallback(async () => {
     if (isPremiumRef.current) return;
     await preloadInterstitial();
   }, []);
 
-  // ✅ Un seul useEffect par composant qui appelle useAdMob —
-  //    mais grâce au singleton, seul le PREMIER appel fait vraiment quelque chose
+  // ✅ Délai 5s — laisse l'app et la WebView se stabiliser avant de charger la pub
   useEffect(() => {
     if (!userIsPremium) {
-      preload();
+      const t = setTimeout(() => preload(), 5000);
+      return () => clearTimeout(t);
     } else {
-      // Reset l'état global si l'utilisateur devient Premium
       globalAdState.isReady   = false;
       globalAdState.isLoading = false;
       console.log('[AdMob] Utilisateur Premium — préchargement annulé');
@@ -197,7 +204,7 @@ export function useAdMob() {
       return;
     }
 
-    // Si pas prêt et pas en cours, on charge d'abord
+    // Si pas prêt et pas en cours de chargement, on charge
     if (!globalAdState.isReady && !globalAdState.isLoading) {
       try {
         await plugin.prepareInterstitial({
@@ -210,18 +217,18 @@ export function useAdMob() {
       }
     }
 
-    // Si toujours pas prêt (chargement en cours depuis ailleurs), on abandonne
+    // Si chargement en cours depuis ailleurs, on abandonne plutôt que d'attendre
     if (!globalAdState.isReady) return;
 
     try {
       globalAdState.isReady = false;
       await plugin.showInterstitial();
       console.log('[AdMob] Interstitiel affiché ✓');
-      // Précharge la prochaine pub après un délai pour ne pas surcharger
-      setTimeout(() => preloadInterstitial(), 1500);
+      // Précharge la suivante avec délai pour ne pas surcharger la mémoire
+      setTimeout(() => preloadInterstitial(), 4000);
     } catch (e) {
       console.error('[AdMob] Erreur show:', e);
-      setTimeout(() => preloadInterstitial(), 1500);
+      setTimeout(() => preloadInterstitial(), 4000);
     }
   }, []);
 
@@ -229,16 +236,14 @@ export function useAdMob() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hook compteur citations
+// Hook compteur citations — pub toutes les N citations
 // ─────────────────────────────────────────────────────────────────────────────
 export function useQuoteAdCounter(showInterstitial: () => Promise<void>) {
   const countRef = useRef(0);
 
   const onNewQuote = useCallback(async () => {
     countRef.current += 1;
-    console.log(`[AdMob] Citation #${countRef.current}`);
     if (countRef.current % QUOTE_AD_INTERVAL === 0) {
-      console.log('[AdMob] Seuil citations atteint → pub');
       await showInterstitial();
     }
   }, [showInterstitial]);
@@ -255,10 +260,8 @@ export function useNavAdCounter(showInterstitial: () => Promise<void>) {
     navCountPerPath[path] += 1;
     const count = navCountPerPath[path];
 
-    console.log(`[AdMob] Nav "${path}" clic #${count}`);
     if (count < NAV_AD_START) return;
     if ((count - NAV_AD_START) % NAV_AD_INTERVAL === 0) {
-      console.log(`[AdMob] Seuil nav atteint pour "${path}" → pub`);
       await showInterstitial();
     }
   }, [showInterstitial]);

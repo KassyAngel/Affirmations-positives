@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <uses-permission android:name="com.android.vending.BILLING" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -15,6 +16,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"
@@ -27,15 +29,39 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- AdMob App ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-5733508257471048~5974451487" />
+
+        <!-- Retarde la mesure Firebase — évite un init trop tôt -->
         <meta-data
             android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
             android:value="true" />
-        <!-- ✅ FIX : android:process=":widget" supprimé -->
-        <!-- Le widget tourne dans le même processus que l'app -->
-        <!-- Il peut maintenant lire les SharedPreferences de Capacitor -->
+
+        <!--
+            ✅ FIX CRASH OOM : Désactive le renderer multiprocess d'AdMob
+            Par défaut AdMob lance un processus WebView SÉPARÉ pour les vidéos
+            → sur appareils modestes (Xiaomi Redmi 9) ce 2ème processus manque
+              de RAM et est tué par l'OS → crash de TOUTE l'application
+            Avec false : les pubs tournent dans le processus principal,
+            pas de 2ème renderer, plus de crash OOM
+        -->
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION"
+            android:value="true" />
+
+        <!--
+            ✅ FIX WIDGET : Optimise la requête AdMob au démarrage
+            Réduit la charge mémoire initiale → l'app démarre plus vite
+            → le widget Launcher trouve le processus disponible
+        -->
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
+            android:value="true" />
+
+        <!-- Widget — même processus que l'app (SharedPreferences accessibles) -->
         <receiver
             android:name=".QuoteWidget"
             android:exported="true"
@@ -48,6 +74,7 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_info" />
         </receiver>
+
         <receiver
             android:name="com.capacitorjs.plugins.localnotifications.LocalNotificationRestoreReceiver"
             android:exported="false">
@@ -56,6 +83,7 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -65,5 +93,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
     </application>
 </manifest>
