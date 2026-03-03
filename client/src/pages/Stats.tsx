@@ -90,7 +90,7 @@ export default function Stats() {
   const cardStyle = { background: P.card, border: `1px solid ${P.border}`, borderRadius: '1rem', boxShadow: `0 2px 16px rgba(255,140,105,0.08)`, backdropFilter: 'blur(12px)' };
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: `linear-gradient(160deg, ${P.bg1} 0%, ${P.bg2} 50%, ${P.bg1} 100%)` }}>
+    <div className="min-h-screen pb-40" style={{ background: `linear-gradient(160deg, ${P.bg1} 0%, ${P.bg2} 50%, ${P.bg1} 100%)` }}>
 
       <header className="px-6 pt-10 pb-6">
         <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="flex items-start justify-between">
