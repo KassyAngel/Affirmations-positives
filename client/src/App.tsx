@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useCallback } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -30,22 +30,37 @@ function AppSkeleton() {
   );
 }
 
+
 function WidgetAdHandler() {
   const { showInterstitial } = useAdMob();
   const { isPremium } = usePremium();
+
+  const triggerWidgetAd = useCallback(async () => {
+    if (isPremium()) return;
+    // Délai 2.5s — laisse l'app s'afficher avant la pub
+    await new Promise(r => setTimeout(r, 2500));
+    await showInterstitial();
+    // Nettoie le paramètre de l'URL
+    window.history.replaceState(null, '', '/');
+  }, [showInterstitial, isPremium]);
+
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const fromWidget = params.get('from') === 'widget';
-    if (fromWidget && !isPremium()) {
-      const timer = setTimeout(async () => {
-        await showInterstitial();
-        const url = new URL(window.location.href);
-        url.searchParams.delete('from');
-        window.history.replaceState({}, '', url.toString());
-      }, 2500);
-      return () => clearTimeout(timer);
+    // ✅ Vérifie au montage (app ouverte depuis le widget)
+    if (window.location.search.includes('from=widget')) {
+      triggerWidgetAd();
     }
-  }, []);
+
+    // ✅ Écoute les navigations injectées par MainActivity.java (app déjà ouverte)
+    const onPopState = () => {
+      if (window.location.search.includes('from=widget')) {
+        triggerWidgetAd();
+      }
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [triggerWidgetAd]);
+
   return null;
 }
 
