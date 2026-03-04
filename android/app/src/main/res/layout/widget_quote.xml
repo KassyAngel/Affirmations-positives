@@ -3,20 +3,20 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
-    android:paddingTop="10dp"
-    android:paddingBottom="10dp"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
+    android:paddingTop="14dp"
+    android:paddingBottom="14dp"
+    android:paddingStart="18dp"
+    android:paddingEnd="18dp"
     android:background="@drawable/widget_background"
     android:gravity="center_vertical">
 
-    <!-- Barre verticale décorative orange -->
+    <!-- Barre verticale dorée élégante -->
     <TextView
-        android:layout_width="3dp"
-        android:layout_height="36dp"
-        android:background="#C8956C"
+        android:layout_width="2.5dp"
+        android:layout_height="42dp"
+        android:background="#B07040"
         android:text=""
-        android:layout_marginEnd="12dp" />
+        android:layout_marginEnd="14dp" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -24,30 +24,30 @@
         android:layout_weight="1"
         android:orientation="vertical">
 
-        <!-- Titre : petit, espacé, uppercase — sobre et élégant -->
+        <!-- Titre : petit, très espacé, doré foncé — lisible et élégant -->
         <TextView
             android:id="@+id/widget_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="MESSAGE DU JOUR"
-            android:textColor="#C8956C"
-            android:textSize="7.5sp"
+            android:textColor="#A0622A"
+            android:textSize="8sp"
             android:textStyle="normal"
             android:textAllCaps="true"
-            android:letterSpacing="0.18"
+            android:letterSpacing="0.25"
             android:fontFamily="sans-serif"
-            android:layout_marginBottom="5dp" />
+            android:layout_marginBottom="6dp" />
 
-        <!-- Citation : italique + medium weight = élégance garantie -->
+        <!-- Citation : grande, italique, contraste fort -->
         <TextView
             android:id="@+id/widget_quote"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Vous meritez tout le bonheur du monde."
-            android:textColor="#3D2B1F"
+            android:text="Vous méritez tout le bonheur du monde."
+            android:textColor="#1A1008"
             android:textSize="15sp"
             android:textStyle="italic"
-            android:lineSpacingMultiplier="1.4"
+            android:lineSpacingMultiplier="1.45"
             android:maxLines="2"
             android:ellipsize="end"
             android:fontFamily="sans-serif-medium" />
