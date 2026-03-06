@@ -22,6 +22,8 @@ import { useAdMob, useQuoteAdCounter } from '@/hooks/use-admob';
 import { Preferences } from '@capacitor/preferences';
 import type { Mood, Quote } from '@shared/schema';
 import { SettingsMenu } from '@/components/SettingsMenu';
+import { RatingModal } from '@/components/RatingModal';
+import { useRating } from '@/hooks/use-rating';
 
 const MOOD_CATEGORY_MAP: Record<Mood, string> = {
   determined: 'work',
@@ -70,6 +72,7 @@ export default function Home() {
   // ✅ Plus de canViewQuote / getRemainingQuotes — accès illimité aux catégories free
   const { isPremium } = usePremium();
   const userIsPremium = isPremium();
+  const { showRating, onQuoteSeen, onRated, onDismiss } = useRating();
 
   const [showPaywall, setShowPaywall] = useState(false);
   const [showMoodOverlay, setShowMoodOverlay] = useState(() => !hasLoggedMoodToday());
@@ -116,6 +119,9 @@ export default function Home() {
 
     // ✅ Pub toutes les 4 citations — inchangé
     await onNewQuote();
+
+    // ✅ Compteur de notation
+    onQuoteSeen();
   };
 
   if (isLoading) {
@@ -270,6 +276,7 @@ export default function Home() {
       </div>
 
       <PremiumPaywall isOpen={showPaywall} onClose={() => setShowPaywall(false)} trigger="quote_limit" />
+      <RatingModal isOpen={showRating} onRated={onRated} onDismiss={onDismiss} />
     </div>
   );
 }
