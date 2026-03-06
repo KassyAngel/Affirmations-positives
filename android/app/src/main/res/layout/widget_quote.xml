@@ -1,57 +1,80 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
-    android:paddingTop="14dp"
-    android:paddingBottom="14dp"
-    android:paddingStart="18dp"
-    android:paddingEnd="18dp"
-    android:background="@drawable/widget_background"
-    android:gravity="center_vertical">
+    android:paddingTop="16dp"
+    android:paddingBottom="16dp"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
+    android:background="@drawable/widget_background">
 
-    <!-- Barre verticale dorée élégante -->
+    <!-- Guillemet décoratif haut-gauche -->
     <TextView
-        android:layout_width="2.5dp"
-        android:layout_height="42dp"
-        android:background="#B07040"
-        android:text=""
-        android:layout_marginEnd="14dp" />
-
-    <LinearLayout
-        android:layout_width="0dp"
+        android:id="@+id/widget_decorative_quote"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:text="&#8220;"
+        android:textColor="#C9956A"
+        android:textSize="36sp"
+        android:fontFamily="serif"
+        android:alpha="0.35"
+        android:layout_marginTop="-6dp"
+        android:layout_marginStart="-2dp" />
+
+    <!-- Contenu centré -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="8dp"
         android:orientation="vertical">
 
-        <!-- Titre : petit, très espacé, doré foncé — lisible et élégant -->
-        <TextView
-            android:id="@+id/widget_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="MESSAGE DU JOUR"
-            android:textColor="#A0622A"
-            android:textSize="8sp"
-            android:textStyle="normal"
-            android:textAllCaps="true"
-            android:letterSpacing="0.25"
-            android:fontFamily="sans-serif"
-            android:layout_marginBottom="6dp" />
-
-        <!-- Citation : grande, italique, contraste fort -->
+        <!-- Citation principale -->
         <TextView
             android:id="@+id/widget_quote"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Vous méritez tout le bonheur du monde."
-            android:textColor="#1A1008"
-            android:textSize="15sp"
+            android:textColor="#2C1A0E"
+            android:textSize="14.5sp"
             android:textStyle="italic"
-            android:lineSpacingMultiplier="1.45"
-            android:maxLines="2"
+            android:lineSpacingMultiplier="1.5"
+            android:maxLines="3"
             android:ellipsize="end"
-            android:fontFamily="sans-serif-medium" />
+            android:fontFamily="serif" />
 
+        <!-- Séparateur fin + titre en bas -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Ligne décorative dorée -->
+            <View
+                android:layout_width="20dp"
+                android:layout_height="1dp"
+                android:background="#C9956A"
+                android:alpha="0.6"
+                android:layout_marginEnd="8dp" />
+
+            <!-- Label -->
+            <TextView
+                android:id="@+id/widget_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="MESSAGE DU JOUR"
+                android:textColor="#A0622A"
+                android:textSize="7.5sp"
+                android:textAllCaps="true"
+                android:letterSpacing="0.22"
+                android:fontFamily="sans-serif-light"
+                android:alpha="0.85" />
+
+        </LinearLayout>
     </LinearLayout>
 
-</LinearLayout>
+</RelativeLayout>

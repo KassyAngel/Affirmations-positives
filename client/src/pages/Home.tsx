@@ -48,13 +48,9 @@ const CATEGORY_STYLES: Record<string, string> = {
   default:      'gradient-default',
 };
 
-// ✅ Sauvegarde la citation ET la langue pour le widget Android
-// Lit content (fr) ou contentEn (en) selon la langue active
 async function saveQuoteForWidget(quote: Quote, lang: string): Promise<void> {
   try {
-    const text = lang === 'en' && quote.contentEn
-      ? quote.contentEn
-      : quote.content;
+    const text = lang === 'en' && quote.contentEn ? quote.contentEn : quote.content;
     await Promise.all([
       Preferences.set({ key: 'current_widget_quote', value: text }),
       Preferences.set({ key: 'app_language', value: lang }),
@@ -71,8 +67,8 @@ export default function Home() {
   const [location] = useLocation();
   const { state, logMood, updateStreak, hasLoggedMoodToday, toggleFavorite, getTodaysMood } = useUserState();
 
-  // ✅ tier retiré — non utilisé ici (évite warning TypeScript)
-  const { isPremium, canViewQuote, incrementQuotesViewed, getRemainingQuotes } = usePremium();
+  // ✅ Plus de canViewQuote / getRemainingQuotes — accès illimité aux catégories free
+  const { isPremium } = usePremium();
   const userIsPremium = isPremium();
 
   const [showPaywall, setShowPaywall] = useState(false);
@@ -98,7 +94,6 @@ export default function Home() {
 
   const { data: quotes, isLoading, isError, refetch } = useQuotes({ category: activeCategory });
 
-  // ✅ Sauvegarde la citation visible pour le widget dès qu'elle change
   useEffect(() => {
     if (!quotes || quotes.length === 0) return;
     saveQuoteForWidget(quotes[currentIndex], language);
@@ -112,16 +107,14 @@ export default function Home() {
   };
 
   const handleNext = async () => {
-    if (!canViewQuote()) { setShowPaywall(true); return; }
     if (!quotes) return;
 
     const nextIndex = (currentIndex + 1) % quotes.length;
     setCurrentIndex(nextIndex);
-    incrementQuotesViewed();
 
-    // ✅ Sauvegarde immédiate pour le widget
     await saveQuoteForWidget(quotes[nextIndex], language);
 
+    // ✅ Pub toutes les 4 citations — inchangé
     await onNewQuote();
   };
 
@@ -151,7 +144,6 @@ export default function Home() {
   const currentQuote = quotes[currentIndex];
   const isFavorite = state.favorites.includes(currentQuote.id);
   const bgStyle = CATEGORY_STYLES[currentQuote.category] || CATEGORY_STYLES.default;
-  const remaining = getRemainingQuotes();
   const formattedDate = new Date().toLocaleDateString(t.home.dateFormat, { weekday: 'long', day: 'numeric', month: 'long' });
   const isTabletOrDesktop = device === 'tablet' || device === 'desktop';
 
@@ -204,6 +196,7 @@ export default function Home() {
           </div>
         </header>
 
+        {/* ✅ Barre du haut : streak + badge Premium (sans compteur de citations) */}
         <div className="px-6 mb-3 flex items-center justify-between">
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md ${theme.cardClass}`}>
             <span className="text-amber-500 text-sm">🔥</span>
@@ -214,6 +207,7 @@ export default function Home() {
           </div>
 
           {userIsPremium ? (
+            /* Badge Premium actif */
             <div
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
               style={{
@@ -225,6 +219,7 @@ export default function Home() {
               <span className="text-xs font-bold" style={{ color: '#fbbf24' }}>Premium</span>
             </div>
           ) : (
+            /* ✅ Bouton "Débloquer" sans compteur de citations restantes */
             <motion.button
               onClick={() => setShowPaywall(true)}
               whileHover={{ scale: 1.06 }}
@@ -236,11 +231,8 @@ export default function Home() {
               }}
             >
               <Sparkles className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#fbbf24' }} />
-              <span className="text-xs font-bold tabular-nums leading-none" style={{ color: '#fbbf24' }}>
-                {remaining}/6
-              </span>
-              <span className="text-xs" style={{ color: 'rgba(251,191,36,0.8)' }}>
-                {language === 'fr' ? 'restantes' : 'left'}
+              <span className="text-xs font-bold" style={{ color: '#fbbf24' }}>
+                {language === 'fr' ? 'Débloquer Premium' : 'Unlock Premium'}
               </span>
             </motion.button>
           )}

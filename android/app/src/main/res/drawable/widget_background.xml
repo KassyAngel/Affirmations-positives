@@ -1,22 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Ombre subtile -->
-    <item android:top="2dp" android:left="1dp" android:right="1dp" android:bottom="0dp">
+
+    <!-- Ombre portée douce -->
+    <item android:top="3dp" android:left="2dp" android:right="2dp" android:bottom="0dp">
         <shape android:shape="rectangle">
-            <solid android:color="#18B07040" />
-            <corners android:radius="22dp" />
+            <solid android:color="#1A8B6030" />
+            <corners android:radius="20dp" />
         </shape>
     </item>
-    <!-- Fond principal — blanc cassé légèrement plus chaud pour meilleur contraste -->
-    <item android:bottom="2dp">
+
+    <!-- Fond principal blanc cassé chaud -->
+    <item android:bottom="3dp">
         <shape android:shape="rectangle">
             <gradient
                 android:type="linear"
-                android:angle="135"
-                android:startColor="#FFFAF5"
-                android:endColor="#FFF2E6" />
-            <corners android:radius="22dp" />
-            <stroke android:width="1dp" android:color="#22B07040" />
+                android:angle="150"
+                android:startColor="#FFFCF8"
+                android:centerColor="#FFF7EE"
+                android:endColor="#FFF0E0" />
+            <corners android:radius="20dp" />
+            <stroke android:width="1dp" android:color="#1AC9956A" />
         </shape>
     </item>
+
+    <!-- Liseré doré subtil en haut -->
+    <item android:bottom="3dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="linear"
+                android:angle="90"
+                android:startColor="#18C9956A"
+                android:endColor="#00C9956A" />
+            <corners android:radius="20dp" />
+        </shape>
+    </item>
+
 </layer-list>
