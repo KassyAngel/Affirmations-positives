@@ -1,15 +1,16 @@
-import { useQuery } from "@tanstack/react-query";
+import { getQuoteCountsByCategory } from "@/data/quotes-data";
 
+/**
+ * Retourne le nombre de citations par catégorie.
+ * Calculé directement depuis ALL_QUOTES (fichier local) —
+ * toujours en sync, pas d'appel réseau, pas de désync BDD.
+ */
 export function useQuoteCounts() {
-  return useQuery({
-    queryKey: ["/api/quotes/count-by-category"],
-    queryFn: async () => {
-      const res = await fetch("/api/quotes/count-by-category", {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Impossible de charger les compteurs");
-      return res.json() as Promise<Record<string, number>>;
-    },
-    staleTime: 1000 * 60 * 10, // Cache for 10 minutes
-  });
+  const counts = getQuoteCountsByCategory();
+
+  return {
+    data: counts,
+    isLoading: false,
+    error: null,
+  };
 }
