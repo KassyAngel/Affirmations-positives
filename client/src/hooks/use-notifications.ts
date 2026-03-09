@@ -1,23 +1,49 @@
 /**
  * use-notifications.ts
  * ✅ Utilise @capacitor/local-notifications (natif Android)
+ * ✅ Utilise @capacitor/preferences au lieu de localStorage
+ *    → survit aux mises à jour de l'app
  * ✅ Gère la révocation de permission Android 13+ après mise à jour
  */
 
 import { useState, useEffect } from 'react';
 import { LocalNotifications, PermissionStatus } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
+import { Preferences } from '@capacitor/preferences';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-const NOTIF_TIME_KEY = 'notif_scheduled_time';
-const DAILY_NOTIF_ID = 1001;
+// ✅ Clés Preferences (persistent, survit aux mises à jour)
+const NOTIF_TIME_KEY    = 'notif_scheduled_time';
+const BANNER_DISMISSED_KEY = 'notification_banner_dismissed';
+const DAILY_NOTIF_ID    = 1001;
 
+// ─── Helpers Preferences ─────────────────────────────────────────────────────
+async function prefsGet(key: string): Promise<string | null> {
+  try {
+    const { value } = await Preferences.get({ key });
+    return value;
+  } catch {
+    // Fallback localStorage si Preferences indisponible (web)
+    return localStorage.getItem(key);
+  }
+}
+
+async function prefsSet(key: string, value: string): Promise<void> {
+  try {
+    await Preferences.set({ key, value });
+  } catch {
+    localStorage.setItem(key, value);
+  }
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
 export function useNotifications() {
   const [permission, setPermission] = useState<'granted' | 'denied' | 'default'>('default');
   const [isSupported, setIsSupported] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(true); // true par défaut → pas de flash
   const { language } = useLanguage();
 
-  // ── Init ───────────────────────────────────────────────────────
+  // ── Init ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const init = async () => {
       if (!Capacitor.isNativePlatform()) {
@@ -27,6 +53,10 @@ export function useNotifications() {
       }
       setIsSupported(true);
 
+      // ✅ Lire l'état "dismissed" depuis Preferences (survit aux mises à jour)
+      const dismissed = await prefsGet(BANNER_DISMISSED_KEY);
+      setBannerDismissed(dismissed === 'true');
+
       try {
         const status: PermissionStatus = await LocalNotifications.checkPermissions();
         const mapped = mapPermission(status.display);
@@ -34,31 +64,23 @@ export function useNotifications() {
         console.log('[Notifs] Permission au démarrage :', status.display);
 
         if (mapped === 'granted') {
-          // ✅ Re-planifier avec try/catch — une mise à jour Android peut avoir
-          //    révoqué la permission sans que checkPermissions() le détecte
           try {
             await scheduleDailyNotificationInternal(language);
             console.log('[Notifs] ✅ Re-planification au démarrage réussie');
           } catch (scheduleErr) {
-            console.warn('[Notifs] ⚠️ Re-planification échouée — permission peut-être révoquée :', scheduleErr);
-            // ✅ Re-vérifier la permission réelle via une vraie requête
+            console.warn('[Notifs] ⚠️ Re-planification échouée :', scheduleErr);
             try {
               const recheck = await LocalNotifications.requestPermissions();
               const remapped = mapPermission(recheck.display);
               setPermission(remapped);
-              console.log('[Notifs] Re-check permission :', recheck.display);
               if (remapped === 'granted') {
                 await scheduleDailyNotificationInternal(language);
               }
             } catch (recheckErr) {
               console.error('[Notifs] Impossible de re-vérifier :', recheckErr);
-              setPermission('default'); // ✅ Force le banner à réapparaître
+              setPermission('default');
             }
           }
-        } else if (mapped === 'default') {
-          // ✅ Android 13+ : après mise à jour, la permission peut être
-          //    "prompt" (default) même si elle était accordée avant
-          console.log('[Notifs] Permission default — banner va s\'afficher');
         }
       } catch (err) {
         console.error('[Notifs] Erreur init :', err);
@@ -68,7 +90,7 @@ export function useNotifications() {
     init();
   }, []);
 
-  // ── Demander la permission ─────────────────────────────────────
+  // ── Demander la permission ────────────────────────────────────────────────
   const requestPermission = async (): Promise<boolean> => {
     if (!isSupported) return false;
     try {
@@ -78,7 +100,6 @@ export function useNotifications() {
 
       if (granted) {
         await scheduleDailyNotificationInternal(language);
-        // Notification de confirmation immédiate
         await scheduleImmediate(
           language === 'fr' ? '🌟 Notifications activées !' : '🌟 Notifications enabled!',
           language === 'fr'
@@ -93,7 +114,13 @@ export function useNotifications() {
     }
   };
 
-  // ── Notification immédiate (interne) ──────────────────────────
+  // ── Marquer le banner comme dismissé (persistant) ────────────────────────
+  const dismissBanner = async () => {
+    setBannerDismissed(true);
+    await prefsSet(BANNER_DISMISSED_KEY, 'true');
+  };
+
+  // ── Notification immédiate ────────────────────────────────────────────────
   const scheduleImmediate = async (title: string, body: string) => {
     try {
       await LocalNotifications.schedule({
@@ -111,10 +138,11 @@ export function useNotifications() {
     }
   };
 
-  // ── Planification quotidienne (interne, sans dépendance au state) ──
+  // ── Planification quotidienne ─────────────────────────────────────────────
   const scheduleDailyNotificationInternal = async (lang: string, timeStr?: string) => {
-    const savedTime = timeStr ?? localStorage.getItem(NOTIF_TIME_KEY) ?? '08:00';
-    if (timeStr) localStorage.setItem(NOTIF_TIME_KEY, timeStr);
+    // ✅ Lire/écrire l'heure dans Preferences (pas localStorage)
+    const savedTime = timeStr ?? (await prefsGet(NOTIF_TIME_KEY)) ?? '08:00';
+    if (timeStr) await prefsSet(NOTIF_TIME_KEY, timeStr);
 
     const [hours, minutes] = savedTime.split(':').map(Number);
     const now  = new Date();
@@ -127,7 +155,6 @@ export function useNotifications() {
       ? "Ta dose de motivation quotidienne t'attend !"
       : 'Your daily motivation awaits!';
 
-    // Annuler l'ancienne avant de replanifier
     try {
       await LocalNotifications.cancel({ notifications: [{ id: DAILY_NOTIF_ID }] });
     } catch (_) {}
@@ -151,20 +178,18 @@ export function useNotifications() {
     console.log(`[Notifs] ✅ Planifiée à ${savedTime}, prochaine : ${next.toLocaleString()}`);
   };
 
-  // ── API publique : planifier (exposée au composant Settings) ──
+  // ── API publique ──────────────────────────────────────────────────────────
   const scheduleDailyNotification = async (timeStr?: string) => {
     if (!isSupported) return;
     await scheduleDailyNotificationInternal(language, timeStr);
   };
 
-  // ── Annuler ────────────────────────────────────────────────────
   const cancelDailyNotification = async () => {
     try {
       await LocalNotifications.cancel({ notifications: [{ id: DAILY_NOTIF_ID }] });
     } catch (_) {}
   };
 
-  // ── Test visible immédiat ──────────────────────────────────────
   const testNotification = async () => {
     await scheduleImmediate(
       language === 'fr' ? '🌟 Test de notification' : '🌟 Notification test',
@@ -172,12 +197,11 @@ export function useNotifications() {
     );
   };
 
-  // ── showImmediateNotification exposée (compatibilité) ─────────
   const showImmediateNotification = async (title: string, body: string) => {
     await scheduleImmediate(title, body);
   };
 
-  // ── Re-planifier si la langue change ──────────────────────────
+  // ── Re-planifier si la langue change ─────────────────────────────────────
   useEffect(() => {
     if (permission === 'granted' && isSupported) {
       scheduleDailyNotificationInternal(language).catch(console.warn);
@@ -187,7 +211,9 @@ export function useNotifications() {
   return {
     permission,
     isSupported,
+    bannerDismissed,
     requestPermission,
+    dismissBanner,
     testNotification,
     scheduleDailyNotification,
     cancelDailyNotification,

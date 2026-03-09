@@ -4,32 +4,37 @@ import { Bell, X } from 'lucide-react';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-const BANNER_DISMISSED_KEY = 'notification_banner_dismissed';
-
 export function NotificationBanner() {
   const [isVisible, setIsVisible] = useState(false);
-  const { permission, isSupported, requestPermission } = useNotifications();
+  // ✅ bannerDismissed vient de Preferences (persistant, survit aux mises à jour)
+  const { permission, isSupported, bannerDismissed, requestPermission, dismissBanner } = useNotifications();
   const { t } = useLanguage();
 
   useEffect(() => {
-    const dismissed = localStorage.getItem(BANNER_DISMISSED_KEY);
-    if (isSupported && permission === 'default' && !dismissed) {
+    // ✅ Afficher uniquement si :
+    //    - natif (isSupported)
+    //    - permission pas encore accordée/refusée
+    //    - l'utilisateur n'a pas explicitement fermé le banner
+    if (isSupported && permission === 'default' && !bannerDismissed) {
       const timer = setTimeout(() => setIsVisible(true), 3000);
       return () => clearTimeout(timer);
+    } else {
+      setIsVisible(false);
     }
-  }, [isSupported, permission]);
+  }, [isSupported, permission, bannerDismissed]);
 
   const handleEnable = async () => {
     const granted = await requestPermission();
     if (granted) setIsVisible(false);
   };
 
-  const handleDismiss = () => {
+  const handleDismiss = async () => {
     setIsVisible(false);
-    localStorage.setItem(BANNER_DISMISSED_KEY, 'true');
+    // ✅ Persiste dans Preferences (pas localStorage)
+    await dismissBanner();
   };
 
-  if (!isSupported || permission !== 'default') return null;
+  if (!isSupported || permission !== 'default' || bannerDismissed) return null;
 
   return (
     <AnimatePresence>
@@ -41,9 +46,6 @@ export function NotificationBanner() {
           transition={{ type: 'spring', damping: 20 }}
           className="fixed left-4 right-4 z-40 max-w-md mx-auto"
           style={{
-            // ✅ 100px fixe = barre nav (80px) + marge (20px)
-            // max() prend le plus grand entre safe-area et 100px
-            // → fonctionne sur Samsung gesture nav ET boutons classiques
             bottom: 'max(calc(env(safe-area-inset-bottom, 0px) + 80px), 100px)',
           }}
         >

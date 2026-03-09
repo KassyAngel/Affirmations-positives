@@ -35,33 +35,19 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-5733508257471048~5974451487" />
 
-        <!-- Retarde la mesure Firebase — évite un init trop tôt -->
         <meta-data
             android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
             android:value="true" />
 
-        <!--
-            ✅ FIX CRASH OOM : Désactive le renderer multiprocess d'AdMob
-            Par défaut AdMob lance un processus WebView SÉPARÉ pour les vidéos
-            → sur appareils modestes (Xiaomi Redmi 9) ce 2ème processus manque
-              de RAM et est tué par l'OS → crash de TOUTE l'application
-            Avec false : les pubs tournent dans le processus principal,
-            pas de 2ème renderer, plus de crash OOM
-        -->
         <meta-data
             android:name="com.google.android.gms.ads.flag.OPTIMIZE_INITIALIZATION"
             android:value="true" />
 
-        <!--
-            ✅ FIX WIDGET : Optimise la requête AdMob au démarrage
-            Réduit la charge mémoire initiale → l'app démarre plus vite
-            → le widget Launcher trouve le processus disponible
-        -->
         <meta-data
             android:name="com.google.android.gms.ads.flag.OPTIMIZE_AD_LOADING"
             android:value="true" />
 
-        <!-- Widget — même processus que l'app (SharedPreferences accessibles) -->
+        <!-- Widget -->
         <receiver
             android:name=".QuoteWidget"
             android:exported="true"
