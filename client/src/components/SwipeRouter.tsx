@@ -107,7 +107,7 @@ function ThemesPage({ onClose }: { onClose: () => void }) {
               key={id}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.025 }} // ✅ réduit de 0.03 → 0.025
+              transition={{ delay: i * 0.025 }}
               onClick={() => handleSelect(id)}
               className="relative"
               style={{ opacity: isLocked ? 0.75 : 1 }}
@@ -121,7 +121,6 @@ function ThemesPage({ onClose }: { onClose: () => void }) {
                   transition: 'all 0.2s',
                 }}
               >
-                {/* ✅ loading="lazy" + decoding="async" pour ne pas bloquer le rendu */}
                 <img
                   src={cfg.imagePath}
                   alt={cfg.label.fr}
@@ -230,6 +229,11 @@ export function SwipeRouter() {
     }
   }, [showInterstitial]);
 
+  // ✅ Remet en haut à chaque changement de page (swipe, dots, retour)
+  useEffect(() => {
+    document.querySelectorAll('.overflow-y-auto').forEach(el => { el.scrollTop = 0; });
+  }, [pageIndex]);
+
   const dragCancelledRef = useRef(false);
 
   const goTo = useCallback(async (newIdx: number) => {
@@ -237,8 +241,6 @@ export function SwipeRouter() {
     setDirection(newIdx > pageIndex ? 1 : -1);
     setPageIndex(newIdx);
     setLocation(INDEX_TO_PATH[newIdx]);
-    // ✅ Scroll en haut à chaque changement de page
-    document.querySelectorAll('.overflow-y-auto').forEach(el => { el.scrollTop = 0; });
     await triggerSwipeAd();
   }, [pageIndex, setLocation, triggerSwipeAd]);
 
@@ -301,14 +303,12 @@ export function SwipeRouter() {
             animate="center"
             exit="exit"
             transition={{
-              // ✅ Spring allégé — stiffness réduit pour moins de calcul CPU
               x:       { type: 'spring', stiffness: 260, damping: 28, mass: 0.8 },
               opacity: { duration: 0.08 },
             }}
             className="absolute inset-0 overflow-y-auto overflow-x-hidden"
             style={{ touchAction: 'pan-y' }}
           >
-            {/* ✅ Suspense avec skeleton — évite le freeze pendant le chargement */}
             <Suspense fallback={<PageSkeleton />}>
               {renderPage()}
             </Suspense>
