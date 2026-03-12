@@ -237,6 +237,8 @@ export function SwipeRouter() {
     setDirection(newIdx > pageIndex ? 1 : -1);
     setPageIndex(newIdx);
     setLocation(INDEX_TO_PATH[newIdx]);
+    // ✅ Scroll en haut à chaque changement de page
+    document.querySelectorAll('.overflow-y-auto').forEach(el => { el.scrollTop = 0; });
     await triggerSwipeAd();
   }, [pageIndex, setLocation, triggerSwipeAd]);
 
