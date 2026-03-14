@@ -6,31 +6,36 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
 
+    // Flag statique : survit au chargement de la WebView
+    public static boolean openedFromWidget = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        registerPlugin(WidgetPlugin.class);
         super.onCreate(savedInstanceState);
-        // ✅ Vérifie si l'app est ouverte depuis le widget au démarrage
-        handleWidgetIntent(getIntent());
+        checkWidgetIntent(getIntent());
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        // ✅ Vérifie si l'app revient au premier plan depuis le widget
-        handleWidgetIntent(intent);
-    }
+        setIntent(intent);
+        checkWidgetIntent(intent);
 
-    private void handleWidgetIntent(Intent intent) {
-        if (intent == null) return;
-        if ("widget".equals(intent.getStringExtra("from"))) {
-            // ✅ Injecte ?from=widget dans la WebView Capacitor
-            // App.tsx lit window.location.search pour déclencher la pub
+        // Si React est déjà chargé, on injecte directement
+        if (getBridge() != null && getBridge().getWebView() != null) {
             getBridge().getWebView().post(() ->
                 getBridge().getWebView().evaluateJavascript(
-                    "window.history.replaceState(null, '', '/?from=widget');",
+                    "if(window.__onWidgetOpen) window.__onWidgetOpen();",
                     null
                 )
             );
+        }
+    }
+
+    private void checkWidgetIntent(Intent intent) {
+        if (intent != null && "widget".equals(intent.getStringExtra("from"))) {
+            openedFromWidget = true;
         }
     }
 }

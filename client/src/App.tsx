@@ -9,6 +9,8 @@ import { usePremium } from "@/hooks/use-premium";
 import { notificationService } from "@/services/notification-service";
 import { initAdMob, useAdMob } from "@/hooks/use-admob";
 import { SwipeRouter } from "@/components/SwipeRouter";
+import { App as CapApp } from "@capacitor/app";
+import { checkOpenedFromWidget } from "@/hooks/use-widget-open"; // ← adaptez le chemin si besoin
 import "@/styles/gradients.css";
 
 // Onboarding en lazy — ne charge que si besoin
@@ -40,25 +42,26 @@ function WidgetAdHandler() {
     // Délai 2.5s — laisse l'app s'afficher avant la pub
     await new Promise(r => setTimeout(r, 2500));
     await showInterstitial();
-    // Nettoie le paramètre de l'URL
-    window.history.replaceState(null, '', '/');
   }, [showInterstitial, isPremium]);
 
   useEffect(() => {
-    // ✅ Vérifie au montage (app ouverte depuis le widget)
-    if (window.location.search.includes('from=widget')) {
-      triggerWidgetAd();
-    }
+    // ✅ Au montage : interroge le plugin natif (flag Java déjà stocké)
+    checkOpenedFromWidget().then((fromWidget) => {
+      if (fromWidget) triggerWidgetAd();
+    });
 
-    // ✅ Écoute les navigations injectées par MainActivity.java (app déjà ouverte)
-    const onPopState = () => {
-      if (window.location.search.includes('from=widget')) {
-        triggerWidgetAd();
+    // ✅ Quand l'app revient au premier plan (widget cliqué app déjà ouverte)
+    const listenerPromise = CapApp.addListener("appStateChange", ({ isActive }: { isActive: boolean }) => {
+      if (isActive) {
+        checkOpenedFromWidget().then((fromWidget) => {
+          if (fromWidget) triggerWidgetAd();
+        });
       }
-    };
+    });
 
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
+    return () => {
+      listenerPromise.then((l: { remove: () => void }) => l.remove());
+    };
   }, [triggerWidgetAd]);
 
   return null;
