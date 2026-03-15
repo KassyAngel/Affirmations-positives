@@ -1,86 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    IMPORTANT : les widgets Android n'acceptent qu'un sous-ensemble de vues.
-    On utilise LinearLayout (vertical) comme racine — plus fiable que RelativeLayout
-    pour la mesure de hauteur sur tous les launchers.
--->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center_vertical"
+    android:gravity="center"
     android:paddingTop="14dp"
     android:paddingBottom="14dp"
     android:paddingStart="18dp"
     android:paddingEnd="18dp"
     android:background="@drawable/widget_background">
 
-    <!-- Guillemet décoratif + citation sur la même zone -->
-    <LinearLayout
+    <!-- Citation principale -->
+    <TextView
+        android:id="@+id/widget_quote"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="top">
+        android:text="Vous méritez tout le bonheur du monde."
+        android:textColor="#2C1A0E"
+        android:textSize="14sp"
+        android:textStyle="italic"
+        android:maxLines="4"
+        android:ellipsize="end" />
 
-        <!-- Guillemet ouvrant -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="&#8220;"
-            android:textColor="#C9956A"
-            android:textSize="30sp"
-            android:fontFamily="serif"
-            android:alpha="0.40"
-            android:layout_marginTop="-4dp"
-            android:layout_marginEnd="4dp"
-            android:layout_marginStart="-2dp" />
-
-        <!-- Citation principale -->
-        <TextView
-            android:id="@+id/widget_quote"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Vous méritez tout le bonheur du monde."
-            android:textColor="#2C1A0E"
-            android:textSize="14sp"
-            android:textStyle="italic"
-            android:lineSpacingMultiplier="1.45"
-            android:maxLines="4"
-            android:ellipsize="end"
-            android:fontFamily="serif" />
-
-    </LinearLayout>
-
-    <!-- Séparateur + titre en bas -->
-    <LinearLayout
-        android:layout_width="match_parent"
+    <!-- Titre en bas -->
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <!-- Ligne décorative dorée -->
-        <View
-            android:layout_width="18dp"
-            android:layout_height="1dp"
-            android:background="#C9956A"
-            android:alpha="0.55"
-            android:layout_marginEnd="8dp" />
-
-        <!-- Label "MESSAGE DU JOUR" -->
-        <TextView
-            android:id="@+id/widget_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="MESSAGE DU JOUR"
-            android:textColor="#A0622A"
-            android:textSize="7.5sp"
-            android:textAllCaps="true"
-            android:letterSpacing="0.22"
-            android:fontFamily="sans-serif-light"
-            android:alpha="0.85" />
-
-    </LinearLayout>
+        android:layout_marginTop="8dp"
+        android:text="MESSAGE DU JOUR"
+        android:textColor="#A0622A"
+        android:textSize="8sp" />
 
 </LinearLayout>
