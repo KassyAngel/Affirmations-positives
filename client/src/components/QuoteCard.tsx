@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Heart, Share2, Quote as QuoteIcon } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -48,7 +49,6 @@ async function generateShareImage(
     const ctx = canvas.getContext('2d')!;
 
     const draw = () => {
-      // 1. Overlay sombre
       const overlay = ctx.createLinearGradient(0, 0, 0, H);
       overlay.addColorStop(0,   'rgba(0,0,0,0.35)');
       overlay.addColorStop(0.5, 'rgba(0,0,0,0.52)');
@@ -56,7 +56,6 @@ async function generateShareImage(
       ctx.fillStyle = overlay;
       ctx.fillRect(0, 0, W, H);
 
-      // 2. Carte centrale
       const cardX = 80; const cardY = 180;
       const cardW = W - 160; const cardH = H - 400;
       const r = 48;
@@ -77,14 +76,12 @@ async function generateShareImage(
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // 3. Guillemet
       ctx.font = 'bold 140px Georgia, serif';
       ctx.fillStyle = 'rgba(255,255,255,0.22)';
       ctx.textAlign = 'left';
       ctx.shadowBlur = 0;
       ctx.fillText('"', cardX + 40, cardY + 110);
 
-      // 4. Citation (word wrap)
       ctx.textAlign = 'center';
       ctx.shadowColor = 'rgba(0,0,0,0.6)';
       ctx.shadowBlur = 14;
@@ -109,7 +106,6 @@ async function generateShareImage(
       const textStartY = cardY + (cardH / 2) - (totalH / 2) + 20;
       lines.forEach((line, i) => ctx.fillText(line, centerX, textStartY + i * lineH));
 
-      // 5. Séparateur
       ctx.shadowBlur = 0;
       const sepY = textStartY + lines.length * lineH + 28;
       ctx.strokeStyle = 'rgba(255,255,255,0.55)';
@@ -119,14 +115,12 @@ async function generateShareImage(
       ctx.lineTo(centerX + 44, sepY);
       ctx.stroke();
 
-      // 6. Auteur
       ctx.font = `600 30px -apple-system, 'Helvetica Neue', Arial, sans-serif`;
       ctx.fillStyle = 'rgba(255,255,255,0.88)';
       ctx.shadowColor = 'rgba(0,0,0,0.4)';
       ctx.shadowBlur = 8;
       ctx.fillText(`— ${author}`, centerX, sepY + 52);
 
-      // 7. Bandeau bas
       ctx.shadowBlur = 0;
       const bannerGrad = ctx.createLinearGradient(0, H - 200, 0, H);
       bannerGrad.addColorStop(0, 'rgba(0,0,0,0)');
@@ -146,7 +140,6 @@ async function generateShareImage(
       resolve(canvas.toDataURL('image/jpeg', 0.92));
     };
 
-    // Charge l'image du thème comme fond
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
@@ -157,7 +150,6 @@ async function generateShareImage(
       draw();
     };
     img.onerror = () => {
-      // Fallback dégradé catégorie
       const [c1, c2] = CATEGORY_GRADIENTS[category] ?? CATEGORY_GRADIENTS.default;
       const grad = ctx.createLinearGradient(0, 0, W, H);
       grad.addColorStop(0, c1);
@@ -172,8 +164,43 @@ async function generateShareImage(
   });
 }
 
-// ─── Composant ────────────────────────────────────────────────────────────────
-export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors }: QuoteCardProps) {
+// ─── ActionButtons — mémoïsé pour éviter les remounts sur re-render parent ───
+interface ActionButtonsProps {
+  size: 'sm' | 'lg';
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
+  onShare: () => void;
+  textClass: string;
+}
+
+const ActionButtons = memo(({ size, isFavorite, onToggleFavorite, onShare, textClass }: ActionButtonsProps) => (
+  <div className={`flex justify-center ${size === 'lg' ? 'gap-8' : 'gap-6'}`}>
+    <button
+      onClick={onToggleFavorite}
+      className={`${size === 'lg' ? 'p-4' : 'p-3'} rounded-full transition-colors active:scale-95 hover:scale-110 shadow-lg`}
+      style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.3)' }}
+    >
+      <Heart className={`${size === 'lg' ? 'w-7 h-7' : 'w-6 h-6'} transition-colors ${isFavorite ? 'fill-rose-500 text-rose-500' : textClass}`} />
+    </button>
+    <button
+      onClick={onShare}
+      className={`${size === 'lg' ? 'p-4' : 'p-3'} rounded-full transition-colors active:scale-95 hover:scale-110 shadow-lg`}
+      style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.3)' }}
+    >
+      <Share2 className={`${size === 'lg' ? 'w-7 h-7' : 'w-6 h-6'} ${textClass}`} />
+    </button>
+  </div>
+));
+ActionButtons.displayName = 'ActionButtons';
+
+// ─── Composant principal — mémoïsé ───────────────────────────────────────────
+// ✅ FIX PERF : memo() → ne re-render que si quote, isFavorite ou callbacks changent
+// ✅ FIX PERF : key={currentQuote.id} retiré du parent (Home.tsx) →
+//              AnimatePresence gère la transition sans démonter/remonter le composant
+
+export const QuoteCard = memo(function QuoteCard({
+  quote, isFavorite, onToggleFavorite, categoryColors,
+}: QuoteCardProps) {
   const { t, language } = useLanguage();
   const { theme }       = useTheme();
   const device          = useDeviceType();
@@ -181,14 +208,11 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
   const displayContent = language === 'en' && quote.contentEn ? quote.contentEn : quote.content;
 
   const handleShare = async () => {
-    // ✅ Texte bien formaté — PAS de champ url (évite que Android affiche seulement le lien)
     const shareText = `✨ "${displayContent}"\n\n— ${quote.author}\n\n📲 Affirmations Positives\n${PLAY_STORE_URL}`;
 
     if (Capacitor.isNativePlatform()) {
       try {
         const { Share } = await import('@capacitor/share');
-
-        // ── Tentative avec image générée ─────────────────────────────────────
         try {
           const base64 = await generateShareImage(
             displayContent,
@@ -196,48 +220,28 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
             quote.category,
             theme.imagePath,
           );
-
           const { Filesystem, Directory } = await import('@capacitor/filesystem');
           const base64Data = base64.split(',')[1];
           const fileName   = `affirmation_${Date.now()}.jpg`;
-
-          await Filesystem.writeFile({
-            path:      fileName,
-            data:      base64Data,
-            directory: Directory.Cache,
-          });
-
-          const { uri } = await Filesystem.getUri({
-            path:      fileName,
-            directory: Directory.Cache,
-          });
-
-          // ✅ url = fichier image local (pas le lien store)
-          // ✅ text = citation complète avec lien store inclus dedans
-          // ✅ PAS de champ "url" séparé → évite l'affichage du lien seul
+          await Filesystem.writeFile({ path: fileName, data: base64Data, directory: Directory.Cache });
+          const { uri } = await Filesystem.getUri({ path: fileName, directory: Directory.Cache });
           await Share.share({
-            title:       '✨ Affirmations Positives',
-            text:        shareText,
-            url:         uri,          // URI fichier image local
+            title: '✨ Affirmations Positives',
+            text: shareText,
+            url: uri,
             dialogTitle: language === 'fr' ? 'Partager cette citation' : 'Share this quote',
           });
-
           try { await Filesystem.deleteFile({ path: fileName, directory: Directory.Cache }); } catch {}
           return;
-
         } catch (imgErr) {
           console.warn('[Share] Image échouée, fallback texte pur:', imgErr);
-
-          // ✅ Fallback texte seul — toujours PAS de champ url
           await Share.share({
-            title:       '✨ Affirmations Positives',
-            text:        shareText,
-            // ← pas de url ici intentionnellement
+            title: '✨ Affirmations Positives',
+            text: shareText,
             dialogTitle: language === 'fr' ? 'Partager cette citation' : 'Share this quote',
           });
           return;
         }
-
       } catch (err: any) {
         if (err?.message?.includes('cancelled') || err?.message?.includes('dismissed')) return;
         console.error('[Share] Erreur:', err);
@@ -249,11 +253,8 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
       }
     }
 
-    // ── Web fallback ─────────────────────────────────────────────────────────
     if (navigator.share) {
-      try {
-        await navigator.share({ title: '✨ Affirmations Positives', text: shareText });
-      } catch {}
+      try { await navigator.share({ title: '✨ Affirmations Positives', text: shareText }); } catch {}
     } else {
       try {
         await navigator.clipboard.writeText(shareText);
@@ -262,30 +263,12 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
     }
   };
 
+  // ✅ FIX PERF : backdropFilter uniquement sur la carte, pas sur les boutons imbriqués
   const cardStyle = {
     background:     theme.cardClass.includes('bg-white') ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.2)',
     backdropFilter: 'blur(20px)',
     border:         '1px solid rgba(255,255,255,0.2)',
   };
-
-  const ActionButtons = ({ size }: { size: 'sm' | 'lg' }) => (
-    <div className={`flex justify-center ${size === 'lg' ? 'gap-8' : 'gap-6'}`}>
-      <button
-        onClick={onToggleFavorite}
-        className={`${size === 'lg' ? 'p-4' : 'p-3'} rounded-full transition-all active:scale-95 hover:scale-110 shadow-lg`}
-        style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.3)' }}
-      >
-        <Heart className={`${size === 'lg' ? 'w-7 h-7' : 'w-6 h-6'} transition-colors ${isFavorite ? 'fill-rose-500 text-rose-500' : theme.textClass}`} />
-      </button>
-      <button
-        onClick={handleShare}
-        className={`${size === 'lg' ? 'p-4' : 'p-3'} rounded-full transition-all active:scale-95 hover:scale-110 shadow-lg`}
-        style={{ background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.3)' }}
-      >
-        <Share2 className={`${size === 'lg' ? 'w-7 h-7' : 'w-6 h-6'} ${theme.textClass}`} />
-      </button>
-    </div>
-  );
 
   if (device === 'mobile') {
     return (
@@ -293,7 +276,7 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.35 }}
         className="relative w-full max-w-sm mx-auto rounded-3xl overflow-hidden shadow-2xl"
         style={{ ...cardStyle, aspectRatio: '4/5' }}
       >
@@ -319,7 +302,13 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
               {quote.author}
             </p>
           </div>
-          <ActionButtons size="sm" />
+          <ActionButtons
+            size="sm"
+            isFavorite={isFavorite}
+            onToggleFavorite={onToggleFavorite}
+            onShare={handleShare}
+            textClass={theme.textClass}
+          />
         </div>
       </motion.div>
     );
@@ -330,7 +319,7 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.4 }}
+      transition={{ duration: 0.35 }}
       className="relative mx-auto rounded-3xl overflow-hidden shadow-2xl"
       style={{ ...cardStyle, width: device === 'desktop' ? '680px' : '580px', height: device === 'desktop' ? '420px' : '380px' }}
     >
@@ -356,8 +345,14 @@ export function QuoteCard({ quote, isFavorite, onToggleFavorite, categoryColors 
             {quote.author}
           </p>
         </div>
-        <ActionButtons size="lg" />
+        <ActionButtons
+          size="lg"
+          isFavorite={isFavorite}
+          onToggleFavorite={onToggleFavorite}
+          onShare={handleShare}
+          textClass={theme.textClass}
+        />
       </div>
     </motion.div>
   );
-}
+});

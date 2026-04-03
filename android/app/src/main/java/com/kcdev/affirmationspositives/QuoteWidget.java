@@ -7,7 +7,6 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -21,22 +20,19 @@ import java.util.Calendar;
 /**
  * QuoteWidget.java
  *
- * ✅ 6 citations par jour : 2 matin / 2 midi / 2 soir
- *    - Slot A = jour pair   (DAY_OF_YEAR % 2 == 0)
- *    - Slot B = jour impair (DAY_OF_YEAR % 2 == 1)
- *    - Index calculé avec DAY_OF_YEAR → stable toute la journée, change chaque jour
- * ✅ Mise à jour toutes les 4h (6h / 10h / 14h / 18h / 22h)
- * ✅ Thread séparé pour la lecture JSON (fix Samsung main thread timeout)
+ * ✅ Citation calculée DIRECTEMENT depuis heure + jour — aucune dépendance aux alarmes
+ * ✅ 4 tranches horaires : matin (6-11h), midi (12-17h), soir (18-21h), nuit (22-5h)
+ * ✅ Dans chaque tranche : 2 citations alternent (pair/impair selon dayOfYear)
+ *    → 8 citations différentes par jour possibles
+ * ✅ updatePeriodMillis=1800000 dans widget_info.xml → Android appelle onUpdate toutes les 30min
+ *    → le widget se met à jour naturellement sans alarme à gérer
+ * ✅ Thread séparé pour lecture JSON (fix Samsung main thread timeout)
  * ✅ Fallback hardcodé si tout échoue → widget jamais noir
  */
 public class QuoteWidget extends AppWidgetProvider {
 
     private static final String TAG = "QuoteWidget";
     private static final String ACTION_UPDATE_WIDGET = "com.kcdev.affirmationspositives.UPDATE_WIDGET";
-
-    // Heures de mise à jour : 6h, 10h, 14h, 18h, 22h
-    // → 2 citations matin (6h + 10h), 2 midi (14h), 2 soir (18h + 22h)
-    private static final int[] UPDATE_HOURS = { 6, 10, 14, 18, 22 };
 
     private static final String[] MESSAGES_FR = {
         "Vous êtes plus fort(e) que vous ne le pensez.",
@@ -69,15 +65,9 @@ public class QuoteWidget extends AppWidgetProvider {
     };
 
     private static final String   CAPACITOR_PREFS = "CapacitorStorage";
-    private static final String[] QUOTE_KEYS = {
-        "_cap_current_widget_quote", "current_widget_quote",
-    };
     private static final String[] LANG_KEYS = {
         "_cap_app_language", "_cap_i18nextLng", "app_language", "i18nextLng",
     };
-    private static final String WIDGET_PREFS = "QuoteWidgetPrefs";
-    private static final String KEY_INDEX    = "fallback_index";
-    private static final String KEY_LAST_DAY = "last_day";
 
     // ─── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -90,7 +80,6 @@ public class QuoteWidget extends AppWidgetProvider {
             final Context appCtx = context.getApplicationContext();
             new Thread(() -> {
                 for (int id : ids) updateAppWidget(appCtx, mgr, id);
-                scheduleNextUpdate(appCtx);
             }).start();
         }
     }
@@ -100,12 +89,19 @@ public class QuoteWidget extends AppWidgetProvider {
         final Context appCtx = context.getApplicationContext();
         new Thread(() -> {
             for (int id : appWidgetIds) updateAppWidget(appCtx, appWidgetManager, id);
-            scheduleNextUpdate(appCtx);
         }).start();
     }
 
-    @Override public void onEnabled(Context context)  { scheduleNextUpdate(context); }
-    @Override public void onDisabled(Context context) { cancelUpdates(context); }
+    @Override
+    public void onEnabled(Context context) {
+        // ✅ Alarme de secours — au cas où updatePeriodMillis ne suffit pas
+        scheduleAlarm(context);
+    }
+
+    @Override
+    public void onDisabled(Context context) {
+        cancelAlarm(context);
+    }
 
     // ─── Mise à jour principale ───────────────────────────────────────────────
 
@@ -129,7 +125,7 @@ public class QuoteWidget extends AppWidgetProvider {
             views.setOnClickPendingIntent(R.id.widget_quote, pi);
 
             mgr.updateAppWidget(widgetId, views);
-            Log.d(TAG, "Widget OK : " + message.substring(0, Math.min(40, message.length())));
+            Log.d(TAG, "Widget mis à jour : " + message.substring(0, Math.min(50, message.length())));
 
         } catch (Exception e) {
             Log.e(TAG, "updateAppWidget : " + e.getMessage(), e);
@@ -149,61 +145,31 @@ public class QuoteWidget extends AppWidgetProvider {
     private static String getTitleForHour(String lang) {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
         boolean fr = "fr".equals(lang);
-        if (hour < 12) return fr ? "✨ PENSÉE DU MATIN"  : "✨ MORNING THOUGHT";
-        if (hour < 18) return fr ? "☀️ MESSAGE DU JOUR"  : "☀️ DAILY MESSAGE";
-        return                     fr ? "🌙 PENSÉE DU SOIR"  : "🌙 EVENING THOUGHT";
+        if (hour >= 6  && hour < 12) return fr ? "✨ PENSÉE DU MATIN"  : "✨ MORNING THOUGHT";
+        if (hour >= 12 && hour < 18) return fr ? "☀️ MESSAGE DU JOUR"  : "☀️ DAILY MESSAGE";
+        if (hour >= 18 && hour < 22) return fr ? "🌙 PENSÉE DU SOIR"   : "🌙 EVENING THOUGHT";
+        return                               fr ? "🌟 AFFIRMATION"       : "🌟 AFFIRMATION";
     }
 
     // ─── Sélection de la citation ─────────────────────────────────────────────
     //
-    //  Logique 6 citations/jour :
+    //  ✅ LOGIQUE SANS ALARME :
     //
-    //  On découpe les 24h en 5 slots (UPDATE_HOURS) → 2 par grande période :
-    //    6h  → matin  slot A  (index = dayOfYear * 2)
-    //   10h  → matin  slot B  (index = dayOfYear * 2 + 1)
-    //   14h  → midi   slot A  (index = dayOfYear * 2)
-    //   18h  → soir   slot A  (index = dayOfYear * 2)
-    //   22h  → soir   slot B  (index = dayOfYear * 2 + 1)
+    //  On découpe la journée en 4 tranches :
+    //    Matin  (6h-11h)  → période "morning"
+    //    Midi   (12h-17h) → période "noon"
+    //    Soir   (18h-21h) → période "evening"
+    //    Nuit   (22h-5h)  → période "morning" (affirmation de préparation)
     //
-    //  "slot A/B" = on alterne l'index dans le tableau JSON selon l'heure
-    //  pour que les deux citations de la même période soient différentes.
+    //  Dans chaque tranche : 2 citations alternent selon dayOfYear pair/impair
+    //    → jour pair   : baseIndex = (dayOfYear / 2) % longueur
+    //    → jour impair : baseIndex = (dayOfYear / 2 + 1) % longueur
+    //
+    //  Résultat : la citation change automatiquement à 6h, 12h, 18h, 22h
+    //  sans aucune alarme — juste en lisant l'heure courante.
 
     private static String getMessageToDisplay(Context context, String lang) {
-        // 1. CapacitorStorage (citation écrite par l'app React)
-        try {
-            Context storageCtx = context;
-            try { storageCtx = context.createDeviceProtectedStorageContext(); } catch (Exception ignored) {}
-
-            SharedPreferences prefs = storageCtx.getSharedPreferences(CAPACITOR_PREFS, Context.MODE_PRIVATE);
-            String raw = null;
-            for (String key : QUOTE_KEYS) {
-                raw = prefs.getString(key, null);
-                if (raw != null && !raw.isEmpty()) break;
-            }
-
-            if (raw != null && !raw.isEmpty()) {
-                raw = raw.trim();
-                if (raw.startsWith("\"") && raw.endsWith("\"") && !raw.contains("{")) {
-                    String text = raw.substring(1, raw.length() - 1)
-                                    .replace("\\\"", "\"").replace("\\n", "\n").trim();
-                    if (!text.isEmpty()) return text;
-                }
-                if (raw.contains("{")) {
-                    String cleaned = raw.startsWith("\"")
-                        ? raw.substring(1, raw.length() - 1).replace("\\\"", "\"") : raw;
-                    JSONObject json = new JSONObject(cleaned);
-                    for (String field : new String[]{lang, "body", "text"}) {
-                        String v = json.optString(field, "").trim();
-                        if (!v.isEmpty()) return v;
-                    }
-                }
-                if (!raw.startsWith("{")) return raw;
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "CapacitorStorage : " + e.getMessage());
-        }
-
-        // 2. quotes.json depuis les assets
+        // Lecture depuis quotes.json en assets (source principale)
         try {
             String quote = loadFromAssetsJson(context, lang);
             if (quote != null && !quote.isEmpty()) return quote;
@@ -211,8 +177,8 @@ public class QuoteWidget extends AppWidgetProvider {
             Log.w(TAG, "quotes.json : " + e.getMessage());
         }
 
-        // 3. Fallback hardcodé
-        return getDailyFallbackMessage(context, lang);
+        // Fallback hardcodé
+        return getDailyFallbackMessage(lang);
     }
 
     // ─── Lecture quotes.json ──────────────────────────────────────────────────
@@ -230,31 +196,40 @@ public class QuoteWidget extends AppWidgetProvider {
 
         JSONObject root = new JSONObject(new String(buffer, StandardCharsets.UTF_8));
 
-        Calendar cal    = Calendar.getInstance();
-        int hour        = cal.get(Calendar.HOUR_OF_DAY);
-        int dayOfYear   = cal.get(Calendar.DAY_OF_YEAR);
+        Calendar cal      = Calendar.getInstance();
+        int hour          = cal.get(Calendar.HOUR_OF_DAY);
+        int dayOfYear     = cal.get(Calendar.DAY_OF_YEAR);
 
-        // Période
-        String period = hour < 12 ? "morning" : (hour < 18 ? "noon" : "evening");
+        // ✅ Période selon l'heure courante
+        String period;
+        if (hour >= 6 && hour < 12)      period = "morning";
+        else if (hour >= 12 && hour < 18) period = "noon";
+        else if (hour >= 18 && hour < 22) period = "evening";
+        else                              period = "morning"; // 22h-5h → citation de préparation
 
-        JSONArray quotes = root.has(period)
-            ? root.getJSONArray(period)
-            : root.has("morning") ? root.getJSONArray("morning") : null;
+        JSONArray quotes = null;
+        if (root.has(period))     quotes = root.getJSONArray(period);
+        else if (root.has("morning")) quotes = root.getJSONArray("morning");
 
         if (quotes == null || quotes.length() == 0) return null;
 
-        // ✅ 2 citations par période :
-        //    slot A (6h, 14h, 18h) → index pair   du jour
-        //    slot B (10h, 22h)     → index impair  du jour
-        boolean slotB = (hour == 10 || hour == 22);
-        int baseIndex = (dayOfYear * 2) % quotes.length();
-        int index     = slotB
-            ? (baseIndex + 1) % quotes.length()
-            : baseIndex;
+        // ✅ Alternance pair/impair selon le jour
+        // → 2 citations différentes par tranche horaire par jour
+        int half  = quotes.length() / 2;
+        int base  = (dayOfYear % 2 == 0)
+            ? (dayOfYear / 2) % Math.max(half, 1)
+            : (dayOfYear / 2 + 1) % Math.max(half, 1);
+
+        // Décalage pour la tranche soir (pour ne pas répéter la même que matin)
+        int offset = 0;
+        if (period.equals("noon"))    offset = quotes.length() / 3;
+        if (period.equals("evening")) offset = (quotes.length() * 2) / 3;
+
+        int index = (base + offset) % quotes.length();
 
         JSONObject quoteObj = quotes.getJSONObject(index);
 
-        // Format nouveau : {"fr":"...","en":"..."}
+        // Format {"fr":"...","en":"..."}
         String fromLang = quoteObj.optString(lang, "").trim();
         if (!fromLang.isEmpty()) return fromLang;
 
@@ -266,25 +241,23 @@ public class QuoteWidget extends AppWidgetProvider {
         return null;
     }
 
-    // ─── Fallback rotatif ─────────────────────────────────────────────────────
+    // ─── Fallback statique (calculé depuis heure+jour, pas de SharedPreferences) ──
 
-    private static String getDailyFallbackMessage(Context context, String lang) {
-        try {
-            SharedPreferences prefs = context.getSharedPreferences(WIDGET_PREFS, Context.MODE_PRIVATE);
-            int today   = Calendar.getInstance().get(Calendar.DAY_OF_YEAR);
-            int lastDay = prefs.getInt(KEY_LAST_DAY, -1);
-            int index   = prefs.getInt(KEY_INDEX, 0);
-            String[] messages = "fr".equals(lang) ? MESSAGES_FR : MESSAGES_EN;
-            if (today != lastDay) {
-                index = (index + 1) % messages.length;
-                prefs.edit().putInt(KEY_INDEX, index).putInt(KEY_LAST_DAY, today).apply();
-            }
-            return messages[index];
-        } catch (Exception e) {
-            return "fr".equals(lang)
-                ? "Vous êtes capable de choses extraordinaires."
-                : "You are capable of extraordinary things.";
-        }
+    private static String getDailyFallbackMessage(String lang) {
+        Calendar cal  = Calendar.getInstance();
+        int hour      = cal.get(Calendar.HOUR_OF_DAY);
+        int dayOfYear = cal.get(Calendar.DAY_OF_YEAR);
+
+        String[] messages = "fr".equals(lang) ? MESSAGES_FR : MESSAGES_EN;
+
+        // Décalage selon tranche horaire → citation différente à chaque tranche
+        int slotOffset = 0;
+        if (hour >= 6  && hour < 12) slotOffset = 0;
+        if (hour >= 12 && hour < 18) slotOffset = messages.length / 3;
+        if (hour >= 18 && hour < 22) slotOffset = (messages.length * 2) / 3;
+
+        int index = ((dayOfYear % (messages.length / 2)) + slotOffset) % messages.length;
+        return messages[index];
     }
 
     // ─── Langue ───────────────────────────────────────────────────────────────
@@ -308,9 +281,9 @@ public class QuoteWidget extends AppWidgetProvider {
         return "fr";
     }
 
-    // ─── Alarme — prochaine heure de mise à jour ──────────────────────────────
+    // ─── Alarme de secours (complément à updatePeriodMillis) ─────────────────
 
-    private static void scheduleNextUpdate(Context context) {
+    private static void scheduleAlarm(Context context) {
         try {
             AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             if (am == null) return;
@@ -318,56 +291,44 @@ public class QuoteWidget extends AppWidgetProvider {
             Intent intent = new Intent(context, QuoteWidget.class);
             intent.setAction(ACTION_UPDATE_WIDGET);
             PendingIntent pi = PendingIntent.getBroadcast(
-                context, 0, intent,
+                context, 1, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
 
-            // Trouver la prochaine heure dans UPDATE_HOURS
-            Calendar now  = Calendar.getInstance();
-            Calendar next = Calendar.getInstance();
-            int currentHour = now.get(Calendar.HOUR_OF_DAY);
-
-            int nextHour = -1;
-            for (int h : UPDATE_HOURS) {
-                if (h > currentHour) { nextHour = h; break; }
-            }
-            if (nextHour == -1) {
-                // Après 22h → première heure du lendemain (6h)
-                next.add(Calendar.DAY_OF_YEAR, 1);
-                nextHour = UPDATE_HOURS[0];
-            }
-
-            next.set(Calendar.HOUR_OF_DAY, nextHour);
-            next.set(Calendar.MINUTE, 0);
-            next.set(Calendar.SECOND, 0);
-            next.set(Calendar.MILLISECOND, 0);
+            // Alarme toutes les 2h — complément à updatePeriodMillis
+            long interval = 2 * 60 * 60 * 1000L;
+            long trigger  = System.currentTimeMillis() + interval;
 
             try {
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pi);
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, pi);
             } catch (SecurityException e) {
-                am.set(AlarmManager.RTC_WAKEUP, next.getTimeInMillis(), pi);
+                am.setInexactRepeating(
+                    AlarmManager.RTC_WAKEUP,
+                    trigger,
+                    interval,
+                    pi
+                );
             }
 
-            Log.d(TAG, "Prochaine mise à jour widget : " + nextHour + "h");
-
+            Log.d(TAG, "Alarme de secours planifiée dans 2h");
         } catch (Exception e) {
-            Log.e(TAG, "scheduleNextUpdate : " + e.getMessage());
+            Log.e(TAG, "scheduleAlarm : " + e.getMessage());
         }
     }
 
-    private static void cancelUpdates(Context context) {
+    private static void cancelAlarm(Context context) {
         try {
             AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
             if (am == null) return;
             Intent intent = new Intent(context, QuoteWidget.class);
             intent.setAction(ACTION_UPDATE_WIDGET);
             PendingIntent pi = PendingIntent.getBroadcast(
-                context, 0, intent,
+                context, 1, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
             am.cancel(pi);
         } catch (Exception e) {
-            Log.e(TAG, "cancelUpdates : " + e.getMessage());
+            Log.e(TAG, "cancelAlarm : " + e.getMessage());
         }
     }
 }

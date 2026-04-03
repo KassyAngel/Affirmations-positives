@@ -314,7 +314,7 @@ export function EmergencyMode({ isOpen, onClose }: EmergencyModeProps) {
       Icon: Eye,
       fr: '5-4-3-2-1', en: '5-4-3-2-1',
       desc_fr: 'Ancrage sensoriel', desc_en: 'Sensory grounding',
-      premium: true, // 💎 PREMIUM
+      premium: false, // 💎 PREMIUM
     },
     {
       id: 'writing' as ExerciseTab,

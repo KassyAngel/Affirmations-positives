@@ -151,16 +151,16 @@ export const en: TranslationKeys = {
     cancel: 'Cancel',
     confirm: 'Release',
     positiveMessages: [
-      "✨ You just released a burden. Take a deep breath.",
-      "🌟 This thought does not define you. You are stronger than that.",
-      "💫 Every release is a step towards lightness.",
-      "🌸 You deserve inner peace. Keep moving forward.",
-      "🦋 Like a butterfly, you release yourself to soar higher.",
-      "🌊 Let this negative wave drift away. Calm is returning.",
-      "🌈 After the rain always comes sunshine.",
-      "💝 You show courage by releasing your thoughts.",
-      "🕊️ Lightness awaits you. You have earned it.",
-      "⭐ Every thought released is a victory over yourself."
+      "You just released a burden. Take a deep breath.",
+      "This thought does not define you. You are stronger than that.",
+      "Every release is a step towards lightness.",
+      "You deserve inner peace. Keep moving forward.",
+      "Like a butterfly, you release yourself to soar higher.",
+      "Let this negative wave drift away. Calm is returning.",
+      "After the rain always comes sunshine.",
+      "You show courage by releasing your thoughts.",
+      "Lightness awaits you. You have earned it.",
+      "Every thought released is a victory over yourself."
     ]
   },
   settings: {

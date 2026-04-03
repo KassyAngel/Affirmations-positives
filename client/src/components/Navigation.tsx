@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { Home, Grid, Heart, TrendingUp } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -10,23 +10,25 @@ interface NavigationProps {
   onSosPress?: () => void;
 }
 
-export function Navigation({ onSosPress }: NavigationProps) {
+// ✅ FIX PERF : animation SOS définie hors du composant → objet stable, jamais recréé
+const SOS_PULSE_ANIMATE = { scale: [1, 1.9, 1] as number[], opacity: [0.6, 0, 0.6] as number[] };
+const SOS_PULSE_TRANSITION = { duration: 2.5, repeat: Infinity, ease: 'easeInOut' };
+
+export const Navigation = memo(function Navigation({ onSosPress }: NavigationProps) {
   const [location, setLocation] = useLocation();
   const { language } = useLanguage();
   const { showInterstitial } = useAdMob();
   const { onNavClick } = useNavAdCounter(showInterstitial);
 
-  // ✅ EmergencyMode géré localement — fonctionne depuis toutes les pages
   const [showEmergency, setShowEmergency] = useState(false);
 
   const handleNav = async (path: string) => {
     if (location === path) return;
-    await onNavClick(path); // ✅ path passé en argument
+    await onNavClick(path);
     setLocation(path);
   };
 
   const handleSos = () => {
-    // ✅ Si callback parent (Home.tsx), on l'utilise — sinon EmergencyMode local
     if (onSosPress) {
       onSosPress();
     } else {
@@ -34,12 +36,13 @@ export function Navigation({ onSosPress }: NavigationProps) {
     }
   };
 
-  const navItems = [
+  // ✅ FIX PERF : navItems mémoïsé sur `language` → recréé seulement si la langue change
+  const navItems = useMemo(() => [
     { path: '/',           icon: Home,       label: language === 'fr' ? 'Accueil'    : 'Home'       },
     { path: '/categories', icon: Grid,       label: language === 'fr' ? 'Catégories' : 'Categories' },
     { path: '/favorites',  icon: Heart,      label: language === 'fr' ? 'Favoris'    : 'Favorites'  },
     { path: '/stats',      icon: TrendingUp, label: language === 'fr' ? 'Stats'      : 'Stats'      },
-  ];
+  ], [language]);
 
   return (
     <>
@@ -62,7 +65,7 @@ export function Navigation({ onSosPress }: NavigationProps) {
               <button
                 key={item.path}
                 onClick={() => handleNav(item.path)}
-                className="relative flex flex-col items-center gap-1 py-2 rounded-2xl transition-all duration-200 flex-1"
+                className="relative flex flex-col items-center gap-1 py-2 rounded-2xl transition-colors duration-200 flex-1"
                 style={{
                   color: isActive ? '#FF8C69' : '#B07060',
                   background: isActive ? 'rgba(255,140,105,0.10)' : 'transparent',
@@ -99,9 +102,10 @@ export function Navigation({ onSosPress }: NavigationProps) {
             }}
           >
             <span className="relative flex items-center justify-center w-5 h-5">
+              {/* ✅ FIX PERF : animate/transition en constantes stables hors du composant */}
               <motion.span
-                animate={{ scale: [1, 1.9, 1], opacity: [0.6, 0, 0.6] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                animate={SOS_PULSE_ANIMATE}
+                transition={SOS_PULSE_TRANSITION}
                 className="absolute inline-flex rounded-full"
                 style={{ width: '100%', height: '100%', backgroundColor: 'rgba(239,68,68,0.4)' }}
               />
@@ -118,11 +122,10 @@ export function Navigation({ onSosPress }: NavigationProps) {
         </div>
       </nav>
 
-      {/* ✅ EmergencyMode monté ici — accessible depuis toutes les pages */}
       <EmergencyMode
         isOpen={showEmergency}
         onClose={() => setShowEmergency(false)}
       />
     </>
   );
-}
+});

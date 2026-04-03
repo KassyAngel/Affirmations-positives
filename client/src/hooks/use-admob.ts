@@ -21,22 +21,38 @@ export const AD_IDS = IS_PRODUCTION ? PROD_IDS : TEST_IDS;
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚙️ PARAMÈTRES DE MONÉTISATION
 // ─────────────────────────────────────────────────────────────────────────────
-const QUOTE_AD_INTERVAL    = 4;  // pub toutes les 4 citations
-const NAV_AD_START         = 4;  // première pub au 4ème clic nav
-const NAV_AD_INTERVAL      = 5;  // puis toutes les 5 clics nav
-export const SWIPE_AD_INTERVAL = 5; // pub toutes les 5 swipes
 
-// ─── Compteurs module-level ───────────────────────────────────────────────────
-const navCountPerPath: Record<string, number> = {};
+// Citations : pub toutes les N citations
+const QUOTE_AD_INTERVAL = 5;
+
+// Navigation unifiée (swipe + barre) : pub toutes les N navigations
+// Premier déclenchement au Nème, puis tous les N suivants
+const NAV_AD_INTERVAL = 5;
+
+// Export pour SwipeRouter (utilisé pour passer SWIPE_AD_INTERVAL — on garde
+// le même nom pour ne pas casser l'import existant, mais la valeur est ignorée
+// au profit du compteur unifié)
+export const SWIPE_AD_INTERVAL = NAV_AD_INTERVAL;
+
+// Cooldown minimum GLOBAL entre deux pubs — 2 minutes
+const MIN_DELAY_BETWEEN_ADS_MS = 2 * 60 * 1000;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 🔑 SINGLETON GLOBAL
-// Résout le crash OOM causé par 3-4 prepareInterstitial simultanés
 // ─────────────────────────────────────────────────────────────────────────────
 const globalAdState = {
-  isLoading: false,
-  isReady:   false,
+  isLoading:   false,
+  isReady:     false,
+  lastShownAt: 0,
 };
+
+// ✅ Compteur de navigation UNIQUE partagé entre swipe et barre du bas
+// Un seul module-level → une seule source de vérité
+let globalNavCount = 0;
+
+function canShowAd(): boolean {
+  return Date.now() - globalAdState.lastShownAt >= MIN_DELAY_BETWEEN_ADS_MS;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types plugin AdMob v7
@@ -49,7 +65,7 @@ interface AdMobPlugin {
     debugGeography?: number;
     testDeviceIdentifiers?: string[];
   }): Promise<{
-    status: number | string;   // ✅ v7 retourne string "REQUIRED" pas number 1
+    status: number | string;
     isConsentFormAvailable: boolean;
     canRequestAds: boolean;
   }>;
@@ -62,8 +78,6 @@ declare global {
   }
 }
 
-// ─── Debug geography ──────────────────────────────────────────────────────────
-// 0 = DISABLED, 1 = EEA (force popup en test), 2 = NOT_EEA
 const DEBUG_GEOGRAPHY_EEA = 1;
 
 function getAdMobPlugin(): AdMobPlugin | null {
@@ -76,12 +90,7 @@ function getAdMobPlugin(): AdMobPlugin | null {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ✅ Consentement UMP RGPD — compatible admob v7
-//
-// BUG CORRIGÉ : @capacitor-community/admob v7 retourne le statut sous forme
-// de STRING ("REQUIRED", "NOT_REQUIRED", "OBTAINED") et non un number (1,2,3)
-// comme dans les versions précédentes.
-// La condition `status === 1` ne matchait donc jamais → popup jamais affichée.
+// Consentement UMP RGPD
 // ─────────────────────────────────────────────────────────────────────────────
 async function requestUMPConsent(plugin: AdMobPlugin): Promise<void> {
   try {
@@ -92,10 +101,9 @@ async function requestUMPConsent(plugin: AdMobPlugin): Promise<void> {
       `[UMP] Status: ${consentInfo.status} | Formulaire dispo: ${consentInfo.isConsentFormAvailable} | canRequestAds: ${consentInfo.canRequestAds}`
     );
 
-    // ✅ FIX v7 : accepte "REQUIRED" (string) ET 1 (number) pour compatibilité
     const isRequired =
-      consentInfo.status === 'REQUIRED' ||  // v7 string
-      consentInfo.status === 1;             // anciennes versions number
+      consentInfo.status === 'REQUIRED' ||
+      consentInfo.status === 1;
 
     if (consentInfo.isConsentFormAvailable && isRequired) {
       console.log('[UMP] Affichage popup RGPD...');
@@ -105,13 +113,12 @@ async function requestUMPConsent(plugin: AdMobPlugin): Promise<void> {
       console.log('[UMP] Consentement non requis ou déjà obtenu');
     }
   } catch (e) {
-    // Ne jamais bloquer l'init AdMob si l'UMP échoue
     console.warn('[UMP] Erreur (non bloquant):', e);
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Init AdMob + UMP — appelé UNE SEULE FOIS dans App.tsx avec délai 8s
+// Init AdMob + UMP
 // ─────────────────────────────────────────────────────────────────────────────
 export async function initAdMob(): Promise<void> {
   const plugin = getAdMobPlugin();
@@ -120,15 +127,11 @@ export async function initAdMob(): Promise<void> {
     return;
   }
   try {
-    // ÉTAPE 1 : Consentement UMP (obligatoire avant initialize)
     await requestUMPConsent(plugin);
-
-    // ÉTAPE 2 : Initialisation AdMob
     await plugin.initialize({
       appId: AD_IDS.APP_ID,
       initializeForTesting: !IS_PRODUCTION,
     });
-
     console.log(`[AdMob] Initialisé — mode ${IS_PRODUCTION ? 'PRODUCTION' : 'TEST'}`);
   } catch (e) {
     console.error('[AdMob] Erreur initialize:', e);
@@ -137,7 +140,6 @@ export async function initAdMob(): Promise<void> {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // preloadInterstitial — singleton global
-// Garantit qu'un seul prepareInterstitial tourne à la fois
 // ─────────────────────────────────────────────────────────────────────────────
 async function preloadInterstitial(): Promise<void> {
   if (globalAdState.isLoading || globalAdState.isReady) return;
@@ -164,8 +166,6 @@ async function preloadInterstitial(): Promise<void> {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Hook principal useAdMob
-// Peut être utilisé dans autant de composants que nécessaire —
-// le singleton global empêche tous les appels redondants
 // ─────────────────────────────────────────────────────────────────────────────
 export function useAdMob() {
   const { isPremium, tier } = usePremium();
@@ -181,7 +181,6 @@ export function useAdMob() {
     await preloadInterstitial();
   }, []);
 
-  // ✅ Délai 5s — laisse l'app et la WebView se stabiliser avant de charger la pub
   useEffect(() => {
     if (!userIsPremium) {
       const t = setTimeout(() => preload(), 5000);
@@ -198,13 +197,21 @@ export function useAdMob() {
       console.log('[AdMob] Utilisateur Premium — pub ignorée');
       return;
     }
+
+    if (!canShowAd()) {
+      const remaining = Math.ceil(
+        (MIN_DELAY_BETWEEN_ADS_MS - (Date.now() - globalAdState.lastShownAt)) / 1000
+      );
+      console.log(`[AdMob] Cooldown actif — prochaine pub dans ${remaining}s`);
+      return;
+    }
+
     const plugin = getAdMobPlugin();
     if (!plugin) {
       console.log('[AdMob] Non natif — ignoré');
       return;
     }
 
-    // Si pas prêt et pas en cours de chargement, on charge
     if (!globalAdState.isReady && !globalAdState.isLoading) {
       try {
         await plugin.prepareInterstitial({
@@ -217,14 +224,13 @@ export function useAdMob() {
       }
     }
 
-    // Si chargement en cours depuis ailleurs, on abandonne plutôt que d'attendre
     if (!globalAdState.isReady) return;
 
     try {
-      globalAdState.isReady = false;
+      globalAdState.isReady     = false;
+      globalAdState.lastShownAt = Date.now();
       await plugin.showInterstitial();
       console.log('[AdMob] Interstitiel affiché ✓');
-      // Précharge la suivante avec délai pour ne pas surcharger la mémoire
       setTimeout(() => preloadInterstitial(), 4000);
     } catch (e) {
       console.error('[AdMob] Erreur show:', e);
@@ -236,7 +242,7 @@ export function useAdMob() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hook compteur citations — pub toutes les N citations
+// Hook compteur citations
 // ─────────────────────────────────────────────────────────────────────────────
 export function useQuoteAdCounter(showInterstitial: () => Promise<void>) {
   const countRef = useRef(0);
@@ -244,6 +250,7 @@ export function useQuoteAdCounter(showInterstitial: () => Promise<void>) {
   const onNewQuote = useCallback(async () => {
     countRef.current += 1;
     if (countRef.current % QUOTE_AD_INTERVAL === 0) {
+      console.log(`[AdMob] Citation #${countRef.current} → pub citations`);
       await showInterstitial();
     }
   }, [showInterstitial]);
@@ -252,16 +259,24 @@ export function useQuoteAdCounter(showInterstitial: () => Promise<void>) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hook compteur navigation barre du bas
+// Hook compteur navigation UNIFIÉ — swipe + barre du bas = même compteur
+//
+// Usage :
+//   • SwipeRouter  → const { onNavClick } = useNavAdCounter(showInterstitial)
+//                    await onNavClick()  (sans argument)
+//   • Navigation   → const { onNavClick } = useNavAdCounter(showInterstitial)
+//                    await onNavClick()  (sans argument)
+//
+// Les deux hooks partagent globalNavCount (module-level) →
+// 4 swipes + 4 clics barre = 8 navigations = 1 pub. Pas de doublons.
 // ─────────────────────────────────────────────────────────────────────────────
 export function useNavAdCounter(showInterstitial: () => Promise<void>) {
-  const onNavClick = useCallback(async (path: string) => {
-    if (navCountPerPath[path] === undefined) navCountPerPath[path] = 0;
-    navCountPerPath[path] += 1;
-    const count = navCountPerPath[path];
+  const onNavClick = useCallback(async (_path?: string) => {
+    globalNavCount += 1;
+    console.log(`[AdMob] Navigation #${globalNavCount} (seuil: ${NAV_AD_INTERVAL})`);
 
-    if (count < NAV_AD_START) return;
-    if ((count - NAV_AD_START) % NAV_AD_INTERVAL === 0) {
+    if (globalNavCount % NAV_AD_INTERVAL === 0) {
+      console.log(`[AdMob] Navigation #${globalNavCount} → pub navigation`);
       await showInterstitial();
     }
   }, [showInterstitial]);

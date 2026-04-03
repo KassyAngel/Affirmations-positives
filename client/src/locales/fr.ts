@@ -149,16 +149,16 @@ export const fr = {
     cancel: 'Annuler',
     confirm: 'Libérer',
     positiveMessages: [
-      "✨ Vous venez de libérer un poids. Respirez profondément.",
-      "🌟 Cette pensée ne vous définit pas. Vous êtes plus fort que cela.",
-      "💫 Chaque libération est un pas vers la légèreté.",
-      "🌸 Vous méritez la paix intérieure. Continuez d'avancer.",
-      "🦋 Comme un papillon, vous vous libérez pour mieux vous envoler.",
-      "🌊 Laissez cette vague négative s'éloigner. Le calme revient.",
-      "🌈 Après la pluie vient toujours le beau temps.",
-      "💝 Vous faites preuve de courage en libérant vos pensées.",
-      "🕊️ La légèreté vous attend. Vous l'avez mérité.",
-      "⭐ Chaque pensée libérée est une victoire sur vous-même."
+      "Vous venez de libérer un poids. Respirez profondément.",
+      "Cette pensée ne vous définit pas. Vous êtes plus fort que cela.",
+      "Chaque libération est un pas vers la légèreté.",
+      "Vous méritez la paix intérieure. Continuez d'avancer.",
+      "Comme un papillon, vous vous libérez pour mieux vous envoler.",
+      "Laissez cette vague négative s'éloigner. Le calme revient.",
+      "Après la pluie vient toujours le beau temps.",
+      "Vous faites preuve de courage en libérant vos pensées.",
+      "La légèreté vous attend. Vous l'avez mérité.",
+      "Chaque pensée libérée est une victoire sur vous-même."
     ]
   },
   settings: {

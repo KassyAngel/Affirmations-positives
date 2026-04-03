@@ -3,18 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, X } from 'lucide-react';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { notificationService } from '@/services/notification-service';
 
 export function NotificationBanner() {
   const [isVisible, setIsVisible] = useState(false);
-  // ✅ bannerDismissed vient de Preferences (persistant, survit aux mises à jour)
   const { permission, isSupported, bannerDismissed, requestPermission, dismissBanner } = useNotifications();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
-    // ✅ Afficher uniquement si :
-    //    - natif (isSupported)
-    //    - permission pas encore accordée/refusée
-    //    - l'utilisateur n'a pas explicitement fermé le banner
     if (isSupported && permission === 'default' && !bannerDismissed) {
       const timer = setTimeout(() => setIsVisible(true), 3000);
       return () => clearTimeout(timer);
@@ -25,12 +21,16 @@ export function NotificationBanner() {
 
   const handleEnable = async () => {
     const granted = await requestPermission();
-    if (granted) setIsVisible(false);
+    if (granted) {
+      setIsVisible(false);
+      // ✅ Planifie 7 jours de notifs après accord de permission
+      // Utilise les settings existants (définis à l'onboarding ou dans SettingsMenu)
+      await notificationService.start(language as 'fr' | 'en');
+    }
   };
 
   const handleDismiss = async () => {
     setIsVisible(false);
-    // ✅ Persiste dans Preferences (pas localStorage)
     await dismissBanner();
   };
 
@@ -52,9 +52,9 @@ export function NotificationBanner() {
           <div
             className="rounded-2xl p-4 shadow-2xl"
             style={{
-              background: 'rgba(255,250,248,0.97)',
-              border: '1px solid rgba(255,140,105,0.2)',
-              backdropFilter: 'blur(20px)',
+              background:    'rgba(255,250,248,0.97)',
+              border:        '1px solid rgba(255,140,105,0.2)',
+              backdropFilter:'blur(20px)',
             }}
           >
             <div className="flex items-start gap-3">
@@ -74,7 +74,7 @@ export function NotificationBanner() {
                     className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105"
                     style={{
                       background: 'linear-gradient(to right, #FF8C69, #FFA882)',
-                      boxShadow: '0 4px 12px rgba(255,140,105,0.3)',
+                      boxShadow:  '0 4px 12px rgba(255,140,105,0.3)',
                     }}
                   >
                     {t.notifications.enable}

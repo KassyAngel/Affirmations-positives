@@ -40,7 +40,7 @@ const FREE_THEMES: ThemeId[] = [
   'zen-cascademinimaliste', 'zen',
 ];
 
-// ─── Skeleton minimaliste pour le chargement des pages ───────────────────────
+// ─── Skeleton minimaliste ─────────────────────────────────────────────────────
 function PageSkeleton() {
   return (
     <div className="w-full h-full flex items-center justify-center">
@@ -205,9 +205,12 @@ export function SwipeRouter() {
   const [direction, setDirection]  = useState(0);
 
   const { showInterstitial } = useAdMob();
-  const { isPremium } = usePremium();
+  const { isPremium, tier } = usePremium();
+
+  // ✅ FIX PERF : on stocke isPremium dans un ref mis à jour sur `tier`
+  // — plus d'appel de fonction dans le tableau de dépendances du useEffect
   const isPremiumRef = useRef(isPremium());
-  useEffect(() => { isPremiumRef.current = isPremium(); }, [isPremium()]);
+  useEffect(() => { isPremiumRef.current = isPremium(); }, [tier]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const prevLocationRef = useRef(location);
   useEffect(() => {
@@ -219,7 +222,7 @@ export function SwipeRouter() {
       setPageIndex(idx);
       triggerSwipeAd();
     }
-  }, [location]);
+  }, [location]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const triggerSwipeAd = useCallback(async () => {
     if (isPremiumRef.current) return;
@@ -229,7 +232,7 @@ export function SwipeRouter() {
     }
   }, [showInterstitial]);
 
-  // ✅ Remet en haut à chaque changement de page (swipe, dots, retour)
+  // ✅ Remet en haut à chaque changement de page
   useEffect(() => {
     document.querySelectorAll('.overflow-y-auto').forEach(el => { el.scrollTop = 0; });
   }, [pageIndex]);
@@ -263,7 +266,7 @@ export function SwipeRouter() {
     if (swipeRight && pageIndex > 0)              goTo(pageIndex - 1);
   }, [pageIndex, goTo]);
 
-  // ✅ Spring moins lourd pour les vieux téléphones
+  // ✅ Spring léger pour les vieux téléphones
   const variants = {
     enter:  (dir: number) => ({ x: dir >= 0 ? '100%' : '-100%', opacity: 0 }),
     center:                  ({ x: 0,                             opacity: 1 }),
