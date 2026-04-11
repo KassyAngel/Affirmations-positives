@@ -1,15 +1,15 @@
 /**
  * notification-service.ts
  *
- * ✅ Système UNIQUE de planification — use-notifications.ts ne planifie plus rien
- * ✅ Planifie 7 jours à l'avance → l'utilisateur reçoit ses notifs même sans ouvrir l'app
- * ✅ Annule + re-planifie à chaque appel de start() pour toujours être à jour
- * ✅ Les contenus viennent de positive-messages.ts (local, zéro réseau)
- * ✅ Compatible Android (Capacitor LocalNotifications)
+ * ✅ Système UNIQUE de planification
+ * ✅ Planifie 7 jours à l'avance → notifs livrées même app fermée
+ * ✅ allowWhileIdle: true → fonctionne en Doze mode Android
+ * ✅ Guard anti re-planification inutile (si > 1 jour restant, on skip)
+ * ✅ Double vérification : jamais de slot dans le passé
+ * ✅ Annule + re-planifie seulement quand nécessaire
  */
 
 import { getRandomMessage } from './positive-messages';
-import type { Quote } from '@shared/schema';
 
 const isCapacitor = () =>
   typeof (window as any).Capacitor !== 'undefined' &&
@@ -17,9 +17,9 @@ const isCapacitor = () =>
 
 export interface NotificationSettings {
   enabled: boolean;
-  frequency: number;   // nombre de notifs par jour (1–20)
-  startTime: string;   // "HH:MM"
-  endTime: string;     // "HH:MM"
+  frequency: number;  // nombre de notifs par jour (1–20)
+  startTime: string;  // "HH:MM"
+  endTime: string;    // "HH:MM"
 }
 
 interface NotificationContent {
@@ -31,11 +31,12 @@ interface NotificationContent {
 const SETTINGS_KEY      = 'notification_settings';
 const CURRENT_QUOTE_KEY = 'current_widget_quote';
 
-// ── Jours à planifier à l'avance ─────────────────────────────────────────────
+// ── Jours à planifier à l'avance ──────────────────────────────────────────────
 const DAYS_AHEAD = 7;
 
-// ── ID de base (on numérote : jour * 100 + slot, max 7*20 = 140 IDs) ─────────
-const BASE_ID = 2000;
+// ── ID de base (jour * 100 + slot, max 7*20 = 140 IDs) ───────────────────────
+const BASE_ID    = 2000;
+const MAX_ID     = BASE_ID + 1000; // zone réservée à ce service
 
 // ── Fallback content ──────────────────────────────────────────────────────────
 const FALLBACK_FR = [
@@ -83,9 +84,8 @@ function toMinutes(time: string): number {
 }
 
 // ── Génère les horaires de notifs pour un jour donné ─────────────────────────
-// Retourne un tableau de Date
 function buildSlotsForDay(
-  dayOffset: number,        // 0 = aujourd'hui, 1 = demain, etc.
+  dayOffset: number,
   settings: NotificationSettings,
 ): Date[] {
   const { frequency, startTime, endTime } = settings;
@@ -95,21 +95,23 @@ function buildSlotsForDay(
   const endMin   = toMinutes(endTime);
   if (endMin <= startMin) return [];
 
-  // Intervalle entre chaque notif (en minutes)
   const totalRange = endMin - startMin;
   const interval   = frequency === 1 ? 0 : Math.floor(totalRange / (frequency - 1));
-
-  const now    = new Date();
+  const now        = Date.now();
   const slots: Date[] = [];
 
   for (let i = 0; i < frequency; i++) {
-    const minuteOfDay = startMin + (frequency === 1 ? Math.floor(totalRange / 2) : i * interval);
-    const slot        = new Date();
+    const minuteOfDay = startMin + (frequency === 1
+      ? Math.floor(totalRange / 2)
+      : i * interval
+    );
+
+    const slot = new Date();
     slot.setDate(slot.getDate() + dayOffset);
     slot.setHours(Math.floor(minuteOfDay / 60), minuteOfDay % 60, 0, 0);
 
-    // Pour aujourd'hui (dayOffset=0), ne planifier que les heures futures
-    if (dayOffset === 0 && slot <= now) continue;
+    // ✅ Ne jamais planifier dans le passé
+    if (slot.getTime() <= now) continue;
 
     slots.push(slot);
   }
@@ -171,7 +173,7 @@ export class NotificationService {
   }
 
   // ── Démarrage principal ─────────────────────────────────────────────────────
-  // Appelé depuis App.tsx au démarrage et depuis SettingsMenu après modification
+  // Appelé depuis App.tsx au démarrage, appStateChange, et depuis SettingsMenu
 
   async start(language: 'fr' | 'en' = 'fr'): Promise<void> {
     const settings = this.getSettings();
@@ -183,14 +185,11 @@ export class NotificationService {
     if (isCapacitor()) {
       await this.scheduleWeekAhead(settings, language);
     } else {
-      // Mode web — pas de planification (uniquement natif Android)
       console.log('[Notifs] Mode web — planification native non disponible');
     }
   }
 
   stop(): void {
-    // Rien à stopper — les notifs sont planifiées de façon native
-    // On annule tout si appelé explicitement
     this.cancelAll().catch(console.warn);
   }
 
@@ -203,7 +202,19 @@ export class NotificationService {
     try {
       const { LocalNotifications } = await import('@capacitor/local-notifications');
 
-      // 1. Annuler toutes les notifs existantes planifiées par ce service
+      // ✅ Guard : si on a encore plus d'1 jour de notifs planifiées, on ne re-planifie pas
+      const pending    = await LocalNotifications.getPending();
+      const ourPending = pending.notifications.filter(
+        n => n.id >= BASE_ID && n.id < MAX_ID,
+      );
+      const minRequired = settings.frequency * 1; // au moins 1 jour restant
+
+      if (ourPending.length > minRequired) {
+        console.log(`[Notifs] ${ourPending.length} notifs déjà planifiées — skip`);
+        return;
+      }
+
+      // 1. Annuler toutes les notifs existantes de ce service
       await this.cancelAll();
 
       // 2. Construire toutes les notifs pour les 7 prochains jours
@@ -216,7 +227,6 @@ export class NotificationService {
         for (const slot of slots) {
           const content = getContent(language);
 
-          // Sauvegarde la toute première citation pour le widget
           if (globalIdx === 0) {
             this.saveCurrentQuote(content);
           }
@@ -225,7 +235,10 @@ export class NotificationService {
             id:        BASE_ID + globalIdx,
             title:     content.title,
             body:      content.body,
-            schedule:  { at: slot },
+            schedule:  {
+              at:             slot,
+              allowWhileIdle: true, // ✅ Crucial : fonctionne en Doze mode Android
+            },
             sound:     'default',
             smallIcon: 'ic_stat_notification',
             iconColor: '#F43F5E',
@@ -237,7 +250,7 @@ export class NotificationService {
       }
 
       if (notifications.length === 0) {
-        console.log('[Notifs] Aucun créneau disponible (toutes les heures sont passées ?)');
+        console.log('[Notifs] Aucun créneau futur disponible');
         return;
       }
 
@@ -247,7 +260,7 @@ export class NotificationService {
       console.log(
         `[Notifs] ✅ ${notifications.length} notifications planifiées` +
         ` sur ${DAYS_AHEAD} jours (${settings.frequency}/jour` +
-        ` de ${settings.startTime} à ${settings.endTime})`
+        ` de ${settings.startTime} à ${settings.endTime})`,
       );
 
     } catch (e) {
@@ -262,9 +275,12 @@ export class NotificationService {
     try {
       const { LocalNotifications } = await import('@capacitor/local-notifications');
       const pending = await LocalNotifications.getPending();
-      if (pending.notifications.length > 0) {
-        await LocalNotifications.cancel({ notifications: pending.notifications });
-        console.log(`[Notifs] ${pending.notifications.length} notifs annulées`);
+      const ours    = pending.notifications.filter(
+        n => n.id >= BASE_ID && n.id < MAX_ID,
+      );
+      if (ours.length > 0) {
+        await LocalNotifications.cancel({ notifications: ours });
+        console.log(`[Notifs] ${ours.length} notifs annulées`);
       }
     } catch (e) {
       console.warn('[Notifs] cancelAll error:', e);
@@ -284,7 +300,10 @@ export class NotificationService {
             id:        BASE_ID + 999,
             title:     content.title,
             body:      content.body,
-            schedule:  { at: new Date(Date.now() + 1500) },
+            schedule:  {
+              at:             new Date(Date.now() + 1500),
+              allowWhileIdle: true,
+            },
             sound:     'default',
             smallIcon: 'ic_stat_notification',
             iconColor: '#F43F5E',
@@ -296,7 +315,10 @@ export class NotificationService {
       }
     } else {
       if (Notification.permission !== 'granted') return false;
-      const notif = new Notification(content.title, { body: content.body, icon: '/icon-192.png' });
+      const notif = new Notification(content.title, {
+        body: content.body,
+        icon: '/icon-192.png',
+      });
       setTimeout(() => notif.close(), 5000);
     }
     return true;
@@ -311,9 +333,14 @@ export class NotificationService {
       const pending = await LocalNotifications.getPending();
       console.log(`📋 ${pending.notifications.length} notifications en attente:`);
       pending.notifications
-        .sort((a, b) => new Date(a.schedule?.at ?? 0).getTime() - new Date(b.schedule?.at ?? 0).getTime())
+        .sort((a, b) =>
+          new Date(a.schedule?.at ?? 0).getTime() -
+          new Date(b.schedule?.at ?? 0).getTime()
+        )
         .forEach(n => {
-          const date = n.schedule?.at ? new Date(n.schedule.at).toLocaleString() : '?';
+          const date = n.schedule?.at
+            ? new Date(n.schedule.at).toLocaleString()
+            : '?';
           console.log(`  #${n.id}: "${n.body?.slice(0, 40)}..." — ${date}`);
         });
     } catch (e) {

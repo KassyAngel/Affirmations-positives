@@ -10,11 +10,9 @@ const config: CapacitorConfig = {
       iconColor: '#F43F5E',
       sound: 'default',
     },
-    // ✅ SplashScreen — reste affiché pendant que le JS charge
-    // puis se cache automatiquement après 2.5s (ou manuellement via SplashScreen.hide())
     SplashScreen: {
-      launchShowDuration: 2500,   // ms avant hide automatique
-      launchAutoHide: true,       // true = auto, false = manuel dans le code
+      launchShowDuration: 2500,
+      launchAutoHide: true,
       backgroundColor: '#000000',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,

@@ -1,9 +1,9 @@
 import { useLocation } from 'wouter';
-import { useUserState } from '@/hooks/use-user-state';
+import { useUserStateContext } from '@/contexts/UserStateContext';
 import { useQuotes } from '@/hooks/use-quotes';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Navigation } from '@/components/Navigation';
+
 import { Loader2, Heart, Share2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
@@ -220,7 +220,7 @@ async function handleShareQuote(
 
 export default function Favorites() {
   const [, setLocation] = useLocation();
-  const { state, toggleFavorite } = useUserState();
+  const { state, toggleFavorite } = useUserStateContext();
   const { data: allQuotes, isLoading } = useQuotes();
   const { t, language } = useLanguage();
   const { theme } = useTheme();
@@ -361,7 +361,7 @@ export default function Favorites() {
         </motion.div>
       )}
 
-      <Navigation />
+      
     </div>
   );
 }

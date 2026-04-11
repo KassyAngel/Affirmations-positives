@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useLocation } from 'wouter';
 import { useUserState } from '@/hooks/use-user-state';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Navigation } from '@/components/Navigation';
+
 import { motion } from 'framer-motion';
 import { Flame, Calendar, TrendingUp, Heart, X, ChevronLeft, ChevronRight, TrendingDown, Minus } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
@@ -247,7 +247,7 @@ export default function Stats() {
 
       </div>
 
-      <Navigation />
+      
     </div>
   );
 }

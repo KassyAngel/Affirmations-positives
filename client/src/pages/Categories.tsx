@@ -1,6 +1,6 @@
 import { useLocation } from 'wouter';
 import { useState } from 'react';
-import { Navigation } from '@/components/Navigation';
+
 import { PremiumPaywall } from '@/components/PremiumPaywall';
 import { usePremium } from '@/hooks/use-premium';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -119,7 +119,7 @@ export default function Categories() {
         })}
       </div>
 
-      <Navigation />
+      
 
       {showPaywall && (
         <>

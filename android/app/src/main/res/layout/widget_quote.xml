@@ -1,35 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:paddingTop="14dp"
-    android:paddingBottom="14dp"
-    android:paddingStart="18dp"
-    android:paddingEnd="18dp"
+    android:paddingTop="18dp"
+    android:paddingBottom="16dp"
+    android:paddingStart="20dp"
+    android:paddingEnd="20dp"
     android:background="@drawable/widget_background">
 
-    <!-- Citation principale -->
+    <!-- Barre décorative en haut -->
+    <View
+        android:layout_width="32dp"
+        android:layout_height="3dp"
+        android:layout_marginBottom="12dp"
+        android:background="#FF8C69" />
+
+    <!-- Citation principale — grosse et impactante -->
     <TextView
         android:id="@+id/widget_quote"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Vous méritez tout le bonheur du monde."
-        android:textColor="#2C1A0E"
-        android:textSize="14sp"
-        android:textStyle="italic"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:lineSpacingMultiplier="1.3"
+        android:gravity="center"
         android:maxLines="4"
         android:ellipsize="end" />
 
-    <!-- Titre en bas -->
+    <!-- Séparateur -->
+    <View
+        android:layout_width="24dp"
+        android:layout_height="1dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="8dp"
+        android:background="#80FF8C69" />
+
+    <!-- Titre / label en bas -->
     <TextView
         android:id="@+id/widget_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="MESSAGE DU JOUR"
-        android:textColor="#A0622A"
-        android:textSize="8sp" />
+        android:text="✨ MESSAGE DU JOUR"
+        android:textColor="#FF8C69"
+        android:textSize="8sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.15" />
 
 </LinearLayout>

@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { PanInfo } from 'framer-motion';
 import { useLocation } from 'wouter';
 import { X, Check } from 'lucide-react';
 import { useTheme, THEMES, type ThemeId } from '@/contexts/ThemeContext';
@@ -8,17 +7,17 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { usePremium } from '@/hooks/use-premium';
 import { useAdMob, SWIPE_AD_INTERVAL } from '@/hooks/use-admob';
 import { PremiumPaywall } from '@/components/PremiumPaywall';
+import { Navigation } from '@/components/Navigation';
+import { EmergencyMode } from '@/components/EmergencyMode';
+import { UserStateProvider } from '@/contexts/UserStateContext';
 
-// ✅ LAZY LOADING — chaque page n'est chargée que quand elle est affichée
 const Home       = lazy(() => import('@/pages/Home'));
 const Categories = lazy(() => import('@/pages/Categories'));
 const Favorites  = lazy(() => import('@/pages/Favorites'));
 const Stats      = lazy(() => import('@/pages/Stats'));
 
-// ─── Config ───────────────────────────────────────────────────────────────────
 const PAGE_COUNT      = 5;
-const SWIPE_THRESHOLD = 55;
-const SWIPE_VELOCITY  = 350;
+const SWIPE_THRESHOLD = 45;
 
 const PATH_TO_INDEX: Record<string, number> = {
   '/':           0,
@@ -29,10 +28,6 @@ const PATH_TO_INDEX: Record<string, number> = {
 };
 const INDEX_TO_PATH = ['/', '/categories', '/favorites', '/stats', '/themes'];
 
-// ✅ Compteur global swipe
-let swipeNavCount = 0;
-
-// ─── Thèmes gratuits ──────────────────────────────────────────────────────────
 const FREE_THEMES: ThemeId[] = [
   'afrique', 'ethereal',
   'minimaliste-1', 'minimaliste-2', 'minimaliste-3',
@@ -40,7 +35,8 @@ const FREE_THEMES: ThemeId[] = [
   'zen-cascademinimaliste', 'zen',
 ];
 
-// ─── Skeleton minimaliste ─────────────────────────────────────────────────────
+let swipeNavCount = 0;
+
 function PageSkeleton() {
   return (
     <div className="w-full h-full flex items-center justify-center">
@@ -49,7 +45,6 @@ function PageSkeleton() {
   );
 }
 
-// ─── Page Thèmes ──────────────────────────────────────────────────────────────
 function ThemesPage({ onClose }: { onClose: () => void }) {
   const { language } = useLanguage();
   const { themeId, setTheme } = useTheme();
@@ -171,14 +166,17 @@ function ThemesPage({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Dots ─────────────────────────────────────────────────────────────────────
 const DOT_EMOJIS = ['🏠', '📂', '❤️', '📊', '🎨'];
 
 function PageDots({ current, onDotClick }: { current: number; onDotClick: (i: number) => void }) {
   return (
     <div
       className="fixed z-30 flex items-center gap-2"
-      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)', left: '50%', transform: 'translateX(-50%)' }}
+      style={{
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 82px)',
+        left: '50%',
+        transform: 'translateX(-50%)',
+      }}
     >
       {Array.from({ length: PAGE_COUNT }).map((_, i) => (
         <motion.button
@@ -198,127 +196,215 @@ function PageDots({ current, onDotClick }: { current: number; onDotClick: (i: nu
   );
 }
 
-// ─── SwipeRouter ──────────────────────────────────────────────────────────────
-export function SwipeRouter() {
+function SwipeRouterInner() {
   const [location, setLocation] = useLocation();
   const [pageIndex, setPageIndex] = useState(() => PATH_TO_INDEX[location] ?? 0);
-  const [direction, setDirection]  = useState(0);
+  const [showEmergency, setShowEmergency] = useState(false);
 
   const { showInterstitial } = useAdMob();
-  const { isPremium, tier } = usePremium();
+  const { isPremium, tier }  = usePremium();
 
-  // ✅ FIX PERF : on stocke isPremium dans un ref mis à jour sur `tier`
-  // — plus d'appel de fonction dans le tableau de dépendances du useEffect
-  const isPremiumRef = useRef(isPremium());
-  useEffect(() => { isPremiumRef.current = isPremium(); }, [tier]); // eslint-disable-line react-hooks/exhaustive-deps
+  const isPremiumRef    = useRef(isPremium());
+  const pageIndexRef    = useRef(pageIndex);
+  const containerRef    = useRef<HTMLDivElement>(null);
+
+  const touchStartX     = useRef(0);
+  const touchStartY     = useRef(0);
+  const touchDeltaX     = useRef(0);
+  const isDragging      = useRef(false);
+  const isScrolling     = useRef(false);
+  const isTransitioning = useRef(false);
+
+  useEffect(() => { isPremiumRef.current = isPremium(); }, [tier]); // eslint-disable-line
 
   const prevLocationRef = useRef(location);
   useEffect(() => {
     if (location === prevLocationRef.current) return;
     prevLocationRef.current = location;
     const idx = PATH_TO_INDEX[location];
-    if (idx !== undefined && idx !== pageIndex) {
-      setDirection(idx > pageIndex ? 1 : -1);
-      setPageIndex(idx);
-      triggerSwipeAd();
+    if (idx !== undefined && idx !== pageIndexRef.current) {
+      navigateTo(idx);
     }
-  }, [location]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [location]); // eslint-disable-line
 
   const triggerSwipeAd = useCallback(async () => {
     if (isPremiumRef.current) return;
     swipeNavCount += 1;
-    if (swipeNavCount % SWIPE_AD_INTERVAL === 0) {
-      await showInterstitial();
-    }
+    if (swipeNavCount % SWIPE_AD_INTERVAL === 0) await showInterstitial();
   }, [showInterstitial]);
 
-  // ✅ Remet en haut à chaque changement de page
-  useEffect(() => {
-    document.querySelectorAll('.overflow-y-auto').forEach(el => { el.scrollTop = 0; });
-  }, [pageIndex]);
-
-  const dragCancelledRef = useRef(false);
-
-  const goTo = useCallback(async (newIdx: number) => {
-    if (newIdx < 0 || newIdx >= PAGE_COUNT || newIdx === pageIndex) return;
-    setDirection(newIdx > pageIndex ? 1 : -1);
-    setPageIndex(newIdx);
-    setLocation(INDEX_TO_PATH[newIdx]);
-    await triggerSwipeAd();
-  }, [pageIndex, setLocation, triggerSwipeAd]);
-
-  const handleCloseThemes = useCallback(() => { goTo(0); }, [goTo]);
-  const handleDragStart   = useCallback(() => { dragCancelledRef.current = false; }, []);
-
-  const handleDrag = useCallback((_: any, info: PanInfo) => {
-    const dx = Math.abs(info.offset.x);
-    const dy = Math.abs(info.offset.y);
-    if (dy > dx * 1.3 && dy > 8) dragCancelledRef.current = true;
+  const setTransform = useCallback((el: HTMLDivElement, idx: number, animated: boolean) => {
+    el.style.transition = animated
+      ? 'transform 260ms cubic-bezier(0.25,0.46,0.45,0.94)'
+      : 'none';
+    el.style.transform = `translate3d(${-idx * 100}vw, 0, 0)`;
   }, []);
 
-  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
-    if (dragCancelledRef.current) return;
-    const { offset, velocity } = info;
-    if (Math.abs(offset.y) > Math.abs(offset.x) * 1.4) return;
-    const swipeLeft  = offset.x < -SWIPE_THRESHOLD || velocity.x < -SWIPE_VELOCITY;
-    const swipeRight = offset.x >  SWIPE_THRESHOLD || velocity.x >  SWIPE_VELOCITY;
-    if (swipeLeft  && pageIndex < PAGE_COUNT - 1) goTo(pageIndex + 1);
-    if (swipeRight && pageIndex > 0)              goTo(pageIndex - 1);
-  }, [pageIndex, goTo]);
+  const navigateTo = useCallback((newIdx: number) => {
+    if (newIdx < 0 || newIdx >= PAGE_COUNT) return;
+    if (newIdx === pageIndexRef.current) return;
+    if (isTransitioning.current) return;
 
-  // ✅ Spring léger pour les vieux téléphones
-  const variants = {
-    enter:  (dir: number) => ({ x: dir >= 0 ? '100%' : '-100%', opacity: 0 }),
-    center:                  ({ x: 0,                             opacity: 1 }),
-    exit:   (dir: number) => ({ x: dir >= 0 ? '-100%' : '100%',  opacity: 0 }),
-  };
+    isTransitioning.current = true;
+    pageIndexRef.current    = newIdx;
+    setPageIndex(newIdx);
+    setLocation(INDEX_TO_PATH[newIdx]);
+    triggerSwipeAd();
 
-  const renderPage = () => {
-    switch (pageIndex) {
-      case 0: return <Home />;
-      case 1: return <Categories />;
-      case 2: return <Favorites />;
-      case 3: return <Stats />;
-      case 4: return <ThemesPage onClose={handleCloseThemes} />;
-      default: return <Home />;
+    if (containerRef.current) {
+      setTransform(containerRef.current, newIdx, true);
     }
-  };
+
+    setTimeout(() => {
+      document.querySelectorAll('.sr-page').forEach(el => { (el as HTMLElement).scrollTop = 0; });
+      isTransitioning.current = false;
+    }, 280);
+  }, [setLocation, triggerSwipeAd, setTransform]);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isTransitioning.current) return;
+    const t = e.touches[0];
+    touchStartX.current = t.clientX;
+    touchStartY.current = t.clientY;
+    touchDeltaX.current = 0;
+    isDragging.current  = false;
+    isScrolling.current = false;
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isTransitioning.current || isScrolling.current) return;
+    const t  = e.touches[0];
+    const dx = t.clientX - touchStartX.current;
+    const dy = t.clientY - touchStartY.current;
+
+    if (!isDragging.current && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      if (Math.abs(dy) > Math.abs(dx) * 1.2) {
+        isScrolling.current = true;
+        return;
+      }
+      isDragging.current = true;
+    }
+
+    if (!isDragging.current) return;
+
+    e.preventDefault();
+    touchDeltaX.current = dx;
+
+    const resistance = 0.35;
+    const current    = pageIndexRef.current;
+    let visualDx     = dx;
+    if ((dx > 0 && current === 0) || (dx < 0 && current === PAGE_COUNT - 1)) {
+      visualDx = dx * resistance;
+    }
+
+    if (containerRef.current) {
+      const baseX = -current * window.innerWidth;
+      containerRef.current.style.transition = 'none';
+      containerRef.current.style.transform  = `translate3d(${baseX + visualDx}px, 0, 0)`;
+    }
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (!isDragging.current || isTransitioning.current) {
+      isDragging.current = false;
+      return;
+    }
+    isDragging.current = false;
+
+    const dx      = touchDeltaX.current;
+    const current = pageIndexRef.current;
+    const goLeft  = dx < -SWIPE_THRESHOLD && current < PAGE_COUNT - 1;
+    const goRight = dx >  SWIPE_THRESHOLD && current > 0;
+
+    if (goLeft || goRight) {
+      navigateTo(current + (goLeft ? 1 : -1));
+    } else {
+      if (containerRef.current) {
+        containerRef.current.style.transition = 'transform 220ms cubic-bezier(0.25,0.46,0.45,0.94)';
+        containerRef.current.style.transform  = `translate3d(${-current * 100}vw, 0, 0)`;
+      }
+    }
+  }, [navigateTo]);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      setTransform(containerRef.current, pageIndex, true);
+    }
+  }, [pageIndex, setTransform]);
+
+  const handleCloseThemes    = useCallback(() => navigateTo(0), [navigateTo]);
+  const handleOpenEmergency  = useCallback(() => setShowEmergency(true), []);
+  const handleCloseEmergency = useCallback(() => setShowEmergency(false), []);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
-      <motion.div
-        className="w-full h-full"
-        drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.06}
-        dragMomentum={false}
-        onDragStart={handleDragStart}
-        onDrag={handleDrag}
-        onDragEnd={handleDragEnd}
-        style={{ touchAction: 'pan-y' }}
+    <div
+      className="relative w-full h-screen overflow-hidden"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      style={{ touchAction: 'pan-y' }}
+    >
+      <div
+        ref={containerRef}
+        style={{
+          display:    'flex',
+          width:      `${PAGE_COUNT * 100}vw`,
+          height:     '100%',
+          transform:  `translate3d(${-(PATH_TO_INDEX[location] ?? 0) * 100}vw, 0, 0)`,
+          willChange: 'transform',
+        }}
       >
-        <AnimatePresence custom={direction} mode="popLayout" initial={false}>
-          <motion.div
-            key={pageIndex}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x:       { type: 'spring', stiffness: 260, damping: 28, mass: 0.8 },
-              opacity: { duration: 0.08 },
+        {([
+          <Home />,
+          <Categories />,
+          <Favorites />,
+          <Stats />,
+          <ThemesPage onClose={handleCloseThemes} />,
+        ] as React.ReactElement[]).map((page, i) => (
+          <div
+            key={i}
+            className="sr-page overflow-y-auto overflow-x-hidden"
+            style={{
+              width:      '100vw',
+              height:     '100%',
+              flexShrink: 0,
+              transform:  'translateZ(0)',
+              willChange: i === pageIndex || i === pageIndex - 1 || i === pageIndex + 1
+                ? 'transform'
+                : 'auto',
             }}
-            className="absolute inset-0 overflow-y-auto overflow-x-hidden"
-            style={{ touchAction: 'pan-y' }}
           >
             <Suspense fallback={<PageSkeleton />}>
-              {renderPage()}
+              {page}
             </Suspense>
-          </motion.div>
-        </AnimatePresence>
-      </motion.div>
-      <PageDots current={pageIndex} onDotClick={goTo} />
+          </div>
+        ))}
+      </div>
+
+      <Navigation onSosPress={handleOpenEmergency} />
+      <PageDots current={pageIndex} onDotClick={navigateTo} />
+
+      <AnimatePresence>
+        {showEmergency && (
+          <EmergencyMode
+            isOpen={showEmergency}
+            onClose={handleCloseEmergency}
+          />
+        )}
+      </AnimatePresence>
+
+      <style>{`
+        .sr-page { -webkit-overflow-scrolling: touch; overscroll-behavior-x: none; }
+      `}</style>
     </div>
+  );
+}
+
+// ✅ Export principal — UserStateProvider entoure tout
+export function SwipeRouter() {
+  return (
+    <UserStateProvider>
+      <SwipeRouterInner />
+    </UserStateProvider>
   );
 }

@@ -10,13 +10,15 @@ import { notificationService } from "@/services/notification-service";
 import { initAdMob, useAdMob } from "@/hooks/use-admob";
 import { SwipeRouter } from "@/components/SwipeRouter";
 import { App as CapApp } from "@capacitor/app";
-import { checkOpenedFromWidget } from "@/hooks/use-widget-open"; // ← adaptez le chemin si besoin
+import { checkOpenedFromWidget } from "@/hooks/use-widget-open";
 import "@/styles/gradients.css";
 
 // Onboarding en lazy — ne charge que si besoin
 const Onboarding = lazy(() =>
   import("@/components/Onboarding").then(m => ({ default: m.Onboarding }))
 );
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function AppSkeleton() {
   return (
@@ -26,12 +28,15 @@ function AppSkeleton() {
     >
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 rounded-full border-2 border-orange-200 border-t-orange-400 animate-spin" />
-        <p className="text-sm font-light" style={{ color: '#B07060' }}>Affirmations Positives</p>
+        <p className="text-sm font-light" style={{ color: '#B07060' }}>
+          Affirmations Positives
+        </p>
       </div>
     </div>
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 
 function WidgetAdHandler() {
   const { showInterstitial } = useAdMob();
@@ -50,14 +55,17 @@ function WidgetAdHandler() {
       if (fromWidget) triggerWidgetAd();
     });
 
-    // ✅ Quand l'app revient au premier plan (widget cliqué app déjà ouverte)
-    const listenerPromise = CapApp.addListener("appStateChange", ({ isActive }: { isActive: boolean }) => {
-      if (isActive) {
-        checkOpenedFromWidget().then((fromWidget) => {
-          if (fromWidget) triggerWidgetAd();
-        });
-      }
-    });
+    // ✅ Quand l'app revient au premier plan (widget cliqué, app déjà ouverte)
+    const listenerPromise = CapApp.addListener(
+      "appStateChange",
+      ({ isActive }: { isActive: boolean }) => {
+        if (isActive) {
+          checkOpenedFromWidget().then((fromWidget) => {
+            if (fromWidget) triggerWidgetAd();
+          });
+        }
+      },
+    );
 
     return () => {
       listenerPromise.then((l: { remove: () => void }) => l.remove());
@@ -67,13 +75,18 @@ function WidgetAdHandler() {
   return null;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 function AppContent() {
   const { hasCompletedOnboarding, completeOnboarding } = useOnboarding();
   const { setTheme } = useTheme();
   const { language } = useLanguage();
   const { syncWithRevenueCat, checkAndExpirePremium } = usePremium();
 
-  useEffect(() => { checkAndExpirePremium(); }, []);
+  // ── Premium ────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    checkAndExpirePremium();
+  }, []);
 
   useEffect(() => {
     // Délai 2s — laisse l'UI s'afficher en premier
@@ -81,25 +94,52 @@ function AppContent() {
     return () => clearTimeout(t);
   }, []);
 
+  // ── AdMob ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    // AdMob délai 3s — après que tout le reste soit prêt
-    const t = setTimeout(() => { initAdMob(); }, 4000);
+    // Délai 3s — après que tout le reste soit prêt
+    const t = setTimeout(() => { initAdMob(); }, 3000);
     return () => clearTimeout(t);
   }, []);
 
+  // ── Notifications ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!hasCompletedOnboarding) return;
+
+    // Délai 1.5s — laisse l'UI s'afficher avant de planifier
     const t = setTimeout(() => {
       const settings = notificationService.getSettings();
       if (settings?.enabled) {
-        notificationService.start(language).then(() => {
-          console.log('Notifications démarrées');
-        });
+        notificationService.start(language as 'fr' | 'en');
       }
     }, 1500);
-    return () => { clearTimeout(t); notificationService.stop(); };
+
+    return () => clearTimeout(t);
   }, [hasCompletedOnboarding, language]);
 
+  // ✅ Re-planifie quand l'app revient au premier plan
+  // Cela garantit que les 7 jours se renouvellent automatiquement
+  // sans action de l'utilisateur (le guard dans notification-service
+  // évite une re-planification inutile si les notifs sont encore fraîches)
+  useEffect(() => {
+    if (!hasCompletedOnboarding) return;
+
+    let subscription: { remove: () => void } | null = null;
+
+    CapApp.addListener("appStateChange", ({ isActive }: { isActive: boolean }) => {
+      if (isActive) {
+        const settings = notificationService.getSettings();
+        if (settings?.enabled) {
+          notificationService.start(language as 'fr' | 'en');
+        }
+      }
+    }).then(s => { subscription = s; });
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [hasCompletedOnboarding, language]);
+
+  // ── Onboarding ─────────────────────────────────────────────────────────────
   const handleOnboardingComplete = (data: any) => {
     if (data.theme) setTheme(data.theme as ThemeId);
     completeOnboarding(data);
@@ -121,6 +161,8 @@ function AppContent() {
     </>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function App() {
   return (

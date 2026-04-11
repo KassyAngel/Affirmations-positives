@@ -7,7 +7,13 @@ import { notificationService } from '@/services/notification-service';
 
 export function NotificationBanner() {
   const [isVisible, setIsVisible] = useState(false);
-  const { permission, isSupported, bannerDismissed, requestPermission, dismissBanner } = useNotifications();
+  const {
+    permission,
+    isSupported,
+    bannerDismissed,
+    requestPermission,
+    dismissBanner,
+  } = useNotifications();
   const { t, language } = useLanguage();
 
   useEffect(() => {
@@ -24,7 +30,6 @@ export function NotificationBanner() {
     if (granted) {
       setIsVisible(false);
       // ✅ Planifie 7 jours de notifs après accord de permission
-      // Utilise les settings existants (définis à l'onboarding ou dans SettingsMenu)
       await notificationService.start(language as 'fr' | 'en');
     }
   };
@@ -52,15 +57,19 @@ export function NotificationBanner() {
           <div
             className="rounded-2xl p-4 shadow-2xl"
             style={{
-              background:    'rgba(255,250,248,0.97)',
-              border:        '1px solid rgba(255,140,105,0.2)',
-              backdropFilter:'blur(20px)',
+              background:     'rgba(255,250,248,0.97)',
+              border:         '1px solid rgba(255,140,105,0.2)',
+              backdropFilter: 'blur(20px)',
             }}
           >
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded-xl shrink-0" style={{ background: 'rgba(255,140,105,0.12)' }}>
+              <div
+                className="p-2 rounded-xl shrink-0"
+                style={{ background: 'rgba(255,140,105,0.12)' }}
+              >
                 <Bell className="w-5 h-5" style={{ color: '#FF8C69' }} />
               </div>
+
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-sm mb-1" style={{ color: '#2D1A12' }}>
                   {t.notifications.permissionTitle}
@@ -88,6 +97,7 @@ export function NotificationBanner() {
                   </button>
                 </div>
               </div>
+
               <button
                 onClick={handleDismiss}
                 className="p-1 rounded-lg transition-colors shrink-0"

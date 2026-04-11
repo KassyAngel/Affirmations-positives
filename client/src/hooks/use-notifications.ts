@@ -9,7 +9,6 @@
 import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { Preferences } from '@capacitor/preferences';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 const BANNER_DISMISSED_KEY = 'notification_banner_dismissed';
 
@@ -30,11 +29,16 @@ async function prefsSet(key: string, value: string): Promise<void> {
   }
 }
 
+function mapPermission(display: string): 'granted' | 'denied' | 'default' {
+  if (display === 'granted') return 'granted';
+  if (display === 'denied')  return 'denied';
+  return 'default';
+}
+
 export function useNotifications() {
-  const [permission, setPermission]         = useState<'granted' | 'denied' | 'default'>('default');
-  const [isSupported, setIsSupported]       = useState(false);
-  const [bannerDismissed, setBannerDismissed] = useState(true); // true par défaut → pas de flash
-  const { language } = useLanguage();
+  const [permission, setPermission]           = useState<'granted' | 'denied' | 'default'>('default');
+  const [isSupported, setIsSupported]         = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(true); // true par défaut → pas de flash au mount
 
   // ── Init : lire l'état de permission + banner ──────────────────────────────
   useEffect(() => {
@@ -43,6 +47,7 @@ export function useNotifications() {
         setIsSupported(false);
         return;
       }
+
       setIsSupported(true);
 
       // Lire le banner dismissed depuis Preferences
@@ -59,6 +64,7 @@ export function useNotifications() {
         setIsSupported(false);
       }
     };
+
     init();
   }, []);
 
@@ -91,10 +97,4 @@ export function useNotifications() {
     requestPermission,
     dismissBanner,
   };
-}
-
-function mapPermission(display: string): 'granted' | 'denied' | 'default' {
-  if (display === 'granted') return 'granted';
-  if (display === 'denied')  return 'denied';
-  return 'default';
 }

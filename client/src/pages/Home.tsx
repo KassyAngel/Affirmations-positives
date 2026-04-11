@@ -1,14 +1,14 @@
 import { useEffect, useState, useRef, memo, useCallback, useMemo } from 'react';
 import { useLocation } from 'wouter';
 import { useQuotes } from '@/hooks/use-quotes';
-import { useUserState } from '@/hooks/use-user-state';
+import { useUserStateContext } from '@/contexts/UserStateContext';
 import { usePremium } from '@/hooks/use-premium';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useDeviceType } from '@/hooks/use-device-type';
 import { QuoteCard } from '@/components/QuoteCard';
 import { MoodOverlay } from '@/components/MoodOverlay';
-import { Navigation } from '@/components/Navigation';
+
 import { NotificationBanner } from '@/components/NotificationBanner';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { PremiumPaywall } from '@/components/PremiumPaywall';
@@ -158,7 +158,7 @@ export default function Home() {
   const device          = useDeviceType();
   const [location]      = useLocation();
 
-  const { state, logMood, updateStreak, hasLoggedMoodToday, toggleFavorite, getTodaysMood } = useUserState();
+  const { state, isReady, logMood, updateStreak, hasLoggedMoodToday, toggleFavorite, getTodaysMood } = useUserStateContext();
   const { isPremium, tier } = usePremium();
 
   // ✅ FIX PERF : isPremium() appelé une seule fois par render, mémoïsé sur `tier`
@@ -215,7 +215,10 @@ export default function Home() {
     }
   }, [location]);
 
-  useEffect(() => { updateStreak(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!isReady) return;
+    updateStreak();
+  }, [isReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!rawQuotes || rawQuotes.length === 0) return;
@@ -398,7 +401,7 @@ export default function Home() {
           </main>
         )}
 
-        <Navigation onSosPress={handleOpenEmergency} />
+        
       </div>
 
       <PremiumPaywall isOpen={showPaywall} onClose={handleClosePaywall} trigger="quote_limit" />

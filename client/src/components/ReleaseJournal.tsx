@@ -341,27 +341,29 @@ export function ReleaseJournal({ isOpen, onClose }: ReleaseJournalProps) {
                 <button
                   onClick={handleSave}
                   disabled={!thought.trim()}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full border transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700"
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-full border transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 whitespace-nowrap"
                   style={{
                     background: 'rgba(255, 255, 255, 0.7)',
                     borderColor: 'rgba(236, 199, 191, 0.5)',
+                    minHeight: '52px',
                   }}
                 >
-                  <Save className="w-4 h-4" />
-                  <span>{t.releaseJournal.saveButton}</span>
+                  <Save className="w-4 h-4 shrink-0" />
+                  <span className="text-sm font-medium">{t.releaseJournal.saveButton}</span>
                 </button>
 
                 <button
                   onClick={handleBurn}
                   disabled={!thought.trim()}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-full transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-white"
+                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-full transition-all active:scale-95 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-white whitespace-nowrap"
                   style={{
                     background: 'linear-gradient(135deg, #FF69B4 0%, #DA70D6 50%, #FFD700 100%)',
                     boxShadow: '0 4px 15px rgba(255, 105, 180, 0.5)',
+                    minHeight: '52px',
                   }}
                 >
-                  <Heart className="w-4 h-4" />
-                  <span className="font-medium">{t.releaseJournal.burnButton}</span>
+                  <Heart className="w-4 h-4 shrink-0" />
+                  <span className="text-sm font-medium">{t.releaseJournal.burnButton}</span>
                 </button>
               </div>
             </>
