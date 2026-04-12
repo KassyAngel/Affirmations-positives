@@ -39,9 +39,6 @@ export default function Categories() {
       setShowPaywall(true);
       return;
     }
-    // ✅ Pas de pub directe ici — géré uniquement par :
-    //    • useNavAdCounter dans Navigation (4ème clic, puis tous les 5)
-    //    • SwipeRouter triggerSwipeAd (toutes les 5 navigations)
     setLocation(`/?category=${categoryId}`);
   };
 
@@ -65,7 +62,6 @@ export default function Categories() {
               {t.categories.subtitle}
             </p>
           </div>
-          {/* ✅ Croix fermeture — sans pub */}
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setLocation('/')}
@@ -119,22 +115,35 @@ export default function Categories() {
         })}
       </div>
 
-      
+      {/*
+        ✅ FIX : suppression du bloc qui existait avant :
 
-      {showPaywall && (
-        <>
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            onClick={() => setShowPaywall(false)}
-            className="fixed top-5 right-5 z-[60] flex items-center justify-center w-9 h-9 rounded-full shadow-lg"
-            style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.1)' }}
-          >
-            <span className="text-lg font-bold leading-none" style={{ color: '#7A4030' }}>✕</span>
-          </motion.button>
-          <PremiumPaywall isOpen={showPaywall} onClose={() => setShowPaywall(false)} trigger="category_locked" />
-        </>
-      )}
+          {showPaywall && (
+            <>
+              <motion.button     ← CE BOUTON ÉTAIT LE PROBLÈME
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                onClick={() => setShowPaywall(false)}
+                className="fixed top-5 right-5 z-[60] ..."   ← z-[60] par-dessus le paywall z-[200] sur Samsung
+              >
+                <span>✕</span>
+              </motion.button>
+              <PremiumPaywall ... />
+            </>
+          )}
+
+        Ce bouton fixed z-[60] créait un stacking context isolé sur Samsung One UI
+        qui s'affichait visuellement AU-DESSUS du PremiumPaywall malgré un z-index plus bas,
+        à cause des animations Framer Motion (initial/animate crée un stacking context).
+
+        Solution : on rend PremiumPaywall directement, sans wrapper, sans bouton externe.
+        Le paywall possède déjà son propre bouton X en haut à droite.
+      */}
+      <PremiumPaywall
+        isOpen={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        trigger="category_locked"
+      />
     </div>
   );
 }

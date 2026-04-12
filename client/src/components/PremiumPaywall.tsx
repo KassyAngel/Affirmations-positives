@@ -3,6 +3,7 @@ import { X, Check, Sparkles, Zap, Star, Heart, Shield, RotateCcw } from 'lucide-
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePremium, type PremiumPlan } from '@/hooks/use-premium';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface PremiumPaywallProps {
   isOpen: boolean;
@@ -16,7 +17,6 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
   const [selectedPlan, setSelectedPlan] = useState<PremiumPlan>('yearly');
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
-  // ✅ FIX : état d'erreur pour afficher les problèmes à l'utilisateur
   const [errorMsg, setErrorMsg] = useState('');
   const isFr = language === 'fr';
 
@@ -75,7 +75,6 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
     },
   ];
 
-  // ✅ FIX : handlePurchase affiche maintenant les erreurs à l'utilisateur
   const handlePurchase = async () => {
     if (purchasing) return;
     setPurchasing(true);
@@ -86,9 +85,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
         onClose();
         alert(isFr ? '🎉 Bienvenue en Premium !' : '🎉 Welcome to Premium!');
       }
-      // Si !success et pas d'erreur → annulation volontaire, on ne fait rien
     } catch (err: any) {
-      // ✅ On affiche l'erreur dans l'UI au lieu de la laisser silencieuse
       const msg = err?.message ?? String(err);
       if (msg.includes('No products are attached') || msg.includes('Aucun package')) {
         setErrorMsg(isFr
@@ -99,9 +96,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
           ? '⚙️ Offre temporairement indisponible. Réessayez plus tard.'
           : '⚙️ Offer temporarily unavailable. Please try again later.');
       } else {
-        setErrorMsg(isFr
-          ? `❌ Erreur: ${msg}`
-          : `❌ Error: ${msg}`);
+        setErrorMsg(isFr ? `❌ Erreur: ${msg}` : `❌ Error: ${msg}`);
       }
     } finally {
       setPurchasing(false);
@@ -122,7 +117,7 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
           ? 'Aucun achat trouvé sur ce compte Google.'
           : 'No purchase found on this Google account.');
       }
-    } catch (err: any) {
+    } catch {
       setErrorMsg(isFr ? '❌ Erreur lors de la restauration.' : '❌ Restore failed.');
     } finally {
       setRestoring(false);
@@ -154,202 +149,210 @@ export function PremiumPaywall({ isOpen, onClose, trigger = 'quote_limit' }: Pre
 
   const message = triggerMessages[trigger];
 
-  if (!isOpen) return null;
-
-  return (
+  // ✅ createPortal : rendu directement dans document.body
+  // Échappe à TOUT stacking context parent (Categories, themes, tirages...)
+  // Fonctionne partout dans l'app sans modifier les autres composants
+  return createPortal(
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm"
-        onClick={handleOverlayClick}
-      >
+      {isOpen && (
         <motion.div
-          initial={{ opacity: 0, y: 100, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 100, scale: 0.9 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-md mx-4 rounded-t-3xl sm:rounded-3xl overflow-hidden z-[201]"
-          style={{
-            background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
-            maxHeight: '90vh',
-          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm"
+          style={{ zIndex: 9999 }} // ✅ absolu par rapport au root, pas à un parent
+          onClick={handleOverlayClick}
         >
-          {/* Fermer */}
-          <button
-            onClick={() => !purchasing && !restoring && onClose()}
-            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(0,0,0,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}
+          <motion.div
+            initial={{ opacity: 0, y: 100, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 100, scale: 0.9 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md mx-4 rounded-t-3xl sm:rounded-3xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
+              maxHeight: '90vh',
+              // ✅ safe area pour Samsung gesture nav
+              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            }}
           >
-            <X className="w-5 h-5 text-white" />
-          </button>
+            {/* Bouton fermer — intégré dans le sheet, pas en dehors */}
+            <button
+              onClick={() => !purchasing && !restoring && onClose()}
+              className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(0,0,0,0.1)', border: '1px solid rgba(255,255,255,0.1)' }}
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
 
-          <div className="overflow-y-auto max-h-[90vh] pb-safe">
-            {/* Header */}
-            <div className="px-6 pt-12 pb-6 text-center">
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center"
-                style={{
-                  background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                  boxShadow: '0 8px 32px rgba(251, 191, 36, 0.3)',
-                }}
-              >
-                <Sparkles className="w-10 h-10 text-white" />
-              </motion.div>
-              <h2 className="text-2xl font-bold mb-2 text-white">{message.title}</h2>
-              <p className="text-sm text-slate-300">{message.subtitle}</p>
-            </div>
-
-            {/* Features */}
-            <div className="px-6 pb-6 space-y-3">
-              {features.map((feature, index) => (
+            <div className="overflow-y-auto max-h-[90vh] pb-safe">
+              {/* Header */}
+              <div className="px-6 pt-12 pb-6 text-center">
                 <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                  className="flex items-start gap-3 p-3 rounded-xl"
-                  style={{ background: 'rgba(255,255,255,0.05)' }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' }}
-                  >
-                    <feature.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-white">{feature.title}</p>
-                    <p className="text-xs text-slate-400">{feature.description}</p>
-                  </div>
-                  <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#10b981' }} />
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Plans */}
-            <div className="px-6 pb-6 space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-center mb-4 text-slate-400">
-                {isFr ? 'Choisissez votre plan' : 'Choose your plan'}
-              </p>
-              {plans.map((plan) => (
-                <motion.button
-                  key={plan.id}
-                  onClick={() => { setSelectedPlan(plan.id); setErrorMsg(''); }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="relative w-full p-4 rounded-xl transition-all"
+                  animate={{ rotate: [0, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center"
                   style={{
-                    background: selectedPlan === plan.id
-                      ? 'linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(245,158,11,0.15) 100%)'
-                      : 'rgba(255,255,255,0.05)',
-                    border: selectedPlan === plan.id ? '2px solid #fbbf24' : '2px solid transparent',
+                    background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                    boxShadow: '0 8px 32px rgba(251, 191, 36, 0.3)',
                   }}
                 >
-                  {plan.popular && (
+                  <Sparkles className="w-10 h-10 text-white" />
+                </motion.div>
+                <h2 className="text-2xl font-bold mb-2 text-white">{message.title}</h2>
+                <p className="text-sm text-slate-300">{message.subtitle}</p>
+              </div>
+
+              {/* Features */}
+              <div className="px-6 pb-6 space-y-3">
+                {features.map((feature, index) => (
+                  <motion.div
+                    key={feature.title}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 * index }}
+                    className="flex items-start gap-3 p-3 rounded-xl"
+                    style={{ background: 'rgba(255,255,255,0.05)' }}
+                  >
                     <div
-                      className="absolute -top-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-xs font-bold text-white"
+                      className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                       style={{ background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' }}
                     >
-                      {isFr ? 'POPULAIRE' : 'POPULAR'}
+                      <feature.icon className="w-5 h-5 text-white" />
                     </div>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 text-left">
-                      <p className="text-base font-bold text-white">{plan.name}</p>
-                      <p className="text-xs text-slate-400">{plan.price} {plan.period}</p>
-                      {plan.savings && (
-                        <p className="text-xs font-semibold mt-1" style={{ color: '#10b981' }}>{plan.savings}</p>
-                      )}
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">{feature.title}</p>
+                      <p className="text-xs text-slate-400">{feature.description}</p>
                     </div>
-                    <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center"
-                      style={{
-                        background: selectedPlan === plan.id ? '#fbbf24' : 'transparent',
-                        border: `2px solid ${selectedPlan === plan.id ? '#fbbf24' : 'rgba(128,128,128,0.3)'}`,
-                      }}
-                    >
-                      {selectedPlan === plan.id && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-
-            {/* ✅ Message d'erreur visible */}
-            {errorMsg && (
-              <div className="px-6 pb-4">
-                <div
-                  className="rounded-xl p-3 text-center text-sm"
-                  style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}
-                >
-                  {errorMsg}
-                </div>
+                    <Check className="w-5 h-5 flex-shrink-0" style={{ color: '#10b981' }} />
+                  </motion.div>
+                ))}
               </div>
-            )}
 
-            {/* CTA */}
-            <div className="px-6 pb-4">
-              <motion.button
-                onClick={handlePurchase}
-                disabled={purchasing || restoring}
-                whileHover={{ scale: purchasing ? 1 : 1.02, y: purchasing ? 0 : -2 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-4 rounded-xl text-white font-bold text-base shadow-xl"
-                style={{
-                  background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                  boxShadow: '0 8px 32px rgba(251, 191, 36, 0.4)',
-                  opacity: purchasing || restoring ? 0.7 : 1,
-                }}
-              >
-                {purchasing
-                  ? <span className="animate-pulse">{isFr ? '⏳ Traitement...' : '⏳ Processing...'}</span>
-                  : <span>{isFr ? '🔓 Débloquer Premium' : '🔓 Unlock Premium'}</span>
-                }
-              </motion.button>
-              <p className="text-center text-xs mt-3 text-slate-400">
-                {isFr ? "7 jours gratuits sur l'abonnement annuel" : '7 days free on yearly subscription'}
-              </p>
-            </div>
-
-            {/* Restauration */}
-            <div className="px-6 pb-8">
-              <div
-                className="rounded-2xl p-4"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-              >
-                <p className="text-center text-xs text-slate-400 mb-3">
-                  {isFr
-                    ? '📱 Changé de téléphone ? Vous avez déjà un abonnement ?'
-                    : '📱 Changed phone? Already subscribed?'}
+              {/* Plans */}
+              <div className="px-6 pb-6 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-center mb-4 text-slate-400">
+                  {isFr ? 'Choisissez votre plan' : 'Choose your plan'}
                 </p>
+                {plans.map((plan) => (
+                  <motion.button
+                    key={plan.id}
+                    onClick={() => { setSelectedPlan(plan.id); setErrorMsg(''); }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="relative w-full p-4 rounded-xl transition-all"
+                    style={{
+                      background: selectedPlan === plan.id
+                        ? 'linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(245,158,11,0.15) 100%)'
+                        : 'rgba(255,255,255,0.05)',
+                      border: selectedPlan === plan.id ? '2px solid #fbbf24' : '2px solid transparent',
+                    }}
+                  >
+                    {plan.popular && (
+                      <div
+                        className="absolute -top-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-xs font-bold text-white"
+                        style={{ background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' }}
+                      >
+                        {isFr ? 'POPULAIRE' : 'POPULAR'}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 text-left">
+                        <p className="text-base font-bold text-white">{plan.name}</p>
+                        <p className="text-xs text-slate-400">{plan.price} {plan.period}</p>
+                        {plan.savings && (
+                          <p className="text-xs font-semibold mt-1" style={{ color: '#10b981' }}>{plan.savings}</p>
+                        )}
+                      </div>
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{
+                          background: selectedPlan === plan.id ? '#fbbf24' : 'transparent',
+                          border: `2px solid ${selectedPlan === plan.id ? '#fbbf24' : 'rgba(128,128,128,0.3)'}`,
+                        }}
+                      >
+                        {selectedPlan === plan.id && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                      </div>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+
+              {/* Erreur */}
+              {errorMsg && (
+                <div className="px-6 pb-4">
+                  <div
+                    className="rounded-xl p-3 text-center text-sm"
+                    style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}
+                  >
+                    {errorMsg}
+                  </div>
+                </div>
+              )}
+
+              {/* CTA */}
+              <div className="px-6 pb-4">
                 <motion.button
-                  onClick={handleRestore}
-                  disabled={restoring || purchasing}
-                  whileHover={{ scale: restoring ? 1 : 1.02 }}
+                  onClick={handlePurchase}
+                  disabled={purchasing || restoring}
+                  whileHover={{ scale: purchasing ? 1 : 1.02, y: purchasing ? 0 : -2 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full py-3 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm transition-all"
+                  className="w-full py-4 rounded-xl text-white font-bold text-base shadow-xl"
                   style={{
-                    background: restoring ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.08)',
-                    border: '1.5px solid rgba(255,255,255,0.15)',
-                    color: restoring ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.85)',
+                    background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+                    boxShadow: '0 8px 32px rgba(251, 191, 36, 0.4)',
+                    opacity: purchasing || restoring ? 0.7 : 1,
                   }}
                 >
-                  <RotateCcw className={`w-4 h-4 ${restoring ? 'animate-spin' : ''}`} />
-                  <span>
-                    {restoring
-                      ? (isFr ? 'Restauration en cours...' : 'Restoring...')
-                      : (isFr ? 'Restaurer mon abonnement' : 'Restore my subscription')}
-                  </span>
+                  {purchasing
+                    ? <span className="animate-pulse">{isFr ? '⏳ Traitement...' : '⏳ Processing...'}</span>
+                    : <span>{isFr ? '🔓 Débloquer Premium' : '🔓 Unlock Premium'}</span>
+                  }
                 </motion.button>
+                <p className="text-center text-xs mt-3 text-slate-400">
+                  {isFr ? "7 jours gratuits sur l'abonnement annuel" : '7 days free on yearly subscription'}
+                </p>
+              </div>
+
+              {/* Restauration */}
+              <div className="px-6 pb-8">
+                <div
+                  className="rounded-2xl p-4"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <p className="text-center text-xs text-slate-400 mb-3">
+                    {isFr
+                      ? '📱 Changé de téléphone ? Vous avez déjà un abonnement ?'
+                      : '📱 Changed phone? Already subscribed?'}
+                  </p>
+                  <motion.button
+                    onClick={handleRestore}
+                    disabled={restoring || purchasing}
+                    whileHover={{ scale: restoring ? 1 : 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full py-3 rounded-xl flex items-center justify-center gap-2 font-semibold text-sm transition-all"
+                    style={{
+                      background: restoring ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.08)',
+                      border: '1.5px solid rgba(255,255,255,0.15)',
+                      color: restoring ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.85)',
+                    }}
+                  >
+                    <RotateCcw className={`w-4 h-4 ${restoring ? 'animate-spin' : ''}`} />
+                    <span>
+                      {restoring
+                        ? (isFr ? 'Restauration en cours...' : 'Restoring...')
+                        : (isFr ? 'Restaurer mon abonnement' : 'Restore my subscription')}
+                    </span>
+                  </motion.button>
+                </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
-      </motion.div>
-    </AnimatePresence>
+      )}
+    </AnimatePresence>,
+    document.body
   );
 }
