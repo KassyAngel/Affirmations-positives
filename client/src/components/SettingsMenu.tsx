@@ -90,8 +90,8 @@ export function SettingsMenu() {
       ];
 
   // ✅ 78vh + paddingBottom min 40px → fonctionne sur Samsung gesture nav
-  const panelMaxHeight = 'calc(78vh - env(safe-area-inset-bottom, 0px))';
-  const scrollMaxHeight = 'calc(78vh - env(safe-area-inset-bottom, 0px) - 40px)';
+  const panelMaxHeight  = 'calc(82vh - env(safe-area-inset-bottom, 0px))';
+  const scrollMaxHeight = 'calc(82vh - env(safe-area-inset-bottom, 0px) - 56px)';
 
   return (
     <div ref={menuRef} className="relative">
@@ -160,7 +160,7 @@ export function SettingsMenu() {
                     </div>
 
                     {/* ✅ pb-16 pour que Confidentialité ne soit pas coupé */}
-                    <div className="px-4 pb-16 space-y-1">
+                      <div className="px-4 pb-24 space-y-1">
                       {menuRows.map(row => {
                         const Icon = row.icon;
                         return (

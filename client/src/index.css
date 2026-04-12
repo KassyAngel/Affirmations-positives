@@ -71,3 +71,11 @@
 .glass-card {
   @apply bg-card/60 backdrop-blur-md border border-white/5 shadow-2xl rounded-2xl;
 }
+:root {
+  --nav-height: 72px; /* valeur par défaut, écrasée par le JS ci-dessus */
+}
+
+/* Utilitaire à utiliser dans toutes les pages/modales */
+.pb-nav {
+  padding-bottom: calc(var(--nav-height) + 16px);
+}

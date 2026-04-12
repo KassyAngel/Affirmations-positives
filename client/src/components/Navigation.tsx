@@ -67,16 +67,25 @@ export const Navigation = memo(function Navigation({ onSosPress }: NavigationPro
         }
       `}</style>
 
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-40"
-        style={{
-          background: 'rgba(255,250,248,0.95)',
-          backdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(255,140,105,0.15)',
-          boxShadow: '0 -4px 24px rgba(255,140,105,0.08)',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        }}
-      >
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-40"
+          ref={(el) => {
+            if (el) {
+              // ✅ Expose la hauteur réelle de la nav comme variable CSS globale
+              document.documentElement.style.setProperty(
+                '--nav-height',
+                `${el.offsetHeight}px`
+              );
+            }
+          }}
+          style={{
+            background: 'rgba(255,250,248,0.95)',
+            backdropFilter: 'blur(20px)',
+            borderTop: '1px solid rgba(255,140,105,0.15)',
+            boxShadow: '0 -4px 24px rgba(255,140,105,0.08)',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          }}
+        >
         <div className="flex items-center px-1 py-2 max-w-lg mx-auto gap-0.5">
 
           {navItems.map((item) => {
