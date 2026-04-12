@@ -8,7 +8,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useDeviceType } from '@/hooks/use-device-type';
 import { QuoteCard } from '@/components/QuoteCard';
 import { MoodOverlay } from '@/components/MoodOverlay';
-
 import { NotificationBanner } from '@/components/NotificationBanner';
 import { ThemeSelector } from '@/components/ThemeSelector';
 import { PremiumPaywall } from '@/components/PremiumPaywall';
@@ -52,9 +51,7 @@ const CATEGORY_STYLES: Record<string, string> = {
   default:      'gradient-default',
 };
 
-const KEY_CATEGORY  = 'home_active_category';
-const KEY_SEED      = 'home_daily_seed';
-const KEY_SEED_DATE = 'home_daily_seed_date';
+const KEY_CATEGORY = 'home_active_category';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -70,36 +67,13 @@ async function saveQuoteForWidget(quote: Quote, lang: string): Promise<void> {
   }
 }
 
-function seededShuffle<T>(arr: T[], seed: number): T[] {
+function randomShuffle<T>(arr: T[]): T[] {
   const result = [...arr];
-  let s = seed;
   for (let i = result.length - 1; i > 0; i--) {
-    s = (s * 1664525 + 1013904223) & 0xffffffff;
-    const j = Math.abs(s) % (i + 1);
+    const j = Math.floor(Math.random() * (i + 1));
     [result[i], result[j]] = [result[j], result[i]];
   }
   return result;
-}
-
-async function getDailySeed(): Promise<number> {
-  const today = new Date().toISOString().split('T')[0];
-  try {
-    const [{ value: storedDate }, { value: storedSeed }] = await Promise.all([
-      Preferences.get({ key: KEY_SEED_DATE }),
-      Preferences.get({ key: KEY_SEED }),
-    ]);
-    if (storedDate === today && storedSeed) {
-      return parseInt(storedSeed, 10);
-    }
-    const newSeed = Date.now() % 0xffffffff;
-    await Promise.all([
-      Preferences.set({ key: KEY_SEED_DATE, value: today }),
-      Preferences.set({ key: KEY_SEED,      value: String(newSeed) }),
-    ]);
-    return newSeed;
-  } catch {
-    return Date.now() % 0xffffffff;
-  }
 }
 
 async function loadPersistedCategory(): Promise<string | undefined> {
@@ -121,8 +95,7 @@ async function persistCategory(category: string | undefined): Promise<void> {
   } catch {}
 }
 
-// ─── NewQuoteButton — sorti du render, mémoïsé ───────────────────────────────
-// ✅ FIX PERF : déclaré hors de Home → jamais recréé, pas de remount à chaque render
+// ─── NewQuoteButton ───────────────────────────────────────────────────────────
 
 interface NewQuoteButtonProps {
   onClick: () => void;
@@ -136,12 +109,12 @@ const NewQuoteButton = memo(({ onClick, label }: NewQuoteButtonProps) => (
     whileTap={{ scale: 0.96 }}
     className="flex items-center gap-2 px-6 py-3 rounded-full transition-colors"
     style={{
-      background:    'rgba(255,255,255,0.18)',
-      backdropFilter:'blur(16px)',
-      border:        '1.5px solid rgba(255,255,255,0.35)',
-      boxShadow:     '0 4px 20px rgba(0,0,0,0.12)',
-      color:         'white',
-      textShadow:    '0 1px 4px rgba(0,0,0,0.25)',
+      background:     'rgba(255,255,255,0.18)',
+      backdropFilter: 'blur(16px)',
+      border:         '1.5px solid rgba(255,255,255,0.35)',
+      boxShadow:      '0 4px 20px rgba(0,0,0,0.12)',
+      color:          'white',
+      textShadow:     '0 1px 4px rgba(0,0,0,0.25)',
     }}
   >
     <RefreshCcw className="w-4 h-4" />
@@ -160,9 +133,7 @@ export default function Home() {
 
   const { state, isReady, logMood, updateStreak, hasLoggedMoodToday, toggleFavorite, getTodaysMood } = useUserStateContext();
   const { isPremium, tier } = usePremium();
-
-  // ✅ FIX PERF : isPremium() appelé une seule fois par render, mémoïsé sur `tier`
-  const userIsPremium = useMemo(() => isPremium(), [tier]); // eslint-disable-line react-hooks/exhaustive-deps
+  const userIsPremium = useMemo(() => isPremium(), [tier]); // eslint-disable-line
 
   const { showRating, onQuoteSeen, onRated, onDismiss } = useRating();
 
@@ -174,22 +145,22 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<string | undefined>(undefined);
   const [currentIndex,   setCurrentIndex]   = useState(0);
   const [shuffledQuotes, setShuffledQuotes] = useState<Quote[]>([]);
-  const seedRef = useRef<number>(0);
+
+  // ✅ shuffleKey : incrémenté au montage pour forcer un nouveau shuffle
+  // même si rawQuotes est déjà en cache React Query (même catégorie)
+  const [shuffleKey, setShuffleKey] = useState(0);
 
   const { showInterstitial } = useAdMob();
   const { onNewQuote }       = useQuoteAdCounter(showInterstitial);
 
   const { data: rawQuotes, isLoading, isError, refetch } = useQuotes({ category: activeCategory });
 
+  // ✅ Au montage : restaure la catégorie persistée + force un nouveau shuffle
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [persisted, seed] = await Promise.all([
-        loadPersistedCategory(),
-        getDailySeed(),
-      ]);
+      const persisted = await loadPersistedCategory();
       if (cancelled) return;
-      seedRef.current = seed;
 
       const params = new URLSearchParams(window.location.search);
       const urlCat = params.get('category');
@@ -201,10 +172,14 @@ export default function Home() {
         const mood = getTodaysMood();
         setActiveCategory(mood ? MOOD_CATEGORY_MAP[mood] : undefined);
       }
+
+      // ✅ Force un nouveau shuffle à chaque ouverture de l'app
+      setShuffleKey(k => k + 1);
     })();
     return () => { cancelled = true; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line
 
+  // Sync catégorie depuis URL (navigation depuis Categories)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const categoryParam = params.get('category');
@@ -212,25 +187,28 @@ export default function Home() {
       setActiveCategory(categoryParam);
       setCurrentIndex(0);
       persistCategory(categoryParam);
+      // ✅ Nouveau shuffle aussi quand on change de catégorie
+      setShuffleKey(k => k + 1);
     }
   }, [location]);
 
   useEffect(() => {
     if (!isReady) return;
     updateStreak();
-  }, [isReady]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isReady]); // eslint-disable-line
 
+  // ✅ Shuffle déclenché par rawQuotes OU par shuffleKey (montage/changement catégorie)
   useEffect(() => {
     if (!rawQuotes || rawQuotes.length === 0) return;
-    const mixed = seededShuffle(rawQuotes, seedRef.current);
-    setShuffledQuotes(mixed);
-  }, [rawQuotes]);
+    const shuffled = randomShuffle(rawQuotes);
+    setShuffledQuotes(shuffled);
+    setCurrentIndex(0);
+  }, [rawQuotes, shuffleKey]); // eslint-disable-line
 
   useEffect(() => {
     if (shuffledQuotes.length === 0) return;
-    const idx = Math.min(currentIndex, shuffledQuotes.length - 1);
-    saveQuoteForWidget(shuffledQuotes[idx], language);
-  }, [shuffledQuotes, currentIndex, language]);
+    saveQuoteForWidget(shuffledQuotes[0], language);
+  }, [shuffledQuotes, language]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
 
@@ -241,6 +219,7 @@ export default function Home() {
     setActiveCategory(cat);
     setCurrentIndex(0);
     persistCategory(cat);
+    setShuffleKey(k => k + 1);
   }, [logMood]);
 
   const handleNext = useCallback(async () => {
@@ -252,12 +231,12 @@ export default function Home() {
     onQuoteSeen();
   }, [shuffledQuotes, currentIndex, language, onNewQuote, onQuoteSeen]);
 
-  const handleOpenJournal    = useCallback(() => setShowReleaseJournal(true), []);
+  const handleOpenJournal    = useCallback(() => setShowReleaseJournal(true),  []);
   const handleCloseJournal   = useCallback(() => setShowReleaseJournal(false), []);
-  const handleOpenEmergency  = useCallback(() => setShowEmergency(true), []);
-  const handleCloseEmergency = useCallback(() => setShowEmergency(false), []);
-  const handleOpenPaywall    = useCallback(() => setShowPaywall(true), []);
-  const handleClosePaywall   = useCallback(() => setShowPaywall(false), []);
+  const handleOpenEmergency  = useCallback(() => setShowEmergency(true),       []);
+  const handleCloseEmergency = useCallback(() => setShowEmergency(false),      []);
+  const handleOpenPaywall    = useCallback(() => setShowPaywall(true),         []);
+  const handleClosePaywall   = useCallback(() => setShowPaywall(false),        []);
 
   // ─── Rendu ────────────────────────────────────────────────────────────────
 
@@ -299,13 +278,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen pb-20 overflow-hidden relative">
-      {/* ✅ FIX PERF : transition-colors au lieu de transition-all (évite repaint layout complet) */}
       <div
         className="fixed inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: `url(${theme.imagePath})`,
-          transition: 'background-image 0.7s ease',
-        }}
+        style={{ backgroundImage: `url(${theme.imagePath})`, transition: 'background-image 0.7s ease' }}
       />
       <div className={`fixed inset-0 ${theme.bgClass} opacity-10`} />
 
@@ -333,7 +308,6 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Streak + badge Premium */}
         <div className="px-6 mb-3 flex items-center justify-between">
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md ${theme.cardClass}`}>
             <span className="text-amber-500 text-sm">🔥</span>
@@ -373,7 +347,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* Mobile */}
         {!isTabletOrDesktop && (
           <main className="px-4 flex flex-col items-center gap-8">
             <QuoteCard
@@ -386,7 +359,6 @@ export default function Home() {
           </main>
         )}
 
-        {/* Tablet / Desktop */}
         {isTabletOrDesktop && (
           <main className="px-8 mt-2 flex items-center justify-center gap-10 min-h-[calc(100vh-200px)]">
             <QuoteCard
@@ -400,8 +372,6 @@ export default function Home() {
             </div>
           </main>
         )}
-
-        
       </div>
 
       <PremiumPaywall isOpen={showPaywall} onClose={handleClosePaywall} trigger="quote_limit" />
