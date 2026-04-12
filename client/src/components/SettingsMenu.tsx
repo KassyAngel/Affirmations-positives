@@ -23,12 +23,45 @@ const PLAY_STORE_URL =
 
 type Panel = 'menu' | 'notifications' | 'widget' | 'submit' | 'language';
 
+// ✅ Lit --nav-height exposée par Navigation.tsx
+// Samsung One UI ne remonte pas safe-area-inset-bottom correctement en gesture nav
+// → on mesure la vraie hauteur de la nav et on l'utilise comme padding-bottom
+function useNavHeight(): number {
+  const [navHeight, setNavHeight] = useState(64); // fallback raisonnable
+  useEffect(() => {
+    const read = () => {
+      const raw = getComputedStyle(document.documentElement)
+        .getPropertyValue('--nav-height')
+        .trim();
+      const parsed = parseInt(raw, 10);
+      // ✅ Si la variable est dispo et cohérente (entre 48 et 200px), on l'utilise
+      // Sinon fallback 80px (couvre Samsung gesture bar + nav)
+      if (!isNaN(parsed) && parsed >= 48 && parsed <= 200) {
+        setNavHeight(parsed);
+      } else {
+        setNavHeight(80);
+      }
+    };
+    // Lecture immédiate + après un frame (Navigation peut se monter après)
+    read();
+    const raf = requestAnimationFrame(read);
+    // Re-lecture au resize (rotation d'écran)
+    window.addEventListener('resize', read, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', read);
+    };
+  }, []);
+  return navHeight;
+}
+
 export function SettingsMenu() {
   const { language, setLanguage } = useLanguage();
   const { themeId } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [panel, setPanel]   = useState<Panel>('menu');
   const menuRef = useRef<HTMLDivElement>(null);
+  const navHeight = useNavHeight();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
@@ -89,9 +122,15 @@ export function SettingsMenu() {
         { label: 'Privacy Policy',  href: '/politique-confidentialite-en.html',   icon: Shield  },
       ];
 
-  // ✅ 78vh + paddingBottom min 40px → fonctionne sur Samsung gesture nav
-  const panelMaxHeight  = 'calc(82vh - env(safe-area-inset-bottom, 0px))';
-  const scrollMaxHeight = 'calc(82vh - env(safe-area-inset-bottom, 0px) - 56px)';
+  // ✅ FIX SAMSUNG : bottom du sheet = hauteur réelle de la nav (pas safe-area qui est fausse)
+  // La nav est fixed bottom:0, donc le sheet doit commencer au-dessus d'elle
+  // On ajoute 8px de marge de sécurité supplémentaire
+  const sheetBottom = navHeight + 8;
+
+  // ✅ maxHeight = viewport - hauteur nav - marge - handle (12px)
+  // On utilise dvh (dynamic viewport height) qui exclut les barres système sur Android
+  const panelMaxHeight  = `calc(82dvh - ${sheetBottom}px)`;
+  const scrollMaxHeight = `calc(82dvh - ${sheetBottom}px - 56px)`;
 
   return (
     <div ref={menuRef} className="relative">
@@ -123,13 +162,17 @@ export function SettingsMenu() {
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 260 }}
-              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl overflow-hidden"
+              className="fixed left-0 right-0 z-50 rounded-t-3xl overflow-hidden"
               style={{
+                // ✅ bottom = hauteur réelle de la nav, pas 0
+                // Ça positionne le sheet juste au-dessus de la nav quelle que soit la config Samsung
+                bottom: sheetBottom,
                 background: 'rgba(255,250,248,0.98)',
                 maxHeight: panelMaxHeight,
                 boxShadow: '0 -8px 40px rgba(255,140,105,0.15)',
-                // ✅ min 40px garanti pour Samsung sans safe-area
-                paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 40px)',
+                // ✅ Plus besoin du paddingBottom safe-area ici
+                // puisqu'on est positionné au-dessus de la nav
+                paddingBottom: '8px',
               }}
             >
               <div className="flex justify-center pt-3 pb-1">
@@ -159,8 +202,7 @@ export function SettingsMenu() {
                       </button>
                     </div>
 
-                    {/* ✅ pb-16 pour que Confidentialité ne soit pas coupé */}
-                      <div className="px-4 pb-24 space-y-1">
+                    <div className="px-4 pb-4 space-y-1">
                       {menuRows.map(row => {
                         const Icon = row.icon;
                         return (
@@ -220,7 +262,7 @@ export function SettingsMenu() {
                     style={{ maxHeight: scrollMaxHeight }}
                   >
                     <PanelHeader title={isFr ? 'Langue' : 'Language'} onBack={() => setPanel('menu')} onClose={close} accent={accent} textMain={textMain} />
-                    <div className="px-4 pb-16 space-y-2">
+                    <div className="px-4 pb-4 space-y-2">
                       {languages.map(lang => {
                         const isActive = lang.code === language;
                         return (
