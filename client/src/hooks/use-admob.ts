@@ -5,7 +5,7 @@ import { usePremium } from '@/hooks/use-premium';
 // ─────────────────────────────────────────────────────────────────────────────
 // 🔧 CONFIGURATION
 // ─────────────────────────────────────────────────────────────────────────────
-const IS_PRODUCTION = false; // ← false = test IDs | true = vrais IDs
+const IS_PRODUCTION = true; // ← false = test IDs | true = vrais IDs
 
 const TEST_IDS = {
   APP_ID:          'ca-app-pub-3940256099942544~3347511713',
